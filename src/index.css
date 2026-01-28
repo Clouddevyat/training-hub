@@ -38,6 +38,11 @@ input[type="range"] {
   outline: none;
 }
 
+.dark input[type="range"],
+[class*="bg-gray-900"] input[type="range"] {
+  background: #374151;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 24px;
@@ -57,4 +62,15 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Smooth transitions for dark mode */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+button, a, input, textarea {
+  transition-property: background-color, border-color, color, transform, box-shadow;
 }
