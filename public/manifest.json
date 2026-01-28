@@ -1,0 +1,16 @@
+{
+  "name": "Combat Alpinist Training Hub",
+  "short_name": "Training Hub",
+  "description": "Personal training management for the Combat Alpinist program",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "/mountain.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
