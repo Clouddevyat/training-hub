@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, Edit3, Save, X as XIcon, AlertTriangle,
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
-  RotateCcw, Info, LineChart
+  RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw
 } from 'lucide-react';
 
 // ============== STORAGE HOOK ==============
@@ -358,6 +358,267 @@ const BENCHMARK_DISPLAY_NAMES = {
   verticalRate: 'Vertical Rate',
   vo2max: 'VO2 Max',
   aetDrift: 'AeT Drift %',
+};
+
+// ============== EXERCISE LIBRARY ==============
+const MOVEMENT_PATTERNS = {
+  hipHinge: { id: 'hipHinge', name: 'Hip Hinge', icon: '🏋️' },
+  squat: { id: 'squat', name: 'Squat', icon: '🦵' },
+  horizontalPush: { id: 'horizontalPush', name: 'Horizontal Push', icon: '💪' },
+  horizontalPull: { id: 'horizontalPull', name: 'Horizontal Pull', icon: '🚣' },
+  verticalPush: { id: 'verticalPush', name: 'Vertical Push', icon: '🙆' },
+  verticalPull: { id: 'verticalPull', name: 'Vertical Pull', icon: '🧗' },
+  carry: { id: 'carry', name: 'Carry', icon: '🎒' },
+  lunge: { id: 'lunge', name: 'Lunge/Single Leg', icon: '🦿' },
+  core: { id: 'core', name: 'Core', icon: '🎯' },
+  cardio: { id: 'cardio', name: 'Cardio', icon: '❤️' },
+  mobility: { id: 'mobility', name: 'Mobility', icon: '🧘' },
+};
+
+const EQUIPMENT_TYPES = {
+  barbell: 'Barbell',
+  dumbbell: 'Dumbbell',
+  kettlebell: 'Kettlebell',
+  bodyweight: 'Bodyweight',
+  machine: 'Machine',
+  cable: 'Cable',
+  bands: 'Bands',
+  trapBar: 'Trap Bar',
+  pullupBar: 'Pull-up Bar',
+  bench: 'Bench',
+  box: 'Box/Step',
+  cardioMachine: 'Cardio Machine',
+  none: 'None',
+};
+
+const EXERCISE_LIBRARY = {
+  // === HIP HINGE ===
+  trapBarDeadlift: { id: 'trapBarDeadlift', name: 'Trap Bar Deadlift', pattern: 'hipHinge', equipment: ['trapBar'], muscles: ['glutes', 'hamstrings', 'back', 'quads'], prKey: 'trapBarDeadlift' },
+  conventionalDeadlift: { id: 'conventionalDeadlift', name: 'Conventional Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'back'] },
+  romanianDeadlift: { id: 'romanianDeadlift', name: 'Romanian Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes'] },
+  kettlebellSwing: { id: 'kettlebellSwing', name: 'Kettlebell Swing', pattern: 'hipHinge', equipment: ['kettlebell'], muscles: ['glutes', 'hamstrings', 'core'] },
+  hipThrust: { id: 'hipThrust', name: 'Hip Thrust', pattern: 'hipHinge', equipment: ['barbell', 'bench'], muscles: ['glutes'] },
+  goodMorning: { id: 'goodMorning', name: 'Good Morning', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['hamstrings', 'back'] },
+  
+  // === SQUAT ===
+  backSquat: { id: 'backSquat', name: 'Back Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes'], prKey: 'backSquat' },
+  frontSquat: { id: 'frontSquat', name: 'Front Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'core'], prKey: 'frontSquat' },
+  gobletSquat: { id: 'gobletSquat', name: 'Goblet Squat', pattern: 'squat', equipment: ['kettlebell', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  legPress: { id: 'legPress', name: 'Leg Press', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  hackSquat: { id: 'hackSquat', name: 'Hack Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads'] },
+  
+  // === LUNGE/SINGLE LEG ===
+  boxStepUp: { id: 'boxStepUp', name: 'Box Step-Up', pattern: 'lunge', equipment: ['box', 'dumbbell'], muscles: ['quads', 'glutes'], prKey: 'boxStepUp' },
+  walkingLunge: { id: 'walkingLunge', name: 'Walking Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  reverseLunge: { id: 'reverseLunge', name: 'Reverse Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell', 'barbell'], muscles: ['quads', 'glutes'] },
+  bulgarianSplitSquat: { id: 'bulgarianSplitSquat', name: 'Bulgarian Split Squat', pattern: 'lunge', equipment: ['bench', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  singleLegRDL: { id: 'singleLegRDL', name: 'Single Leg RDL', pattern: 'lunge', equipment: ['dumbbell', 'kettlebell'], muscles: ['hamstrings', 'glutes'] },
+  
+  // === HORIZONTAL PUSH ===
+  benchPress: { id: 'benchPress', name: 'Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps', 'shoulders'], prKey: 'benchPress' },
+  inclineBenchPress: { id: 'inclineBenchPress', name: 'Incline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'shoulders'] },
+  dbBenchPress: { id: 'dbBenchPress', name: 'DB Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'triceps'] },
+  pushUp: { id: 'pushUp', name: 'Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps', 'core'] },
+  chestDip: { id: 'chestDip', name: 'Dip', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps'], prKey: 'weightedDip' },
+  
+  // === HORIZONTAL PULL ===
+  barbellRow: { id: 'barbellRow', name: 'Barbell Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  dbRow: { id: 'dbRow', name: 'DB Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back', 'biceps'] },
+  cableRow: { id: 'cableRow', name: 'Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  chestSupportedRow: { id: 'chestSupportedRow', name: 'Chest Supported Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
+  invertedRow: { id: 'invertedRow', name: 'Inverted Row', pattern: 'horizontalPull', equipment: ['bodyweight', 'pullupBar'], muscles: ['back', 'biceps'] },
+  
+  // === VERTICAL PUSH ===
+  overheadPress: { id: 'overheadPress', name: 'Overhead Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps'], prKey: 'overheadPress' },
+  dbShoulderPress: { id: 'dbShoulderPress', name: 'DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders', 'triceps'] },
+  pushPress: { id: 'pushPress', name: 'Push Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps', 'legs'] },
+  arnoldPress: { id: 'arnoldPress', name: 'Arnold Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+  pikePushUp: { id: 'pikePushUp', name: 'Pike Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
+  
+  // === VERTICAL PULL ===
+  pullUp: { id: 'pullUp', name: 'Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'], prKey: 'weightedPullUp' },
+  chinUp: { id: 'chinUp', name: 'Chin-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  latPulldown: { id: 'latPulldown', name: 'Lat Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  assistedPullUp: { id: 'assistedPullUp', name: 'Assisted Pull-Up', pattern: 'verticalPull', equipment: ['machine', 'bands'], muscles: ['back', 'biceps'] },
+  
+  // === CARRY ===
+  farmerCarry: { id: 'farmerCarry', name: "Farmer's Carry", pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'core', 'traps'] },
+  suitcaseCarry: { id: 'suitcaseCarry', name: 'Suitcase Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['core', 'grip'] },
+  ruckMarch: { id: 'ruckMarch', name: 'Ruck March', pattern: 'carry', equipment: ['none'], muscles: ['legs', 'core', 'back'] },
+  sandbagCarry: { id: 'sandbagCarry', name: 'Sandbag Carry', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
+  
+  // === CORE ===
+  plank: { id: 'plank', name: 'Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  deadBug: { id: 'deadBug', name: 'Dead Bug', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  pallofPress: { id: 'pallofPress', name: 'Pallof Press', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['core'] },
+  hangingLegRaise: { id: 'hangingLegRaise', name: 'Hanging Leg Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
+  abWheel: { id: 'abWheel', name: 'Ab Wheel Rollout', pattern: 'core', equipment: ['none'], muscles: ['core'] },
+  sidePlank: { id: 'sidePlank', name: 'Side Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  facePull: { id: 'facePull', name: 'Face Pull', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['rear delts', 'rotator cuff'] },
+  
+  // === CARDIO ===
+  run: { id: 'run', name: 'Run', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  hike: { id: 'hike', name: 'Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  ruckHike: { id: 'ruckHike', name: 'Ruck Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  bike: { id: 'bike', name: 'Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  rowErg: { id: 'rowErg', name: 'Row Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  swim: { id: 'swim', name: 'Swim', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  stairClimber: { id: 'stairClimber', name: 'Stair Climber', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  
+  // === MOBILITY ===
+  pigeonPose: { id: 'pigeonPose', name: 'Pigeon Pose', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  worldsGreatestStretch: { id: 'worldsGreatestStretch', name: "World's Greatest Stretch", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  catCow: { id: 'catCow', name: 'Cat-Cow', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  thoracicRotation: { id: 'thoracicRotation', name: 'Thoracic Rotation', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  hipFlexorStretch: { id: 'hipFlexorStretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+};
+
+// ============== PROGRESSION MODELS ==============
+const PROGRESSION_MODELS = {
+  linear: {
+    id: 'linear',
+    name: 'Linear Periodization',
+    description: 'Gradually increase intensity while maintaining volume',
+    icon: '📈',
+    generateWeeks: (weeks, startIntensity = 70) => {
+      const increment = (90 - startIntensity) / (weeks - 1);
+      return Array.from({ length: weeks }, (_, i) => {
+        const isDeload = (i + 1) % 4 === 0;
+        return {
+          week: i + 1,
+          intensity: isDeload ? startIntensity : Math.round(startIntensity + (increment * i)),
+          sets: isDeload ? 2 : 4,
+          reps: isDeload ? '8-10' : '4-6',
+          rpe: isDeload ? 6 : 8,
+          isDeload,
+        };
+      });
+    },
+  },
+  undulatingDaily: {
+    id: 'undulatingDaily',
+    name: 'Daily Undulating (DUP)',
+    description: 'Vary intensity and volume each training day',
+    icon: '🌊',
+    dayPatterns: [
+      { name: 'Strength', sets: 5, reps: '3-5', intensity: 85, rpe: 8 },
+      { name: 'Hypertrophy', sets: 4, reps: '8-12', intensity: 70, rpe: 7 },
+      { name: 'Power', sets: 4, reps: '2-3', intensity: 75, rpe: 7, note: 'Explosive' },
+    ],
+    generateWeeks: (weeks) => {
+      return Array.from({ length: weeks }, (_, i) => {
+        const isDeload = (i + 1) % 4 === 0;
+        return {
+          week: i + 1,
+          pattern: 'DUP',
+          intensityMod: isDeload ? 0.8 : 1,
+          volumeMod: isDeload ? 0.6 : 1,
+          isDeload,
+        };
+      });
+    },
+  },
+  undulatingWeekly: {
+    id: 'undulatingWeekly',
+    name: 'Weekly Undulating',
+    description: 'Vary intensity and volume each week',
+    icon: '📊',
+    generateWeeks: (weeks) => {
+      const pattern = [
+        { focus: 'Volume', sets: 4, reps: '10-12', intensity: 65, rpe: 7 },
+        { focus: 'Strength', sets: 4, reps: '5-6', intensity: 80, rpe: 8 },
+        { focus: 'Peak', sets: 5, reps: '2-4', intensity: 88, rpe: 9 },
+        { focus: 'Deload', sets: 2, reps: '8-10', intensity: 60, rpe: 5, isDeload: true },
+      ];
+      return Array.from({ length: weeks }, (_, i) => ({
+        week: i + 1,
+        ...pattern[i % pattern.length],
+      }));
+    },
+  },
+  block: {
+    id: 'block',
+    name: 'Block Periodization',
+    description: 'Accumulation → Transmutation → Realization',
+    icon: '🧱',
+    generateWeeks: (weeks) => {
+      const accumWeeks = Math.ceil(weeks * 0.4);
+      const transWeeks = Math.ceil(weeks * 0.35);
+      const realWeeks = weeks - accumWeeks - transWeeks;
+      
+      return Array.from({ length: weeks }, (_, i) => {
+        if (i < accumWeeks) {
+          return { week: i + 1, phase: 'Accumulation', sets: 4, reps: '8-12', intensity: 65 + (i * 2), rpe: 7, focus: 'Volume' };
+        } else if (i < accumWeeks + transWeeks) {
+          return { week: i + 1, phase: 'Transmutation', sets: 4, reps: '4-6', intensity: 78 + ((i - accumWeeks) * 3), rpe: 8, focus: 'Intensity' };
+        } else {
+          const realIdx = i - accumWeeks - transWeeks;
+          return { week: i + 1, phase: 'Realization', sets: 3, reps: '1-3', intensity: 90 + (realIdx * 2), rpe: 9, focus: 'Peak' };
+        }
+      });
+    },
+  },
+  maintenance: {
+    id: 'maintenance',
+    name: 'Maintenance',
+    description: 'Preserve strength with minimal volume',
+    icon: '⚖️',
+    generateWeeks: (weeks) => {
+      return Array.from({ length: weeks }, (_, i) => ({
+        week: i + 1,
+        sets: 2,
+        reps: '3-5',
+        intensity: 80,
+        rpe: 7,
+        note: 'Maintenance only',
+      }));
+    },
+  },
+};
+
+// ============== CARDIO ZONE TEMPLATES ==============
+const CARDIO_ZONES = {
+  zone1: { id: 'zone1', name: 'Zone 1 - Recovery', hrPercent: [50, 60], rpe: [1, 2], description: 'Very easy, full conversation' },
+  zone2: { id: 'zone2', name: 'Zone 2 - Aerobic Base', hrPercent: [60, 70], rpe: [3, 4], description: 'Easy, can hold conversation' },
+  zone3: { id: 'zone3', name: 'Zone 3 - Tempo', hrPercent: [70, 80], rpe: [5, 6], description: 'Comfortably hard, short sentences' },
+  zone4: { id: 'zone4', name: 'Zone 4 - Threshold', hrPercent: [80, 90], rpe: [7, 8], description: 'Hard, few words at a time' },
+  zone5: { id: 'zone5', name: 'Zone 5 - VO2 Max', hrPercent: [90, 100], rpe: [9, 10], description: 'Max effort, no talking' },
+};
+
+const CARDIO_SESSION_TEMPLATES = {
+  zone2Steady: { id: 'zone2Steady', name: 'Zone 2 Steady State', zone: 'zone2', structure: 'continuous', durationRange: [30, 90] },
+  tempoIntervals: { id: 'tempoIntervals', name: 'Tempo Intervals', zone: 'zone3', structure: 'intervals', workRest: '5:2', durationRange: [30, 50] },
+  thresholdIntervals: { id: 'thresholdIntervals', name: 'Threshold Intervals', zone: 'zone4', structure: 'intervals', workRest: '4:2', durationRange: [35, 50] },
+  longSlow: { id: 'longSlow', name: 'Long Slow Distance', zone: 'zone2', structure: 'continuous', durationRange: [90, 240] },
+  fartlek: { id: 'fartlek', name: 'Fartlek', zone: 'mixed', structure: 'fartlek', durationRange: [30, 60] },
+  hillRepeats: { id: 'hillRepeats', name: 'Hill Repeats', zone: 'zone4', structure: 'intervals', durationRange: [30, 45] },
+};
+
+// ============== MESOCYCLE TEMPLATES ==============
+const MESO_TEMPLATES = {
+  hypertrophy: { id: 'hypertrophy', name: 'Hypertrophy', weeks: 4, icon: '💪', progression: 'linear', defaultSets: 4, defaultReps: '8-12', defaultIntensity: 65 },
+  strength: { id: 'strength', name: 'Strength', weeks: 4, icon: '🏋️', progression: 'linear', defaultSets: 4, defaultReps: '4-6', defaultIntensity: 80 },
+  power: { id: 'power', name: 'Power', weeks: 3, icon: '⚡', progression: 'undulatingDaily', defaultSets: 4, defaultReps: '2-4', defaultIntensity: 75 },
+  peaking: { id: 'peaking', name: 'Peaking', weeks: 2, icon: '🎯', progression: 'block', defaultSets: 3, defaultReps: '1-3', defaultIntensity: 90 },
+  deload: { id: 'deload', name: 'Deload', weeks: 1, icon: '😴', progression: 'maintenance', defaultSets: 2, defaultReps: '6-8', defaultIntensity: 60 },
+  aerobicBase: { id: 'aerobicBase', name: 'Aerobic Base', weeks: 6, icon: '❤️', progression: 'linear', isCardioFocused: true },
+  muscularEndurance: { id: 'muscularEndurance', name: 'Muscular Endurance', weeks: 4, icon: '🔥', progression: 'linear', defaultSets: 3, defaultReps: '15-20', defaultIntensity: 55 },
+};
+
+// Helper to get exercise swaps by movement pattern
+const getExerciseSwaps = (exerciseId) => {
+  const exercise = EXERCISE_LIBRARY[exerciseId];
+  if (!exercise) return [];
+  return Object.values(EXERCISE_LIBRARY)
+    .filter(e => e.pattern === exercise.pattern && e.id !== exerciseId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+// Helper to calculate working weight from 1RM and percentage
+const calculateWorkingWeight = (oneRepMax, percentage, roundTo = 5) => {
+  if (!oneRepMax || !percentage) return null;
+  const weight = oneRepMax * (percentage / 100);
+  return Math.round(weight / roundTo) * roundTo;
 };
 
 // ============== DEFAULT PROGRAM ==============
@@ -1846,6 +2107,762 @@ const SmartLoadDisplay = ({ prescription, profile, theme, darkMode, currentWeek 
   );
 };
 
+// ============== PROGRAM BUILDER COMPONENT ==============
+const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile, theme, darkMode }) => {
+  const [step, setStep] = useState('type'); // type, details, phases, template, review
+  const [programType, setProgramType] = useState(null); // 'meso' or 'macro'
+  const [program, setProgram] = useState({
+    id: `custom_${Date.now()}`,
+    name: '',
+    description: '',
+    icon: '🏋️',
+    phases: [],
+  });
+  const [currentPhaseIdx, setCurrentPhaseIdx] = useState(0);
+  const [showExercisePicker, setShowExercisePicker] = useState(null); // { dayIdx, exerciseIdx } or null
+  const [showSwapPicker, setShowSwapPicker] = useState(null); // { dayIdx, exerciseIdx, currentExerciseId }
+
+  const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
+
+  // Step 1: Choose program type
+  const TypeSelection = () => (
+    <div className="space-y-4">
+      <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to build?</h3>
+      
+      <button
+        onClick={() => { setProgramType('meso'); setStep('details'); }}
+        className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500 transition-colors`}
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-3xl">📦</span>
+          <div>
+            <p className={`font-bold ${theme.text}`}>Mesocycle</p>
+            <p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p>
+            <p className={`text-xs ${theme.textMuted} mt-1`}>Best for: focused training phases, specific goals</p>
+          </div>
+        </div>
+      </button>
+
+      <button
+        onClick={() => { setProgramType('macro'); setStep('details'); }}
+        className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500 transition-colors`}
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-3xl">📅</span>
+          <div>
+            <p className={`font-bold ${theme.text}`}>Macrocycle</p>
+            <p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p>
+            <p className={`text-xs ${theme.textMuted} mt-1`}>Best for: season planning, competition prep</p>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+
+  // Step 2: Program details
+  const DetailsStep = () => (
+    <div className="space-y-4">
+      <h3 className={`text-lg font-bold ${theme.text}`}>Program Details</h3>
+      
+      <div>
+        <label className={`block text-sm font-medium ${theme.text} mb-2`}>Program Name</label>
+        <input
+          type="text"
+          value={program.name}
+          onChange={(e) => setProgram(p => ({ ...p, name: e.target.value }))}
+          placeholder="e.g., Pre-Season Strength"
+          className={`w-full p-3 rounded-lg ${theme.input} border`}
+        />
+      </div>
+
+      <div>
+        <label className={`block text-sm font-medium ${theme.text} mb-2`}>Description</label>
+        <textarea
+          value={program.description}
+          onChange={(e) => setProgram(p => ({ ...p, description: e.target.value }))}
+          placeholder="Brief description of goals..."
+          rows={2}
+          className={`w-full p-3 rounded-lg ${theme.input} border`}
+        />
+      </div>
+
+      <div>
+        <label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label>
+        <div className="flex flex-wrap gap-2">
+          {ICONS.map(icon => (
+            <button
+              key={icon}
+              onClick={() => setProgram(p => ({ ...p, icon }))}
+              className={`text-2xl p-2 rounded-lg ${program.icon === icon ? 'bg-blue-500' : theme.cardAlt}`}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={() => setStep('phases')}
+        disabled={!program.name}
+        className={`w-full py-3 rounded-xl font-medium ${program.name ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+      >
+        Next: Add {programType === 'meso' ? 'Phase' : 'Mesocycles'}
+      </button>
+    </div>
+  );
+
+  // Step 3: Phase/Meso builder
+  const PhasesStep = () => {
+    const [newPhase, setNewPhase] = useState({
+      name: '',
+      weeks: 4,
+      progression: 'linear',
+      weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'rest', exercises: [] })),
+    });
+
+    const addPhase = () => {
+      const startWeek = program.phases.reduce((sum, p) => sum + p.weeks, 0) + 1;
+      const endWeek = startWeek + newPhase.weeks - 1;
+      
+      // Generate progression for each week
+      const progressionModel = PROGRESSION_MODELS[newPhase.progression];
+      const weeklyProgression = progressionModel.generateWeeks(newPhase.weeks);
+      
+      setProgram(p => ({
+        ...p,
+        phases: [...p.phases, {
+          ...newPhase,
+          id: `phase_${Date.now()}`,
+          weeksRange: [startWeek, endWeek],
+          weeklyProgression,
+        }]
+      }));
+      setNewPhase({
+        name: '',
+        weeks: 4,
+        progression: 'linear',
+        weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'rest', exercises: [] })),
+      });
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className={`text-lg font-bold ${theme.text}`}>
+            {programType === 'meso' ? 'Phase Setup' : 'Mesocycles'}
+          </h3>
+          <span className={`text-sm ${theme.textMuted}`}>
+            {program.phases.reduce((sum, p) => sum + p.weeks, 0)} weeks total
+          </span>
+        </div>
+
+        {/* Existing phases */}
+        {program.phases.map((phase, idx) => (
+          <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`font-medium ${theme.text}`}>{phase.name}</p>
+                <p className={`text-sm ${theme.textMuted}`}>
+                  Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setProgram(p => ({ ...p, phases: p.phases.filter((_, i) => i !== idx) }))}
+                  className="px-3 py-1 bg-red-500/20 text-red-500 rounded-lg text-sm"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Add new phase */}
+        <div className={`${theme.card} rounded-xl p-4 space-y-4 border-2 border-dashed ${theme.border}`}>
+          <p className={`font-medium ${theme.text}`}>Add {programType === 'meso' ? 'Phase' : 'Mesocycle'}</p>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-xs ${theme.textMuted} mb-1`}>Name</label>
+              <input
+                type="text"
+                value={newPhase.name}
+                onChange={(e) => setNewPhase(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g., Accumulation"
+                className={`w-full p-2 rounded-lg ${theme.input} border text-sm`}
+              />
+            </div>
+            <div>
+              <label className={`block text-xs ${theme.textMuted} mb-1`}>Weeks</label>
+              <input
+                type="number"
+                value={newPhase.weeks}
+                onChange={(e) => setNewPhase(p => ({ ...p, weeks: Math.max(1, parseInt(e.target.value) || 1) }))}
+                min={1}
+                max={12}
+                className={`w-full p-2 rounded-lg ${theme.input} border text-sm`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={`block text-xs ${theme.textMuted} mb-2`}>Progression Model</label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(PROGRESSION_MODELS).map(model => (
+                <button
+                  key={model.id}
+                  onClick={() => setNewPhase(p => ({ ...p, progression: model.id }))}
+                  className={`p-3 rounded-lg text-left ${newPhase.progression === model.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+                >
+                  <span className="text-lg mr-2">{model.icon}</span>
+                  <span className="text-sm font-medium">{model.name}</span>
+                </button>
+              ))}
+            </div>
+            {newPhase.progression && (
+              <p className={`text-xs ${theme.textMuted} mt-2`}>
+                {PROGRESSION_MODELS[newPhase.progression].description}
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={addPhase}
+            disabled={!newPhase.name}
+            className={`w-full py-2 rounded-lg font-medium ${newPhase.name ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+          >
+            <Plus size={18} className="inline mr-1" /> Add Phase
+          </button>
+        </div>
+
+        {program.phases.length > 0 && (
+          <button
+            onClick={() => setStep('review')}
+            className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white"
+          >
+            Review & Save Program
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // Step 4: Weekly template editor
+  const TemplateStep = () => {
+    const phase = program.phases[currentPhaseIdx];
+    if (!phase) return null;
+
+    const SESSION_TYPES = [
+      { id: 'strength', name: 'Strength', icon: '🏋️' },
+      { id: 'cardio', name: 'Cardio', icon: '❤️' },
+      { id: 'muscular_endurance', name: 'Muscular Endurance', icon: '🔥' },
+      { id: 'mobility', name: 'Mobility', icon: '🧘' },
+      { id: 'recovery', name: 'Recovery/Off', icon: '😴' },
+    ];
+
+    const updateDay = (dayIdx, updates) => {
+      setProgram(p => ({
+        ...p,
+        phases: p.phases.map((ph, i) => i === currentPhaseIdx ? {
+          ...ph,
+          weeklyTemplate: ph.weeklyTemplate.map((d, di) => di === dayIdx ? { ...d, ...updates } : d)
+        } : ph)
+      }));
+    };
+
+    const addExercise = (dayIdx) => {
+      const day = phase.weeklyTemplate[dayIdx];
+      updateDay(dayIdx, {
+        exercises: [...(day.exercises || []), {
+          id: `ex_${Date.now()}`,
+          exerciseId: null,
+          name: '',
+          sets: 3,
+          reps: '8-10',
+          intensity: 70,
+          rpe: 7,
+          rest: '2 min',
+        }]
+      });
+    };
+
+    const updateExercise = (dayIdx, exIdx, updates) => {
+      const day = phase.weeklyTemplate[dayIdx];
+      updateDay(dayIdx, {
+        exercises: day.exercises.map((ex, i) => i === exIdx ? { ...ex, ...updates } : ex)
+      });
+    };
+
+    const removeExercise = (dayIdx, exIdx) => {
+      const day = phase.weeklyTemplate[dayIdx];
+      updateDay(dayIdx, {
+        exercises: day.exercises.filter((_, i) => i !== exIdx)
+      });
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <button onClick={() => setStep('phases')} className={`${theme.textMuted}`}>
+            <ChevronLeft size={20} className="inline" /> Back
+          </button>
+          <h3 className={`font-bold ${theme.text}`}>{phase.name} - Week Template</h3>
+          <span className={`text-sm ${theme.textMuted}`}>Week 1 of {phase.weeks}</span>
+        </div>
+
+        <p className={`text-sm ${theme.textMuted}`}>
+          Build your template for Week 1. Exercises will auto-propagate to all {phase.weeks} weeks with {PROGRESSION_MODELS[phase.progression].name} progression.
+        </p>
+
+        {phase.weeklyTemplate.map((day, dayIdx) => (
+          <div key={day.day} className={`${theme.card} rounded-xl p-4`}>
+            <div className="flex items-center justify-between mb-3">
+              <input
+                type="text"
+                value={day.dayName}
+                onChange={(e) => updateDay(dayIdx, { dayName: e.target.value })}
+                className={`font-medium ${theme.text} bg-transparent border-b ${theme.border} w-24`}
+              />
+              <select
+                value={day.type}
+                onChange={(e) => updateDay(dayIdx, { type: e.target.value, session: SESSION_TYPES.find(s => s.id === e.target.value)?.name || '' })}
+                className={`p-2 rounded-lg ${theme.input} text-sm`}
+              >
+                {SESSION_TYPES.map(t => (
+                  <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {day.type !== 'recovery' && (
+              <>
+                <input
+                  type="text"
+                  value={day.session}
+                  onChange={(e) => updateDay(dayIdx, { session: e.target.value })}
+                  placeholder="Session name (e.g., Upper Body A)"
+                  className={`w-full p-2 rounded-lg ${theme.input} border text-sm mb-3`}
+                />
+
+                {day.type === 'cardio' ? (
+                  <div className="space-y-2">
+                    <select
+                      value={day.cardioZone || 'zone2'}
+                      onChange={(e) => updateDay(dayIdx, { cardioZone: e.target.value })}
+                      className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                    >
+                      {Object.values(CARDIO_ZONES).map(z => (
+                        <option key={z.id} value={z.id}>{z.name}</option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={`text-xs ${theme.textMuted}`}>Duration (min)</label>
+                        <input
+                          type="number"
+                          value={day.duration || 45}
+                          onChange={(e) => updateDay(dayIdx, { duration: parseInt(e.target.value) || 30 })}
+                          className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`text-xs ${theme.textMuted}`}>Activity</label>
+                        <select
+                          value={day.cardioActivity || 'run'}
+                          onChange={(e) => updateDay(dayIdx, { cardioActivity: e.target.value })}
+                          className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                        >
+                          {Object.values(EXERCISE_LIBRARY).filter(e => e.isCardio).map(e => (
+                            <option key={e.id} value={e.id}>{e.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(day.exercises || []).map((ex, exIdx) => (
+                      <div key={ex.id} className={`${theme.cardAlt} rounded-lg p-3`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <button
+                            onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })}
+                            className={`text-sm font-medium ${theme.text} ${!ex.exerciseId ? 'text-blue-500' : ''}`}
+                          >
+                            {ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}
+                          </button>
+                          <div className="flex gap-1">
+                            {ex.exerciseId && (
+                              <button
+                                onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })}
+                                className={`p-1 ${theme.textMuted} hover:text-blue-500`}
+                                title="Swap exercise"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => removeExercise(dayIdx, exIdx)}
+                              className="p-1 text-red-500"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-xs">
+                          <div>
+                            <label className={theme.textMuted}>Sets</label>
+                            <input
+                              type="number"
+                              value={ex.sets}
+                              onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })}
+                              className={`w-full p-1 rounded ${theme.input}`}
+                            />
+                          </div>
+                          <div>
+                            <label className={theme.textMuted}>Reps</label>
+                            <input
+                              type="text"
+                              value={ex.reps}
+                              onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })}
+                              className={`w-full p-1 rounded ${theme.input}`}
+                            />
+                          </div>
+                          <div>
+                            <label className={theme.textMuted}>%1RM</label>
+                            <input
+                              type="number"
+                              value={ex.intensity}
+                              onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })}
+                              className={`w-full p-1 rounded ${theme.input}`}
+                            />
+                          </div>
+                          <div>
+                            <label className={theme.textMuted}>RPE</label>
+                            <input
+                              type="number"
+                              value={ex.rpe}
+                              onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })}
+                              min={1}
+                              max={10}
+                              className={`w-full p-1 rounded ${theme.input}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addExercise(dayIdx)}
+                      className={`w-full py-2 border-2 border-dashed ${theme.border} rounded-lg text-sm ${theme.textMuted}`}
+                    >
+                      <Plus size={16} className="inline mr-1" /> Add Exercise
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+
+        <button
+          onClick={() => setStep('phases')}
+          className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white"
+        >
+          Save Template
+        </button>
+      </div>
+    );
+  };
+
+  // Exercise Picker Modal
+  const ExercisePicker = () => {
+    const [search, setSearch] = useState('');
+    const [filterPattern, setFilterPattern] = useState('all');
+
+    const filteredExercises = Object.values(EXERCISE_LIBRARY)
+      .filter(e => !e.isCardio && !e.isMobility)
+      .filter(e => filterPattern === 'all' || e.pattern === filterPattern)
+      .filter(e => e.name.toLowerCase().includes(search.toLowerCase()));
+
+    const selectExercise = (exerciseId) => {
+      const { dayIdx, exerciseIdx } = showExercisePicker;
+      const exercise = EXERCISE_LIBRARY[exerciseId];
+      
+      setProgram(p => ({
+        ...p,
+        phases: p.phases.map((ph, i) => i === currentPhaseIdx ? {
+          ...ph,
+          weeklyTemplate: ph.weeklyTemplate.map((d, di) => di === dayIdx ? {
+            ...d,
+            exercises: d.exercises.map((ex, ei) => ei === exerciseIdx ? {
+              ...ex,
+              exerciseId,
+              name: exercise.name,
+              prKey: exercise.prKey || null,
+            } : ex)
+          } : d)
+        } : ph)
+      }));
+      setShowExercisePicker(null);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+        <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[80vh] overflow-auto`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`font-bold ${theme.text}`}>Select Exercise</h3>
+            <button onClick={() => setShowExercisePicker(null)}><X size={24} className={theme.text} /></button>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Search exercises..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={`w-full p-3 rounded-lg ${theme.input} border mb-3`}
+          />
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setFilterPattern('all')}
+              className={`px-3 py-1 rounded-full text-sm ${filterPattern === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+            >
+              All
+            </button>
+            {Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (
+              <button
+                key={pattern.id}
+                onClick={() => setFilterPattern(pattern.id)}
+                className={`px-3 py-1 rounded-full text-sm ${filterPattern === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+              >
+                {pattern.icon} {pattern.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-2 max-h-[40vh] overflow-auto">
+            {filteredExercises.map(ex => (
+              <button
+                key={ex.id}
+                onClick={() => selectExercise(ex.id)}
+                className={`w-full p-3 ${theme.card} rounded-lg text-left`}
+              >
+                <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                <p className={`text-xs ${theme.textMuted}`}>
+                  {MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Swap Picker Modal (same pattern exercises)
+  const SwapPicker = () => {
+    const swaps = getExerciseSwaps(showSwapPicker.currentExerciseId);
+    const currentExercise = EXERCISE_LIBRARY[showSwapPicker.currentExerciseId];
+
+    const selectSwap = (exerciseId) => {
+      const { dayIdx, exerciseIdx } = showSwapPicker;
+      const exercise = EXERCISE_LIBRARY[exerciseId];
+      
+      setProgram(p => ({
+        ...p,
+        phases: p.phases.map((ph, i) => i === currentPhaseIdx ? {
+          ...ph,
+          weeklyTemplate: ph.weeklyTemplate.map((d, di) => di === dayIdx ? {
+            ...d,
+            exercises: d.exercises.map((ex, ei) => ei === exerciseIdx ? {
+              ...ex,
+              exerciseId,
+              name: exercise.name,
+              prKey: exercise.prKey || null,
+            } : ex)
+          } : d)
+        } : ph)
+      }));
+      setShowSwapPicker(null);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+        <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[70vh] overflow-auto`}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className={`font-bold ${theme.text}`}>Swap Exercise</h3>
+              <p className={`text-sm ${theme.textMuted}`}>
+                Same movement pattern: {MOVEMENT_PATTERNS[currentExercise.pattern]?.name}
+              </p>
+            </div>
+            <button onClick={() => setShowSwapPicker(null)}><X size={24} className={theme.text} /></button>
+          </div>
+
+          <div className="space-y-2">
+            {swaps.map(ex => (
+              <button
+                key={ex.id}
+                onClick={() => selectSwap(ex.id)}
+                className={`w-full p-3 ${theme.card} rounded-lg text-left`}
+              >
+                <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                <p className={`text-xs ${theme.textMuted}`}>
+                  Equipment: {ex.equipment.join(', ')}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Step 5: Review and save
+  const ReviewStep = () => {
+    const totalWeeks = program.phases.reduce((sum, p) => sum + p.weeks, 0);
+
+    const saveProgram = () => {
+      // Convert to the format expected by the app
+      const finalProgram = {
+        ...program,
+        phases: program.phases.map(phase => ({
+          id: phase.id,
+          name: phase.name,
+          weeks: phase.weeksRange,
+          description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
+          progression: phase.progression,
+          weeklyTemplate: phase.weeklyTemplate.map(day => ({
+            day: day.day,
+            dayName: day.dayName,
+            session: day.session,
+            type: day.type,
+            duration: day.duration || 60,
+            prescription: day.type === 'cardio' ? {
+              hrZone: day.cardioZone || 'zone2',
+              description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description,
+            } : {
+              exercises: (day.exercises || []).map(ex => ({
+                name: ex.name,
+                sets: ex.sets,
+                reps: ex.reps,
+                percentage: ex.intensity,
+                rpe: ex.rpe,
+                rest: ex.rest,
+                prKey: ex.prKey,
+              })),
+            },
+          })),
+        })),
+      };
+
+      setCustomPrograms(prev => ({
+        ...prev,
+        [program.id]: finalProgram,
+      }));
+      
+      // Reset
+      setStep('type');
+      setProgram({
+        id: `custom_${Date.now()}`,
+        name: '',
+        description: '',
+        icon: '🏋️',
+        phases: [],
+      });
+    };
+
+    return (
+      <div className="space-y-4">
+        <h3 className={`text-lg font-bold ${theme.text}`}>Review Program</h3>
+
+        <div className={`${theme.card} rounded-xl p-5`}>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-4xl">{program.icon}</span>
+            <div>
+              <h4 className={`text-xl font-bold ${theme.text}`}>{program.name}</h4>
+              <p className={`text-sm ${theme.textMuted}`}>{program.description}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}>
+              <p className={`text-2xl font-bold ${theme.text}`}>{totalWeeks}</p>
+              <p className={`text-xs ${theme.textMuted}`}>Total Weeks</p>
+            </div>
+            <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}>
+              <p className={`text-2xl font-bold ${theme.text}`}>{program.phases.length}</p>
+              <p className={`text-xs ${theme.textMuted}`}>Phases</p>
+            </div>
+          </div>
+
+          {program.phases.map((phase, idx) => (
+            <div key={phase.id} className={`${theme.cardAlt} rounded-lg p-3 mb-2`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className={`font-medium ${theme.text}`}>{phase.name}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>
+                    Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}
+                  </p>
+                </div>
+                <p className={`text-sm ${theme.textMuted}`}>{phase.weeks} wks</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep('phases')}
+            className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}
+          >
+            Edit
+          </button>
+          <button
+            onClick={saveProgram}
+            className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white"
+          >
+            Save Program
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-4">
+      {/* Progress indicator */}
+      <div className="flex items-center gap-2 mb-6">
+        {['type', 'details', 'phases', 'template', 'review'].map((s, i) => (
+          <div
+            key={s}
+            className={`h-2 flex-1 rounded-full ${
+              ['type', 'details', 'phases', 'template', 'review'].indexOf(step) >= i
+                ? 'bg-blue-500'
+                : theme.cardAlt
+            }`}
+          />
+        ))}
+      </div>
+
+      {step === 'type' && <TypeSelection />}
+      {step === 'details' && <DetailsStep />}
+      {step === 'phases' && <PhasesStep />}
+      {step === 'template' && <TemplateStep />}
+      {step === 'review' && <ReviewStep />}
+
+      {showExercisePicker && <ExercisePicker />}
+      {showSwapPicker && <SwapPicker />}
+    </div>
+  );
+};
+
 // ============== MAIN APP ==============
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -2321,7 +3338,10 @@ export default function App() {
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className={`text-xl font-bold ${theme.text}`}>Programs</h2>
-              <button onClick={() => setShowProgramUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium text-white"><Plus size={16} />Add</button>
+              <div className="flex gap-2">
+                <button onClick={() => setCurrentView('programBuilder')} className="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium text-white"><Plus size={16} />Build</button>
+                <button onClick={() => setShowProgramUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium text-white"><FileUp size={16} /></button>
+              </div>
             </div>
 
             {showProgramUpload && (
@@ -2358,6 +3378,24 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* PROGRAM BUILDER VIEW */}
+        {currentView === 'programBuilder' && (
+          <div>
+            <div className="p-4 border-b ${theme.border}">
+              <button onClick={() => setCurrentView('programs')} className={`flex items-center gap-2 ${theme.textMuted}`}>
+                <ChevronLeft size={20} /> Back to Programs
+              </button>
+            </div>
+            <ProgramBuilderView
+              customPrograms={customPrograms}
+              setCustomPrograms={setCustomPrograms}
+              athleteProfile={athleteProfile}
+              theme={theme}
+              darkMode={darkMode}
+            />
           </div>
         )}
 
