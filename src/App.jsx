@@ -1138,7 +1138,94 @@ export default function App() {
     header: darkMode ? 'bg-gray-800' : 'bg-slate-800',
     nav: darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
   };
-                      </span>
+
+  return (
+    <div className={`min-h-screen ${theme.bg}`}>
+      {/* Header */}
+      <header className={`${theme.header} text-white p-4 sticky top-0 z-50`}>
+        <div className="flex items-center justify-between max-w-2xl mx-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">⛰️</span>
+            <h1 className="text-lg font-bold">Training Hub</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            {readinessScore && (
+              <div className={`px-2 py-1 rounded-lg ${readinessScore >= 70 ? 'bg-green-500/20' : readinessScore >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}`}>
+                <span className={`text-sm font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore}</span>
+              </div>
+            )}
+            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-slate-700 rounded-lg">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 hover:bg-slate-700 rounded-lg">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav className={`absolute top-full left-0 right-0 ${theme.header} border-t border-slate-700 p-4 shadow-lg`}>
+            <div className="max-w-2xl mx-auto flex flex-col gap-2">
+              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: Calendar }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
+                <button key={id} onClick={() => { setCurrentView(id); setMenuOpen(false); }} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${currentView === id ? 'bg-slate-600' : 'hover:bg-slate-700'}`}><Icon size={20} /><span>{label}</span></button>
+              ))}
+            </div>
+          </nav>
+        )}
+      </header>
+
+      <main className="max-w-2xl mx-auto pb-24">
+        {/* DASHBOARD */}
+        {currentView === 'dashboard' && (
+          <div className="p-4 space-y-4">
+            {!todayReadiness && (
+              <button onClick={() => setCurrentView('readiness')} className={`w-full p-4 ${darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'} border rounded-xl flex items-center gap-3`}>
+                <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
+                <div className="text-left flex-1"><p className={`font-medium ${theme.text}`}>Complete Readiness Check</p><p className={`text-sm ${theme.textMuted}`}>Log how you feel to optimize training</p></div>
+                <ChevronRight className={theme.textMuted} />
+              </button>
+            )}
+            {todayReadiness && (
+              <div className={`${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between`}>
+                <div><p className={`text-xs ${theme.textMuted} uppercase`}>Today's Readiness</p><p className={`text-2xl font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore} <span className="text-sm font-normal">{readinessInfo?.text}</span></p></div>
+                <button onClick={() => setCurrentView('readiness')} className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={18} className={theme.textMuted} /></button>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>Acute (7d)</p><p className={`text-2xl font-bold ${theme.text}`}>{acuteLoad}<span className={`text-sm ${theme.textMuted} ml-1`}>min</span></p></div>
+              <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>A:C Ratio</p><p className={`text-2xl font-bold ${loadRatio !== '-' && loadRatio > 1.5 ? 'text-red-500' : loadRatio !== '-' && loadRatio < 0.8 ? 'text-amber-500' : 'text-green-500'}`}>{loadRatio}</p></div>
+            </div>
+            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+              <div className="flex items-center justify-between mb-3"><div><p className={`text-xs ${theme.textMuted} uppercase`}>{program?.name}</p><h2 className={`text-lg font-bold ${theme.text}`}>{phase?.name} Phase</h2></div><span className="text-3xl">{program?.icon}</span></div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{programState.currentWeek}</p><p className={`text-xs ${theme.textMuted}`}>Week</p></div>
+                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{programState.currentDay}</p><p className={`text-xs ${theme.textMuted}`}>Day</p></div>
+                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{completedThisWeek}/7</p><p className={`text-xs ${theme.textMuted}`}>Done</p></div>
+                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{workoutLogs.filter(l => l.programId === programState.currentProgram).length}</p><p className={`text-xs ${theme.textMuted}`}>Total</p></div>
+              </div>
+            </div>
+            {todayWorkout && (
+              <button onClick={() => setCurrentView('workout')} className={`w-full text-left rounded-xl shadow-sm p-5 border-l-4 ${getTypeBorder(todayWorkout.type)} ${theme.card} hover:shadow-md transition-shadow`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs ${theme.textMuted} uppercase`}>Day {programState.currentDay}</p>
+                    <h3 className={`text-xl font-bold ${theme.text} mt-1`}>{todayWorkout.session}</h3>
+                    <div className={`flex items-center gap-3 mt-2 text-sm ${theme.textMuted}`}>
+                      <span className="flex items-center gap-1"><Clock size={14} />{todayWorkout.duration} min</span>
+                      <span className={`px-2 py-0.5 rounded text-xs text-white ${getTypeColor(todayWorkout.type, darkMode)}`}>{todayWorkout.type.replace('_', ' ')}</span>
+                      {todayLog?.completed && <span className="flex items-center gap-1 text-green-500"><CheckCircle2 size={14} />Done</span>}
+                    </div>
+                    {readinessScore && readinessScore < 55 && todayWorkout.type !== 'recovery' && <p className={`text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'} mt-2`}>⚠️ {readinessInfo?.recommendation}</p>}
+                  </div>
+                  <ChevronRight size={24} className={theme.textMuted} />
+                </div>
+              </button>
+            )}
+            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+              <h3 className={`font-semibold ${theme.text} mb-3`}>This Week</h3>
+              <div className="space-y-2">
+                {phase?.weeklyTemplate.map((w, idx) => {
+                  const isCurrent = w.day === programState.currentDay;
+                  const logged = thisWeekLogs.find(l => l.day === w.day && l.completed);
+                  return (
+                    <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? (darkMode ? 'bg-blue-900/40 border border-blue-700' : 'bg-blue-50 border border-blue-200') : theme.cardAlt}`}>
+                      {logged ? <CheckCircle2 size={18} className="text-green-500" /> : <Circle size={18} className={theme.textSubtle} />}
+                      <span className={`flex-1 text-sm font-medium ${theme.text} truncate`}>{w.session}</span>
                       <span className={`text-xs ${theme.textMuted}`}>D{w.day}</span>
                       <span className={`text-xs ${theme.textMuted}`}>{w.duration}m</span>
                     </div>
