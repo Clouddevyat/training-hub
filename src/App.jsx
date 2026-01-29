@@ -612,17 +612,96 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
   const [activeTest, setActiveTest] = useState(null);
   const [testData, setTestData] = useState({});
   const [testInProgress, setTestInProgress] = useState(false);
+  const [viewMode, setViewMode] = useState('tests'); // 'tests', 'history', 'compare'
+  const [selectedTestHistory, setSelectedTestHistory] = useState(null);
+  
+  // Timer state
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerMode, setTimerMode] = useState('stopwatch'); // 'stopwatch' or 'countdown'
+  const [countdownTarget, setCountdownTarget] = useState(3600); // 60 min default
+  const [hrPrompts, setHrPrompts] = useState([]); // For AeT drift test intervals
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+
+  // Timer effect
+  useEffect(() => {
+    let interval = null;
+    if (timerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => {
+          const newTime = timerMode === 'stopwatch' ? prev + 1 : prev - 1;
+          
+          // Check for HR prompt intervals (AeT drift test)
+          if (activeTest === 'aetDrift' && hrPrompts.length > 0) {
+            const elapsed = timerMode === 'stopwatch' ? newTime : (countdownTarget - newTime);
+            const promptTimes = [0, 900, 1800, 2700, 3600]; // 0, 15, 30, 45, 60 min in seconds
+            const promptIndex = promptTimes.findIndex((t, i) => 
+              elapsed >= t && elapsed < t + 5 && !testData[`hr${promptTimes[i]/60}`]
+            );
+            if (promptIndex >= 0 && promptIndex !== currentPromptIndex) {
+              setCurrentPromptIndex(promptIndex);
+              // Audio cue
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkpGLgXZwaGRobHaCi5GQi4N5cWxsbHN9h42Qj4mBd3Fsa21zfYeMj46Ig3dxa2tvdH6IjY+OiIF2cGprcHWAiY6PjomBdnBpa3B1gImOj46JgXZwaWtwd4GKj5CNiYF1b2lrcXiCi5GQjomAdW9oa3J4g4yRkI6JgHVvaGtzeIONkpGPioB0b2hrc3mEjpOSkYqAdG5na3R6hY+Uk5KLgHRuZ2t0e4WQlJSTi4B0bmdrdXyGkZWUk4uAdG5na3Z8hpKVlZSLgHRuZ2t2fIeSlpWUi4B0bWdrd32Il5aWlIt/dG1nanZ+iZiXl5WLf3Rtamp2foqZmJeVi350bWlqd3+LmpmYlYt+c21panl/jJuamJaLfnNtaWp5gI2cm5mWi35zbWhqeoGOnJuZlot+c2xoanqBj52cmpeLfnNsaGp7gpCenZubinxza2hqe4ORn56cnIt8c2tnanyCkqCfnJyKfHNraWp9g5Ohn5+ci3xzamlqfYOUoaCgnIt8c2lpan2ElKKhoJyLfHJpaWp+hZWioqGci3xyaWlqfoWWo6OhnIt8cmlpan+Gl6Sjo5yKe3Joamp/h5ikoqOci3tyaGlrfoeZpaOknIt7cmhpa3+HmqWjpJyLe3Joamp/iJulpKSci3tyaGpqf4mbpqWlnIt7cmhpa3+JnKampaSLe3JoaWqAiZ2mp6Wki3tyaGlqgIqdp6elpIt7cWhpa4CKnqenpqSLe3FoaWqAi5+oqKaki3txZ2lqgYugqammpIt7cWdoaoGLoKqpp6SLe3FnaWqBjKGqqaekintyZ2lqgY2iqqqop4p7cmdoaoKNoqqqqqeKe3JnaGqCjqOrq6qnintxZ2hqgo6jrKurp4p7cWdoaoOPpKysq6iKe3FnZ2qDj6WsrKuointxZ2dqg4+mrK2sq4p7cGdnaoSQpq2trKuKe3BnZ2qEkKaurqyrinthZ2drh5OpsLCxrYp7Y2Nla4iUqrGxsq+LfGJjZmuIlauxsbKvjHxiY2ZriJWssbKyr4x8YmNma4mWrbGys6+Me2FiZWuKl66ysr+Me2FiZWuKl66ysr+Me2FiZWuKl66ysr+Me2FiZWuKl62ysr+Me2FiZWuKl62ysr+Me2FiZWuKl62ysb+Me2FiZWuKl62ysb+Ke2FiZWuKl62ysb+Ke2FiZWuKl62ysb+Ke2FiZWuJl62ysb+Ke2FiZGuJl62ysb+Ke2FiZGuJl6yysb+Ke2FiZGuJl6yysb+Ke2FiZGuJlqyxsL+Ke2FiZGuJlqyxsL+Ke2FhZGuIlqyxsL+Ke2FhZGuIlqyxsL+Ke2FhZGuIlquxsL+Ie2FhZGuIlquxsL+Ie2FhZGuIlauwr7+Ie2FhZGuIlauwr7+Ie2BhZGuHlKuwr7+Ie2BhZGuHlKuwr7+Ie2BhZGuHlKuwr76Ie2BhZGuHlKuwr76Ie2BhZGuHlKuwr76Ie2BgZGuGk6qvr76Ie2BgZGuGk6qvr76Gd2BgZGuGk6qvr76Gd2BgZGuGk6qvr76Gd19gZGqFkqmvrr6Gd19gZGqFkqmvrr6Gd19gZGqFkqmvrr6Gd19gZGqFkqmurr6Gd19fZGqFkqmurr6Gd19fZGqFkqmurr6Gd19fZGqEkamurr6Gd19fZGqEkamurr6Fd19fZGqEkaiurb6Fd19fZGqEkaiurb6Fd19fY2qEkaiurb6Fd19fY2qEkaiurb6Fd19fY2qDkKitrb6Fd19fY2qDkKitrb6Fd19fY2qDkKitrb6Fd19fY2qDkKitrb6Fd19fY2qDkKitrb6Fd15fY2qDkKetrb6Fd15fY2qDj6etrb6Fd15fY2qCj6etrL6Fd15fY2qCj6etrL6Fd15fY2qCj6asrL6Fd15fY2qCj6asrL6Fd15fYmqCj6asrL6Fd15fYmqCj6asrL6Fd15fYmqBjqWsrL6Fd15fYmqBjqWsq76Fd15fYmqBjqWsq76Fd15fYmqBjqWsq76Fd15fYmqBjqWsq76FdV5fYmqAjaSrq72FdV5fYmqAjaSrq72FdV5fYml/jKSrq72FdV5fYml/jKSrq72FdV5fYml/jKOqq72FdV5fYml/jKOqq72FdV5fYml/jKOqq72DdF5fYWl+i6Oqq72DdF5fYWl+i6Oqqr2DdF5fYWl+i6Oqqr2DdF5fYWl+i6Oqqr2DdF1fYWl+i6Kqqr2DdF1fYWl+i6Kqqr2DdF1fYWl+i6Kqqr2DdF1fYWl+i6Kqqr2DdF1fYWh9iqGpqr2DdF1fYWh9iqGpqr2DdF1fYGh9iqGpqr2DdF1fYGh9iqGpqr2Dc11fYGh8iaGpqr2Dc11fYGh8iaGpqb2Dc11fYGh8iaGoqb2Dc11fYGh8iaGoqb2Dc11fYGh8iaGoqb2Dc11eX2h7iKCoqL2BcV1eX2h7iKCoqL2Bcl1eX2d7iKCoqL2BcV1eX2d7iJ+np72BcV1eX2d7iJ+np72BcV1eX2d7iJ+np72BcV1eXmd6h5+np72BcV1eXmd6h56mp72BcV1eXmd5hp6mp72BcV1eXmZ5hp6mp72AcF1eXmZ5hp6mp7x/cF1dXmZ5hp2lpr1/cF1dXmZ4hZ2lprt/cF1dXmV4hZ2lprx/cF1dXWV4hZykpbx/cF1dXWV4hZykpbx/cF1dXWV3hJykpbt/b11dXWV3hJujpLt/b11dXWR3hJujpLt/b11dXGR3g5ujpLt+b1xdXGR2g5ujpLt+b1xdXGR2g5uio7t+b1xdXGR2gpuio7t+b1xdXGN2gpuio7t+blxdW2N1gpuior1+blxcW2N1gZqhor1+blxcW2N1gZqhor19blxcW2J0gZqhob19blxcW2J0gJmhob19blxcWmJ0gJmgoL19blxcWmJzgJmgoL18bVtcWmJzf5igoL18bVtcWmFzf5ign718bVtcWmFyf5efn718bVtcWmFyfpefn718bVtbWWFyfpefnrx8bVtbWWFxfpaenrx8bVtbWWBxfpaenrt8bFpbWWBxfZaenrt8bFpbWWBwfZWdnbt8bFpbWWBwfZWdnbt8bFpaWF9vfZWdnbt7a1paWF9vfJSdnbt7a1paWF9vfJScnLp7a1paWF9ufJScnLp7a1paV15ue5Scm7p7a1paV15te5Scm7p7a1pZV15te5Sbm7p7allaV15te5Sbm7p6allaV15se5Sbm7p6allaV11seZObmrl6allaVl1seo+amrl6allaVl1seY+amrl6allaVl1seY+amrl6aVlZVlxrd4+amrl5aVlZVlxrd46Zmrh5aVlZVlxrdY6Zmrh5aFhZVlxqdY2Ymrh5aFhZVltqdI2YmLd4aFhZVltqdI2YmLd4aFhYVVtpc4yXl7d4aFhYVVtpcomXl7Z4aFhYVVppcomWlrZ4aFhYVVpocYiWlrZ3Z1hYVFpob4eVlbV3Z1hYVFpob4eVlbV3Z1hYVFlnb4aVlbV3Z1hXVFlmbYWUlLR2ZldXVFlmbYSUlLR2ZldXVFllbISUk7R2ZldXVFlka4OTk7R2ZldXVFlka4KTk7N1ZlZXVFhkaoKSk7N1ZlZWVFhjaYKSkrN1ZlZWVFhjZ4GRkbJ1ZlZWU1djZ4CRkbJ0ZVZWUldjZn+QkLF0ZVZVU1diZX6QkLF0ZVVVU1diZX2PkLB0ZFVVU1dhZH2Pj7BzZFVVUlZhYnyOj69zZFVVUlZhYXuOjq9zY1RUUlZgYHqNjq9yY1RUUVZgXXmNjK5yY1RUUVVgXHiMjK5yYlRUUVVfXHiLjK5yYlNTUFVeW3eLi61xYlNTUFVeWnWKi6xxYVNTT1ReWXSJiqdwYVJST1NdV3OIiqdwYVJST1NdV3OHiadwYVJST1NdV3OHiKZvYFJST1NcVXKGh6VvYFJRT1JcVHGFh6VvYFJRT1JbU3CFhqRuX1FQTlJbUnCDhaNuX1FQTlJaUnCChKNuX1FPTlFZUW+ChKJtXlFPTlFZT26Bg6JtXlBPTlFZT26AgaFsXlBPTVBYTW2Aga9sXlBOTVBXTGyAfq9sXU9OTVBWS2t/fr9rXU9NTE9VSWp+fb5rXU5NTE5URml9fL1qXE5MTE5TRWh8e71qXE5MS05SRGd7e7xpW01LS01SQmd6erxpW01LS01SQmV5erxpWk1LS0xRQWV4ebtpWkxKSktQQGR3eLpoWUxKSkpOP2N2d7lnWEtKSklNPmJ1drhmWEtJSUlMPGF0dbhmV0pJSUhMO2BzdbdlVkpISEhLOl9yc7ZlVkkISEdKOV5xcbVkVUgHR0dJOF1wcLRkVUcHRkZINlxvb7NjVEYGRkVHNltubrJiU0UGRURGNVptbLFhUkUFRERENG9KS2xrQUBAKClGRQAAAA==');
+                audio.volume = 0.5;
+                audio.play();
+              } catch (e) {}
+            }
+          }
+          
+          // Stop at zero for countdown
+          if (timerMode === 'countdown' && newTime <= 0) {
+            setTimerRunning(false);
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerRunning, timerMode, activeTest, hrPrompts, testData, currentPromptIndex, countdownTarget]);
+
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const startTest = (testId) => {
     setActiveTest(testId);
     setTestData({});
     setTestInProgress(true);
+    setTimerSeconds(0);
+    setTimerRunning(false);
+    setCurrentPromptIndex(0);
+    
+    // Set up HR prompts for AeT drift test
+    if (testId === 'aetDrift') {
+      setHrPrompts([
+        { time: 0, label: 'Start', key: 'hr0' },
+        { time: 900, label: '15 min', key: 'hr15' },
+        { time: 1800, label: '30 min', key: 'hr30' },
+        { time: 2700, label: '45 min', key: 'hr45' },
+        { time: 3600, label: '60 min', key: 'hr60' }
+      ]);
+      setTimerMode('stopwatch');
+      setCountdownTarget(3600);
+    } else {
+      setHrPrompts([]);
+    }
   };
 
   const cancelTest = () => {
     setActiveTest(null);
     setTestData({});
     setTestInProgress(false);
+    setTimerRunning(false);
+    setTimerSeconds(0);
+    setHrPrompts([]);
   };
 
   const saveTestResult = () => {
@@ -702,6 +781,11 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
 
   if (activeTest && testInProgress) {
     const test = BENCHMARK_TESTS[activeTest];
+    const isAetTest = activeTest === 'aetDrift';
+    const isFiveMile = activeTest === 'fiveMile';
+    const isVerticalRate = activeTest === 'verticalRate';
+    const showTimer = isAetTest || isFiveMile || isVerticalRate;
+    
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -709,17 +793,122 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           <button onClick={cancelTest} className={`p-2 ${theme.textMuted} hover:${theme.text}`}><X size={24} /></button>
         </div>
 
+        {/* Timer Section */}
+        {showTimer && (
+          <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+            <div className="text-center">
+              <p className={`text-6xl font-mono font-bold ${theme.text} mb-4`}>{formatTime(timerSeconds)}</p>
+              
+              {/* Timer controls */}
+              <div className="flex justify-center gap-4 mb-4">
+                {!timerRunning ? (
+                  <button 
+                    onClick={() => setTimerRunning(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl"
+                  >
+                    <Play size={20} /> Start
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setTimerRunning(false)}
+                    className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl"
+                  >
+                    <StopCircle size={20} /> Pause
+                  </button>
+                )}
+                <button 
+                  onClick={() => { setTimerSeconds(0); setTimerRunning(false); }}
+                  className={`flex items-center gap-2 px-6 py-3 ${theme.cardAlt} ${theme.text} font-semibold rounded-xl`}
+                >
+                  <RotateCcw size={20} /> Reset
+                </button>
+              </div>
+              
+              {/* AeT Drift Test HR Recording Intervals */}
+              {isAetTest && (
+                <div className={`mt-4 p-4 ${theme.cardAlt} rounded-xl`}>
+                  <p className={`text-sm font-medium ${theme.text} mb-3`}>Record HR at each interval:</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {hrPrompts.map((prompt, idx) => {
+                      const elapsed = timerSeconds;
+                      const isActive = elapsed >= prompt.time && elapsed < prompt.time + 60;
+                      const isPast = elapsed >= prompt.time + 60;
+                      const hasValue = testData[prompt.key];
+                      
+                      return (
+                        <div 
+                          key={prompt.key}
+                          className={`p-2 rounded-lg text-center transition-all ${
+                            isActive && !hasValue 
+                              ? 'bg-orange-500 text-white animate-pulse' 
+                              : hasValue 
+                                ? (darkMode ? 'bg-green-900/50' : 'bg-green-100')
+                                : theme.card
+                          }`}
+                        >
+                          <p className={`text-xs font-medium ${hasValue ? 'text-green-500' : isActive ? 'text-white' : theme.textMuted}`}>
+                            {prompt.label}
+                          </p>
+                          {hasValue ? (
+                            <p className={`font-mono font-bold text-green-500`}>{testData[prompt.key]}</p>
+                          ) : (
+                            <input
+                              type="number"
+                              placeholder="HR"
+                              className={`w-full mt-1 px-2 py-1 rounded text-center text-sm ${theme.input} ${isActive ? 'ring-2 ring-orange-500' : ''}`}
+                              value={testData[prompt.key] || ''}
+                              onChange={(e) => setTestData(prev => ({ ...prev, [prompt.key]: e.target.value }))}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Live drift calculation */}
+                  {testData.hr15 && testData.hr60 && (
+                    <div className={`mt-4 p-3 ${parseFloat(test.calculateDrift(testData)) < 5 ? (darkMode ? 'bg-green-900/30' : 'bg-green-50') : (darkMode ? 'bg-red-900/30' : 'bg-red-50')} rounded-lg`}>
+                      <p className={`text-sm ${theme.textMuted}`}>Cardiac Drift</p>
+                      <p className={`text-3xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                        {test.calculateDrift(testData)}%
+                      </p>
+                      <p className={`text-xs mt-1 ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                        {parseFloat(test.calculateDrift(testData)) < 5 ? '✓ Strong aerobic base' : '✗ More base work needed'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5-Mile: Quick time entry from timer */}
+              {isFiveMile && timerSeconds > 0 && (
+                <button
+                  onClick={() => setTestData(prev => ({ ...prev, time: formatTime(timerSeconds) }))}
+                  className={`mt-4 px-4 py-2 ${theme.cardAlt} rounded-lg text-sm ${theme.text}`}
+                >
+                  Use timer value: {formatTime(timerSeconds)}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Protocol */}
         <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-          <h3 className={`font-semibold ${theme.text} mb-3`}>Protocol</h3>
-          <ol className="space-y-2">
-            {test.protocol.map((step, idx) => (
-              <li key={idx} className={`flex gap-3 ${theme.text} text-sm`}>
-                <span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.cardAlt} ${theme.textMuted} text-xs flex items-center justify-center`}>{idx + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
+          <details className="group">
+            <summary className={`font-semibold ${theme.text} cursor-pointer flex items-center justify-between`}>
+              <span>Protocol</span>
+              <ChevronDown size={18} className={`${theme.textMuted} group-open:rotate-180 transition-transform`} />
+            </summary>
+            <ol className="space-y-2 mt-3">
+              {test.protocol.map((step, idx) => (
+                <li key={idx} className={`flex gap-3 ${theme.text} text-sm`}>
+                  <span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.cardAlt} ${theme.textMuted} text-xs flex items-center justify-center`}>{idx + 1}</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </details>
           {test.notes && <p className={`mt-4 text-sm ${theme.textMuted} p-3 ${theme.cardAlt} rounded-lg`}>💡 {test.notes}</p>}
         </div>
 
@@ -727,24 +916,29 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
         <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
           <h3 className={`font-semibold ${theme.text} mb-4`}>Record Results</h3>
           <div className="space-y-4">
-            {test.metrics.filter(m => m.type !== 'calculated').map(metric => (
-              <div key={metric.key} className="space-y-2">
-                <label className={`text-sm font-medium ${theme.text}`}>{metric.label}</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type={metric.type === 'time' || metric.type === 'pace' ? 'text' : 'number'}
-                    placeholder={metric.type === 'time' ? '32:00' : metric.type === 'pace' ? '6:24' : ''}
-                    value={testData[metric.key] || ''}
-                    onChange={(e) => setTestData(prev => ({ ...prev, [metric.key]: e.target.value }))}
-                    className={`flex-1 px-4 py-2 rounded-lg border ${theme.input}`}
-                  />
-                  <span className={`text-sm ${theme.textMuted} w-16`}>{metric.unit}</span>
+            {test.metrics.filter(m => m.type !== 'calculated').map(metric => {
+              // Skip HR fields for AeT test (handled in timer section)
+              if (isAetTest && metric.key.startsWith('hr')) return null;
+              
+              return (
+                <div key={metric.key} className="space-y-2">
+                  <label className={`text-sm font-medium ${theme.text}`}>{metric.label}</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type={metric.type === 'time' || metric.type === 'pace' ? 'text' : 'number'}
+                      placeholder={metric.type === 'time' ? '32:00' : metric.type === 'pace' ? '6:24' : ''}
+                      value={testData[metric.key] || ''}
+                      onChange={(e) => setTestData(prev => ({ ...prev, [metric.key]: e.target.value }))}
+                      className={`flex-1 px-4 py-2 rounded-lg border ${theme.input}`}
+                    />
+                    <span className={`text-sm ${theme.textMuted} w-16`}>{metric.unit}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Show calculated values */}
-            {test.calculateDrift && testData.hr15 && testData.hr60 && (
+            {test.calculateDrift && testData.hr15 && testData.hr60 && !isAetTest && (
               <div className={`p-4 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg`}>
                 <p className={`text-sm ${theme.textMuted}`}>Calculated Drift</p>
                 <p className={`text-2xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
@@ -760,6 +954,9 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
               <div className={`p-4 ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-lg`}>
                 <p className={`text-sm ${theme.textMuted}`}>Calculated Rate</p>
                 <p className={`text-2xl font-bold ${theme.text}`}>{test.calculateRate(testData)} ft/hr</p>
+                <p className={`text-xs ${theme.textMuted} mt-1`}>
+                  {test.calculateRate(testData) >= 1000 ? '✓ Target achieved (1000+ ft/hr)' : `${1000 - test.calculateRate(testData)} ft/hr to target`}
+                </p>
               </div>
             )}
           </div>
@@ -775,20 +972,192 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
     );
   }
 
+  // History View Component
+  const HistoryView = () => {
+    const allResults = Object.entries(benchmarkResults).flatMap(([testId, results]) => 
+      results.map(r => ({ ...r, testName: BENCHMARK_TESTS[testId]?.name, testIcon: BENCHMARK_TESTS[testId]?.icon }))
+    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className={`font-semibold ${theme.text}`}>Test History</h3>
+          <button onClick={() => setViewMode('tests')} className={`text-sm ${theme.textMuted}`}>← Back to Tests</button>
+        </div>
+        
+        {allResults.length === 0 ? (
+          <div className={`text-center py-8 ${theme.textMuted}`}>
+            <Target size={48} className="mx-auto mb-3 opacity-50" />
+            <p>No test results yet</p>
+            <p className="text-sm">Complete a benchmark test to see your history</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {allResults.slice(0, 20).map((result, idx) => (
+              <div key={idx} className={`${theme.card} rounded-xl p-4`}>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{result.testIcon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className={`font-medium ${theme.text}`}>{result.testName}</h4>
+                      <span className={`text-xs ${theme.textMuted}`}>{formatDateShort(result.date)}</span>
+                    </div>
+                    <div className={`flex flex-wrap gap-3 mt-2 text-sm`}>
+                      {result.data.time && <span className={`font-mono ${theme.text}`}>⏱️ {result.data.time}</span>}
+                      {result.data.drift && <span className={`font-mono ${parseFloat(result.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>📉 {result.data.drift}%</span>}
+                      {result.data.rate && <span className={`font-mono ${theme.text}`}>⛰️ {result.data.rate} ft/hr</span>}
+                      {result.data.maxHR && <span className={`font-mono ${theme.text}`}>❤️ {result.data.maxHR} bpm</span>}
+                      {result.data.avgHR && <span className={`font-mono ${theme.text}`}>💓 avg {result.data.avgHR} bpm</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Compare View Component
+  const CompareView = () => {
+    const testOptions = Object.values(BENCHMARK_TESTS).filter(t => (benchmarkResults[t.id]?.length || 0) > 1);
+    
+    if (testOptions.length === 0) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className={`font-semibold ${theme.text}`}>Progress Comparison</h3>
+            <button onClick={() => setViewMode('tests')} className={`text-sm ${theme.textMuted}`}>← Back</button>
+          </div>
+          <div className={`text-center py-8 ${theme.textMuted}`}>
+            <LineChart size={48} className="mx-auto mb-3 opacity-50" />
+            <p>Need more data</p>
+            <p className="text-sm">Complete the same test multiple times to compare progress</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className={`font-semibold ${theme.text}`}>Progress Comparison</h3>
+          <button onClick={() => setViewMode('tests')} className={`text-sm ${theme.textMuted}`}>← Back</button>
+        </div>
+        
+        {testOptions.map(test => {
+          const results = benchmarkResults[test.id] || [];
+          const sortedResults = [...results].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          const first = sortedResults[0];
+          const last = sortedResults[sortedResults.length - 1];
+          
+          // Calculate improvement
+          let improvement = null;
+          let improvementLabel = '';
+          if (test.id === 'fiveMile' && first.data.time && last.data.time) {
+            const parseTime = (t) => { const [m, s] = t.split(':').map(Number); return m * 60 + s; };
+            const firstSec = parseTime(first.data.time);
+            const lastSec = parseTime(last.data.time);
+            improvement = firstSec - lastSec;
+            improvementLabel = improvement > 0 ? `${Math.floor(improvement / 60)}:${(improvement % 60).toString().padStart(2, '0')} faster` : 'No improvement';
+          } else if (test.id === 'aetDrift' && first.data.drift && last.data.drift) {
+            improvement = parseFloat(first.data.drift) - parseFloat(last.data.drift);
+            improvementLabel = improvement > 0 ? `${improvement.toFixed(1)}% better drift` : 'No improvement';
+          } else if (test.id === 'verticalRate' && first.data.rate && last.data.rate) {
+            improvement = last.data.rate - first.data.rate;
+            improvementLabel = improvement > 0 ? `+${improvement} ft/hr` : 'No improvement';
+          }
+
+          return (
+            <div key={test.id} className={`${theme.card} rounded-xl p-4`}>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">{test.icon}</span>
+                <div>
+                  <h4 className={`font-medium ${theme.text}`}>{test.name}</h4>
+                  <p className={`text-xs ${theme.textMuted}`}>{results.length} tests completed</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className={`p-3 ${theme.cardAlt} rounded-lg`}>
+                  <p className={`text-xs ${theme.textMuted}`}>First</p>
+                  <p className={`font-mono font-bold ${theme.text}`}>
+                    {first.data.time || first.data.drift + '%' || first.data.rate || '—'}
+                  </p>
+                  <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(first.date)}</p>
+                </div>
+                <div className={`p-3 ${improvement && improvement > 0 ? (darkMode ? 'bg-green-900/30' : 'bg-green-50') : theme.cardAlt} rounded-lg`}>
+                  <p className={`text-xs ${theme.textMuted}`}>Change</p>
+                  <p className={`font-mono font-bold ${improvement && improvement > 0 ? 'text-green-500' : theme.text}`}>
+                    {improvementLabel || '—'}
+                  </p>
+                  <TrendingUp size={16} className={`mx-auto mt-1 ${improvement && improvement > 0 ? 'text-green-500' : theme.textMuted}`} />
+                </div>
+                <div className={`p-3 ${theme.cardAlt} rounded-lg`}>
+                  <p className={`text-xs ${theme.textMuted}`}>Latest</p>
+                  <p className={`font-mono font-bold ${theme.text}`}>
+                    {last.data.time || last.data.drift + '%' || last.data.rate || '—'}
+                  </p>
+                  <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(last.date)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Main return - check view mode
+  if (viewMode === 'history') {
+    return <div className="p-4"><HistoryView /></div>;
+  }
+  
+  if (viewMode === 'compare') {
+    return <div className="p-4"><CompareView /></div>;
+  }
+
   return (
     <div className="p-4 space-y-4">
-      <h2 className={`text-xl font-bold ${theme.text}`}>Benchmark Tests</h2>
-      <p className={`text-sm ${theme.textMuted}`}>Structured tests to track fitness progress and update your profile.</p>
+      <div className="flex items-center justify-between">
+        <h2 className={`text-xl font-bold ${theme.text}`}>Benchmark Tests</h2>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setViewMode('history')} 
+            className={`p-2 ${theme.cardAlt} rounded-lg`}
+            title="View History"
+          >
+            <Clock size={18} className={theme.textMuted} />
+          </button>
+          <button 
+            onClick={() => setViewMode('compare')} 
+            className={`p-2 ${theme.cardAlt} rounded-lg`}
+            title="Compare Progress"
+          >
+            <LineChart size={18} className={theme.textMuted} />
+          </button>
+        </div>
+      </div>
+      <p className={`text-sm ${theme.textMuted}`}>Structured tests with guided protocols and auto-recording.</p>
 
       <div className="space-y-3">
         {Object.values(BENCHMARK_TESTS).map(test => {
           const lastResult = getLastResult(test.id);
+          const resultCount = benchmarkResults[test.id]?.length || 0;
           return (
             <div key={test.id} className={`${theme.card} rounded-xl shadow-sm p-4`}>
               <div className="flex items-start gap-4">
                 <span className="text-3xl">{test.icon}</span>
                 <div className="flex-1">
-                  <h3 className={`font-semibold ${theme.text}`}>{test.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className={`font-semibold ${theme.text}`}>{test.name}</h3>
+                    {resultCount > 0 && (
+                      <span className={`text-xs ${theme.textMuted} px-2 py-1 ${theme.cardAlt} rounded-full`}>
+                        {resultCount} test{resultCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                   <p className={`text-sm ${theme.textMuted} mt-1`}>{test.description}</p>
                   <div className={`flex gap-4 mt-2 text-xs ${theme.textMuted}`}>
                     <span>⏱️ {test.duration}</span>
@@ -799,8 +1168,9 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                       <span className={theme.textMuted}>Last: </span>
                       <span className={`font-medium ${theme.text}`}>{formatDateShort(lastResult.date)}</span>
                       {lastResult.data.time && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.time}</span>}
-                      {lastResult.data.drift && <span className={`ml-2 font-mono ${lastResult.data.drift < 5 ? 'text-green-500' : 'text-red-500'}`}>{lastResult.data.drift}%</span>}
+                      {lastResult.data.drift && <span className={`ml-2 font-mono ${parseFloat(lastResult.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>{lastResult.data.drift}%</span>}
                       {lastResult.data.rate && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.rate} ft/hr</span>}
+                      {lastResult.data.maxHR && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.maxHR} bpm</span>}
                     </div>
                   )}
                 </div>
@@ -815,6 +1185,473 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ============== CHARTS & TRENDS COMPONENT ==============
+const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, theme, darkMode }) => {
+  const [activeChart, setActiveChart] = useState('overview');
+  const [timeRange, setTimeRange] = useState(30); // days
+
+  // Filter data by time range
+  const filterByRange = (items, dateKey = 'date') => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - timeRange);
+    return items.filter(item => new Date(item[dateKey]) >= cutoff);
+  };
+
+  // SVG Line Chart Component
+  const LineChart = ({ data, xKey, yKey, color = '#10b981', height = 150, showDots = true, yLabel = '', formatY = (v) => v }) => {
+    if (!data || data.length < 2) {
+      return (
+        <div className={`h-[${height}px] flex items-center justify-center ${theme.textMuted}`}>
+          <p className="text-sm">Need more data points</p>
+        </div>
+      );
+    }
+
+    const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+    const width = 320;
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    const yValues = data.map(d => d[yKey]).filter(v => v != null);
+    const yMin = Math.min(...yValues) * 0.95;
+    const yMax = Math.max(...yValues) * 1.05;
+    const yRange = yMax - yMin || 1;
+
+    const points = data.map((d, i) => ({
+      x: padding.left + (i / (data.length - 1)) * chartWidth,
+      y: padding.top + chartHeight - ((d[yKey] - yMin) / yRange) * chartHeight,
+      value: d[yKey],
+      label: d[xKey]
+    }));
+
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const areaD = pathD + ` L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
+
+    // Y-axis ticks
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
+      value: yMin + pct * yRange,
+      y: padding.top + chartHeight - pct * chartHeight
+    }));
+
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+        {/* Grid lines */}
+        {yTicks.map((tick, i) => (
+          <g key={i}>
+            <line x1={padding.left} y1={tick.y} x2={width - padding.right} y2={tick.y} stroke={darkMode ? '#374151' : '#e5e7eb'} strokeWidth="1" />
+            <text x={padding.left - 5} y={tick.y + 4} textAnchor="end" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
+              {formatY(Math.round(tick.value))}
+            </text>
+          </g>
+        ))}
+        
+        {/* Area fill */}
+        <path d={areaD} fill={color} fillOpacity="0.1" />
+        
+        {/* Line */}
+        <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Dots */}
+        {showDots && points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="4" fill={color} stroke={darkMode ? '#1f2937' : '#fff'} strokeWidth="2" />
+        ))}
+        
+        {/* X-axis labels (first and last) */}
+        <text x={padding.left} y={height - 5} textAnchor="start" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
+          {data[0]?.[xKey]?.slice(5) || ''}
+        </text>
+        <text x={width - padding.right} y={height - 5} textAnchor="end" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
+          {data[data.length - 1]?.[xKey]?.slice(5) || ''}
+        </text>
+        
+        {/* Y-axis label */}
+        {yLabel && (
+          <text x={10} y={height / 2} textAnchor="middle" transform={`rotate(-90, 10, ${height / 2})`} className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
+            {yLabel}
+          </text>
+        )}
+      </svg>
+    );
+  };
+
+  // Bar Chart Component
+  const BarChart = ({ data, xKey, yKey, color = '#3b82f6', height = 150 }) => {
+    if (!data || data.length === 0) {
+      return <div className={`h-[${height}px] flex items-center justify-center ${theme.textMuted}`}><p className="text-sm">No data</p></div>;
+    }
+
+    const padding = { top: 20, right: 20, bottom: 40, left: 40 };
+    const width = 320;
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    const yMax = Math.max(...data.map(d => d[yKey])) * 1.1 || 1;
+    const barWidth = (chartWidth / data.length) * 0.7;
+    const barGap = (chartWidth / data.length) * 0.3;
+
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+        {data.map((d, i) => {
+          const barHeight = (d[yKey] / yMax) * chartHeight;
+          const x = padding.left + i * (barWidth + barGap) + barGap / 2;
+          const y = padding.top + chartHeight - barHeight;
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill={color} rx="4" fillOpacity="0.8" />
+              <text x={x + barWidth / 2} y={height - 5} textAnchor="middle" className={`text-[9px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
+                {d[xKey]?.slice(5, 10) || i}
+              </text>
+              <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" className={`text-[10px] font-medium ${darkMode ? 'fill-gray-300' : 'fill-gray-600'}`}>
+                {d[yKey]}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
+
+  // Prepare workout volume data (weekly)
+  const workoutVolumeData = useMemo(() => {
+    const weeks = {};
+    workoutLogs.forEach(log => {
+      const date = new Date(log.date);
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      const weekKey = weekStart.toISOString().slice(0, 10);
+      if (!weeks[weekKey]) weeks[weekKey] = { week: weekKey, workouts: 0, duration: 0 };
+      weeks[weekKey].workouts++;
+      weeks[weekKey].duration += log.duration || 0;
+    });
+    return Object.values(weeks).sort((a, b) => a.week.localeCompare(b.week)).slice(-8);
+  }, [workoutLogs]);
+
+  // Prepare readiness trend data
+  const readinessData = useMemo(() => {
+    return filterByRange(readiness.logs || [], 'date')
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(r => ({ date: r.date, score: r.score, sleep: r.sleepHours }));
+  }, [readiness.logs, timeRange]);
+
+  // Prepare benchmark trends
+  const benchmarkTrends = useMemo(() => {
+    const trends = {};
+    Object.entries(benchmarkResults).forEach(([testId, results]) => {
+      if (results && results.length > 0) {
+        trends[testId] = results
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+          .map(r => ({
+            date: r.date,
+            ...r.data
+          }));
+      }
+    });
+    return trends;
+  }, [benchmarkResults]);
+
+  // Calculate summary stats
+  const stats = useMemo(() => {
+    const recentLogs = filterByRange(workoutLogs, 'date');
+    const recentReadiness = filterByRange(readiness.logs || [], 'date');
+    
+    return {
+      totalWorkouts: recentLogs.length,
+      totalDuration: recentLogs.reduce((sum, l) => sum + (l.duration || 0), 0),
+      avgRPE: recentLogs.length > 0 ? (recentLogs.reduce((sum, l) => sum + (l.rpe || 5), 0) / recentLogs.length).toFixed(1) : '—',
+      avgReadiness: recentReadiness.length > 0 ? (recentReadiness.reduce((sum, r) => sum + (r.score || 0), 0) / recentReadiness.length).toFixed(0) : '—',
+      avgSleep: recentReadiness.length > 0 ? (recentReadiness.reduce((sum, r) => sum + (r.sleepHours || 0), 0) / recentReadiness.length).toFixed(1) : '—',
+    };
+  }, [workoutLogs, readiness.logs, timeRange]);
+
+  // PR History from athlete profile
+  const prHistory = useMemo(() => {
+    return (athleteProfile.history || [])
+      .filter(h => h.category === 'prs')
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 10);
+  }, [athleteProfile.history]);
+
+  const chartOptions = [
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'readiness', label: 'Readiness', icon: '🔋' },
+    { id: 'benchmarks', label: 'Benchmarks', icon: '🎯' },
+    { id: 'strength', label: 'Strength', icon: '💪' },
+  ];
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className={`text-xl font-bold ${theme.text}`}>Charts & Trends</h2>
+        <select 
+          value={timeRange} 
+          onChange={(e) => setTimeRange(Number(e.target.value))}
+          className={`px-3 py-1 rounded-lg text-sm ${theme.input}`}
+        >
+          <option value={7}>7 days</option>
+          <option value={30}>30 days</option>
+          <option value={90}>90 days</option>
+          <option value={365}>1 year</option>
+        </select>
+      </div>
+
+      {/* Chart Type Selector */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {chartOptions.map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => setActiveChart(opt.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              activeChart === opt.id 
+                ? 'bg-blue-500 text-white' 
+                : `${theme.cardAlt} ${theme.text}`
+            }`}
+          >
+            <span>{opt.icon}</span>
+            <span>{opt.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Overview */}
+      {activeChart === 'overview' && (
+        <div className="space-y-4">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <p className={`text-xs ${theme.textMuted}`}>Workouts</p>
+              <p className={`text-2xl font-bold ${theme.text}`}>{stats.totalWorkouts}</p>
+              <p className={`text-xs ${theme.textMuted}`}>last {timeRange} days</p>
+            </div>
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <p className={`text-xs ${theme.textMuted}`}>Total Time</p>
+              <p className={`text-2xl font-bold ${theme.text}`}>{Math.round(stats.totalDuration / 60)}h</p>
+              <p className={`text-xs ${theme.textMuted}`}>{stats.totalDuration} min</p>
+            </div>
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <p className={`text-xs ${theme.textMuted}`}>Avg RPE</p>
+              <p className={`text-2xl font-bold ${theme.text}`}>{stats.avgRPE}</p>
+              <p className={`text-xs ${theme.textMuted}`}>perceived effort</p>
+            </div>
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <p className={`text-xs ${theme.textMuted}`}>Avg Readiness</p>
+              <p className={`text-2xl font-bold ${theme.text}`}>{stats.avgReadiness}</p>
+              <p className={`text-xs ${theme.textMuted}`}>out of 100</p>
+            </div>
+          </div>
+
+          {/* Weekly Volume Chart */}
+          <div className={`${theme.card} rounded-xl p-4`}>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>Weekly Training Volume</h3>
+            {workoutVolumeData.length > 0 ? (
+              <BarChart data={workoutVolumeData} xKey="week" yKey="workouts" color="#3b82f6" height={160} />
+            ) : (
+              <div className={`h-32 flex items-center justify-center ${theme.textMuted}`}>
+                <p className="text-sm">Complete workouts to see trends</p>
+              </div>
+            )}
+          </div>
+
+          {/* Recent PRs */}
+          {prHistory.length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-3`}>Recent PRs</h3>
+              <div className="space-y-2">
+                {prHistory.slice(0, 5).map((pr, i) => (
+                  <div key={i} className={`flex items-center justify-between p-2 ${theme.cardAlt} rounded-lg`}>
+                    <div>
+                      <p className={`font-medium ${theme.text}`}>{PR_DISPLAY_NAMES[pr.key] || pr.key}</p>
+                      <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date?.slice(0, 10))}</p>
+                    </div>
+                    <p className={`font-mono font-bold text-green-500`}>{pr.value} lbs</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Readiness Charts */}
+      {activeChart === 'readiness' && (
+        <div className="space-y-4">
+          <div className={`${theme.card} rounded-xl p-4`}>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>Readiness Score Trend</h3>
+            <LineChart data={readinessData} xKey="date" yKey="score" color="#10b981" height={180} yLabel="Score" />
+          </div>
+          
+          <div className={`${theme.card} rounded-xl p-4`}>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>Sleep Hours</h3>
+            <LineChart data={readinessData} xKey="date" yKey="sleep" color="#8b5cf6" height={180} yLabel="Hours" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`${theme.card} rounded-xl p-4 text-center`}>
+              <p className={`text-xs ${theme.textMuted}`}>Avg Sleep</p>
+              <p className={`text-3xl font-bold ${theme.text}`}>{stats.avgSleep}h</p>
+            </div>
+            <div className={`${theme.card} rounded-xl p-4 text-center`}>
+              <p className={`text-xs ${theme.textMuted}`}>Check-ins</p>
+              <p className={`text-3xl font-bold ${theme.text}`}>{readinessData.length}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Benchmark Charts */}
+      {activeChart === 'benchmarks' && (
+        <div className="space-y-4">
+          {/* 5-Mile Time */}
+          {benchmarkTrends.fiveMile && benchmarkTrends.fiveMile.length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-1`}>🏃 5-Mile Time</h3>
+              <p className={`text-xs ${theme.textMuted} mb-3`}>{benchmarkTrends.fiveMile.length} tests recorded</p>
+              <div className="flex items-end justify-between mb-4">
+                {benchmarkTrends.fiveMile.map((t, i) => (
+                  <div key={i} className="text-center flex-1">
+                    <p className={`font-mono font-bold ${i === benchmarkTrends.fiveMile.length - 1 ? 'text-green-500 text-lg' : theme.text}`}>
+                      {t.time || '—'}
+                    </p>
+                    <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(t.date)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AeT Drift */}
+          {benchmarkTrends.aetDrift && benchmarkTrends.aetDrift.length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-1`}>💓 Cardiac Drift</h3>
+              <p className={`text-xs ${theme.textMuted} mb-3`}>Target: &lt;5%</p>
+              <div className="space-y-2">
+                {benchmarkTrends.aetDrift.map((t, i) => (
+                  <div key={i} className={`flex items-center justify-between p-3 ${theme.cardAlt} rounded-lg`}>
+                    <span className={`text-sm ${theme.textMuted}`}>{formatDateShort(t.date)}</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-24 h-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+                        <div 
+                          className={`h-full ${parseFloat(t.drift) < 5 ? 'bg-green-500' : parseFloat(t.drift) < 10 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(parseFloat(t.drift) * 10, 100)}%` }}
+                        />
+                      </div>
+                      <span className={`font-mono font-bold ${parseFloat(t.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                        {t.drift}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vertical Rate */}
+          {benchmarkTrends.verticalRate && benchmarkTrends.verticalRate.length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-1`}>⛰️ Vertical Rate</h3>
+              <p className={`text-xs ${theme.textMuted} mb-3`}>Target: 1000 ft/hr @ 25% BW</p>
+              <div className="space-y-2">
+                {benchmarkTrends.verticalRate.map((t, i) => (
+                  <div key={i} className={`flex items-center justify-between p-3 ${theme.cardAlt} rounded-lg`}>
+                    <div>
+                      <span className={`text-sm ${theme.textMuted}`}>{formatDateShort(t.date)}</span>
+                      {t.load && <span className={`text-xs ${theme.textMuted} ml-2`}>@ {t.load} lbs</span>}
+                    </div>
+                    <span className={`font-mono font-bold ${t.rate >= 1000 ? 'text-green-500' : theme.text}`}>
+                      {t.rate} ft/hr
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {Object.keys(benchmarkTrends).length === 0 && (
+            <div className={`${theme.card} rounded-xl p-8 text-center`}>
+              <Target size={48} className={`mx-auto ${theme.textMuted} mb-4`} />
+              <p className={theme.textMuted}>No benchmark data yet</p>
+              <p className={`text-sm ${theme.textMuted}`}>Complete tests to track progress</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Strength Charts */}
+      {activeChart === 'strength' && (
+        <div className="space-y-4">
+          {/* Current PRs */}
+          <div className={`${theme.card} rounded-xl p-4`}>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>Current PRs</h3>
+            <div className="space-y-2">
+              {Object.entries(athleteProfile.prs || {}).filter(([_, v]) => v?.value).map(([key, pr]) => (
+                <div key={key} className={`flex items-center justify-between p-3 ${theme.cardAlt} rounded-lg`}>
+                  <div>
+                    <p className={`font-medium ${theme.text}`}>{PR_DISPLAY_NAMES[key] || key}</p>
+                    {pr.date && <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date)}</p>}
+                  </div>
+                  <p className={`font-mono font-bold text-lg ${theme.text}`}>{pr.value} <span className={`text-sm ${theme.textMuted}`}>{pr.unit}</span></p>
+                </div>
+              ))}
+              {Object.values(athleteProfile.prs || {}).filter(v => v?.value).length === 0 && (
+                <p className={`text-center py-4 ${theme.textMuted}`}>No PRs recorded yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* PR Timeline */}
+          {prHistory.length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-3`}>PR History</h3>
+              <div className="space-y-2">
+                {prHistory.map((pr, i) => (
+                  <div key={i} className={`flex items-center gap-3 p-2 ${theme.cardAlt} rounded-lg`}>
+                    <div className={`w-2 h-2 rounded-full bg-green-500`} />
+                    <div className="flex-1">
+                      <p className={`text-sm ${theme.text}`}>{PR_DISPLAY_NAMES[pr.key] || pr.key}</p>
+                      <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date?.slice(0, 10))}</p>
+                    </div>
+                    <p className={`font-mono font-bold text-green-500`}>{pr.value} lbs</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strength Standards */}
+          <div className={`${theme.card} rounded-xl p-4`}>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>Program Standards</h3>
+            <p className={`text-xs ${theme.textMuted} mb-3`}>Based on {athleteProfile.weight || 225} lb bodyweight</p>
+            <div className="space-y-3">
+              {[
+                { lift: 'Trap Bar Deadlift', target: 2.0, current: athleteProfile.prs?.trapBarDeadlift?.value },
+                { lift: 'Back Squat', target: 1.5, current: athleteProfile.prs?.backSquat?.value },
+                { lift: 'Bench Press', target: 1.25, current: athleteProfile.prs?.benchPress?.value },
+                { lift: 'Weighted Pull-up', target: 0.5, current: athleteProfile.prs?.weightedPullUp?.value },
+              ].map((item, i) => {
+                const targetLbs = Math.round((athleteProfile.weight || 225) * item.target);
+                const progress = item.current ? Math.min((item.current / targetLbs) * 100, 100) : 0;
+                return (
+                  <div key={i}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className={theme.text}>{item.lift}</span>
+                      <span className={theme.textMuted}>{item.current || 0} / {targetLbs} lbs</span>
+                    </div>
+                    <div className={`h-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+                      <div 
+                        className={`h-full ${progress >= 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1023,6 +1860,19 @@ export default function App() {
   const [exerciseCompletion, setExerciseCompletion] = useState({});
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
+  
+  // Offline status
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const allPrograms = { ...DEFAULT_PROGRAMS, ...customPrograms };
   const program = allPrograms[programState.currentProgram];
@@ -1141,6 +1991,13 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${theme.bg}`}>
+      {/* Offline Banner */}
+      {isOffline && (
+        <div className="bg-amber-500 text-amber-950 text-center py-1 text-sm font-medium">
+          📴 Offline Mode — Data saves locally
+        </div>
+      )}
+      
       {/* Header */}
       <header className={`${theme.header} text-white p-4 sticky top-0 z-50`}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -1161,7 +2018,7 @@ export default function App() {
         {menuOpen && (
           <nav className={`absolute top-full left-0 right-0 ${theme.header} border-t border-slate-700 p-4 shadow-lg`}>
             <div className="max-w-2xl mx-auto flex flex-col gap-2">
-              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: Calendar }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
+              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'charts', label: 'Charts & Trends', icon: LineChart }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: Calendar }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
                 <button key={id} onClick={() => { setCurrentView(id); setMenuOpen(false); }} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${currentView === id ? 'bg-slate-600' : 'hover:bg-slate-700'}`}><Icon size={20} /><span>{label}</span></button>
               ))}
             </div>
@@ -1190,6 +2047,16 @@ export default function App() {
               <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>Acute (7d)</p><p className={`text-2xl font-bold ${theme.text}`}>{acuteLoad}<span className={`text-sm ${theme.textMuted} ml-1`}>min</span></p></div>
               <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>A:C Ratio</p><p className={`text-2xl font-bold ${loadRatio !== '-' && loadRatio > 1.5 ? 'text-red-500' : loadRatio !== '-' && loadRatio < 0.8 ? 'text-amber-500' : 'text-green-500'}`}>{loadRatio}</p></div>
             </div>
+            <button onClick={() => setCurrentView('charts')} className={`w-full ${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow`}>
+              <div className="flex items-center gap-3">
+                <LineChart size={20} className="text-blue-500" />
+                <div className="text-left">
+                  <p className={`font-medium ${theme.text}`}>Charts & Trends</p>
+                  <p className={`text-xs ${theme.textMuted}`}>View progress visualization</p>
+                </div>
+              </div>
+              <ChevronRight className={theme.textMuted} />
+            </button>
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <div className="flex items-center justify-between mb-3"><div><p className={`text-xs ${theme.textMuted} uppercase`}>{program?.name}</p><h2 className={`text-lg font-bold ${theme.text}`}>{phase?.name} Phase</h2></div><span className="text-3xl">{program?.icon}</span></div>
               <div className="grid grid-cols-4 gap-2">
@@ -1343,6 +2210,9 @@ export default function App() {
 
         {/* BENCHMARK TESTS VIEW */}
         {currentView === 'benchmarks' && <BenchmarkTestsView athleteProfile={athleteProfile} setAthleteProfile={setAthleteProfile} benchmarkResults={benchmarkResults} setBenchmarkResults={setBenchmarkResults} theme={theme} darkMode={darkMode} />}
+
+        {/* CHARTS VIEW */}
+        {currentView === 'charts' && <ChartsView workoutLogs={workoutLogs} benchmarkResults={benchmarkResults} readiness={readiness} athleteProfile={athleteProfile} theme={theme} darkMode={darkMode} />}
 
         {/* LOG VIEW */}
         {currentView === 'log' && (
