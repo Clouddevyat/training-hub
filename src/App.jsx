@@ -270,11 +270,6 @@ const calculateLoadTargets = (weight) => {
   };
 };
 
-const calculateWorkingWeight = (prValue, percentage) => {
-  if (!prValue || !percentage) return null;
-  return Math.round(prValue * (percentage / 100) / 5) * 5;
-};
-
 // Calculate readiness score from check-in data
 const calculateReadinessScore = (data) => {
   if (!data) return null;
