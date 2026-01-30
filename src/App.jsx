@@ -2405,6 +2405,11 @@ export default function App() {
   const program = allPrograms[programState.currentProgram];
   const phase = program?.phases.find(p => programState.currentWeek >= p.weeks[0] && programState.currentWeek <= p.weeks[1]);
   
+  // Today's readiness - MUST be defined before todayWorkout useMemo
+  const todayReadiness = readiness.logs?.find(l => l.date === getTodayKey());
+  const readinessScore = todayReadiness?.score;
+  const readinessInfo = readinessScore ? getReadinessLabel(readinessScore) : null;
+
   // Generate today's workout with auto-propagated values
   const todayWorkoutRaw = phase?.weeklyTemplate.find(w => w.day === programState.currentDay);
   const todayWorkout = useMemo(() => {
@@ -2415,11 +2420,6 @@ export default function App() {
     }
     return todayWorkoutRaw;
   }, [todayWorkoutRaw, athleteProfile, programState.currentWeek, readinessScore, program?.isTemplate]);
-
-  // Today's readiness
-  const todayReadiness = readiness.logs?.find(l => l.date === getTodayKey());
-  const readinessScore = todayReadiness?.score;
-  const readinessInfo = readinessScore ? getReadinessLabel(readinessScore) : null;
 
   // Handle template upload
   const handleTemplateUpload = ({ template, program, profileCheck }) => {

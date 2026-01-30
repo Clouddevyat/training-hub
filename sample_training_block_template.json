@@ -1,0 +1,560 @@
+{
+  "meta": {
+    "id": "training_block_system",
+    "name": "Training Block System",
+    "description": "Modular system for long-term operational fitness with main cycle and specialty blocks",
+    "version": "1.0",
+    "type": "block_system",
+    "icon": "🎯"
+  },
+
+  "required_profile_fields": [
+    "bodyweight",
+    "1rm.squat",
+    "1rm.deadlift",
+    "1rm.weighted_pullup",
+    "max_hr"
+  ],
+
+  "equipment_required": [
+    "barbell",
+    "dumbbells",
+    "pull_up_bar",
+    "pack"
+  ],
+
+  "global_rules": {
+    "deload_every_4th_week": true,
+    "one_specialty_at_a_time": true,
+    "always_return_to_base": true
+  },
+
+  "quarterly_testing": {
+    "frequency": "every_12_weeks",
+    "tests": [
+      { "name": "Ruck Benchmark", "protocol": "4 hours at 60 lbs", "track": ["pace", "rpe"] },
+      { "name": "Strength Check", "protocol": "Squat and deadlift to heavy single" },
+      { "name": "2-Mile Run", "protocol": "All-out effort", "track": ["time"] },
+      { "name": "Combat Capacity", "protocol": "5 x 3 min rounds", "track": ["round_5_performance"] }
+    ]
+  },
+
+  "blocks": {
+    "main_cycle": [
+      {
+        "id": "block_a",
+        "name": "Base Building",
+        "type": "main",
+        "duration": { "min": 6, "max": 8, "unit": "weeks" },
+        "description": "Build aerobic engine and maintain strength foundation",
+        "when_to_use": [
+          "After time off",
+          "After injury",
+          "After deployment",
+          "After any specialty block"
+        ],
+        "exit_criteria": [
+          "4+ hours at 50 lbs feels conversational",
+          "Strength stable or within 5% of baseline"
+        ],
+        "deload_week": 4,
+        "week_template": {
+          "monday": {
+            "name": "Lower Strength + Arms",
+            "type": "strength",
+            "duration": 60,
+            "exercises": [
+              { "default": "back_squat", "sets": 3, "reps": "5", "intensity": "0.75 * 1rm.squat", "rest": "3 min" },
+              { "default": "romanian_deadlift", "sets": 3, "reps": "10", "intensity": "0.62 * 1rm.deadlift", "rest": "2 min" },
+              { "name": "Walking Lunge", "sets": 2, "reps": "10/leg" },
+              { "name": "Pallof Press", "sets": 2, "reps": "10/side" },
+              { "name": "Hammer Curl", "sets": 3, "reps": "12-15" },
+              { "name": "Band Pushdown", "sets": 3, "reps": "20" }
+            ]
+          },
+          "tuesday": {
+            "name": "Long Ruck (Zone 2)",
+            "type": "aerobic",
+            "duration": 180,
+            "description": "Progressive long ruck at conversational pace",
+            "hrZone": "zone2",
+            "notes": ["2-4 hours", "Progressive load"]
+          },
+          "wednesday": {
+            "name": "Upper Strength + Pulls + Grip",
+            "type": "strength",
+            "duration": 55,
+            "exercises": [
+              { "default": "pull_up", "sets": 4, "reps": "5", "intensity": "0.85 * 1rm.weighted_pullup" },
+              { "default": "overhead_press", "sets": 3, "reps": "5", "intensity": "0.75 * 1rm.press" },
+              { "name": "Bent-Over Row", "sets": 3, "reps": "8" },
+              { "name": "Farmer's Carry", "sets": 3, "reps": "50m", "notes": "Heavy as possible" },
+              { "name": "Face Pull", "sets": 3, "reps": "15" },
+              { "name": "Dead Hang", "sets": 1, "reps": "2-3 min accumulated" }
+            ]
+          },
+          "thursday": {
+            "name": "Medium Ruck (Zone 2)",
+            "type": "aerobic",
+            "duration": 120,
+            "description": "1.5-2.5 hours Zone 2",
+            "hrZone": "zone2"
+          },
+          "friday": {
+            "name": "Combat Conditioning",
+            "type": "conditioning",
+            "duration": 45,
+            "description": "Moderate intensity combat conditioning",
+            "notes": ["Bag work", "Sprints", "Carries"]
+          },
+          "saturday": {
+            "name": "Long Ruck (Zone 2)",
+            "type": "long_effort",
+            "duration": 240,
+            "description": "Longest session of the week - 3-5 hours",
+            "hrZone": "zone2"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest",
+            "description": "Complete rest"
+          }
+        }
+      },
+      {
+        "id": "block_b",
+        "name": "Progression",
+        "type": "main",
+        "duration": { "min": 8, "max": 12, "unit": "weeks" },
+        "description": "Push capacity higher with increased loads and tempo work",
+        "when_to_use": ["Base is solid", "Time to push capacity higher"],
+        "exit_criteria": [
+          "4+ hours at 70+ lbs sustainable",
+          "Tempo efforts feel controlled",
+          "5 rope climbs with minimal rest"
+        ],
+        "deload_week": 4,
+        "week_template": {
+          "monday": {
+            "name": "Lower Strength-Endurance",
+            "type": "strength",
+            "duration": 55,
+            "exercises": [
+              { "default": "back_squat", "sets": 3, "reps": "8", "intensity": "0.70 * 1rm.squat" },
+              { "default": "romanian_deadlift", "sets": 3, "reps": "10", "intensity": "0.60 * 1rm.deadlift" },
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": "8/leg" }
+            ]
+          },
+          "tuesday": {
+            "name": "Long Ruck (Heavier)",
+            "type": "aerobic",
+            "duration": 210,
+            "description": "3-4 hours with 60-70 lbs",
+            "hrZone": "zone2"
+          },
+          "wednesday": {
+            "name": "Upper + Climbing Emphasis",
+            "type": "strength",
+            "duration": 60,
+            "exercises": [
+              { "name": "Rope Climb", "sets": 5, "reps": "1" },
+              { "default": "pull_up", "sets": 5, "reps": "max" },
+              { "default": "overhead_press", "sets": 3, "reps": "5" },
+              { "name": "Dead Hang", "sets": 3, "reps": "max time" }
+            ]
+          },
+          "thursday": {
+            "name": "Tempo Ruck or Hill Repeats",
+            "type": "threshold",
+            "duration": 90,
+            "description": "Zone 3 efforts - comfortably hard",
+            "hrZone": "zone3"
+          },
+          "friday": {
+            "name": "Combat Conditioning (Increased)",
+            "type": "conditioning",
+            "duration": 50,
+            "description": "5 rounds with additional drills"
+          },
+          "saturday": {
+            "name": "Long Ruck (Heaviest)",
+            "type": "long_effort",
+            "duration": 300,
+            "description": "70+ lbs route simulation"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest",
+            "description": "Mandatory rest"
+          }
+        }
+      },
+      {
+        "id": "block_c",
+        "name": "Integration",
+        "type": "main",
+        "duration": { "min": 8, "max": 12, "unit": "weeks" },
+        "description": "Combine skills under fatigue. Pre-deployment/mission/selection.",
+        "when_to_use": [
+          "High capacity established",
+          "Need to combine skills under fatigue",
+          "Pre-deployment",
+          "Pre-mission",
+          "Pre-selection"
+        ],
+        "exit_criteria": [
+          "8+ hour field day completed",
+          "Skills hold up under fatigue",
+          "Strength within 90% of baseline"
+        ],
+        "week_template": {
+          "monday": {
+            "name": "Strength Maintenance (Full Body)",
+            "type": "strength",
+            "duration": 50,
+            "exercises": [
+              { "default": "back_squat", "sets": 3, "reps": "5", "intensity": "0.80 * 1rm.squat" },
+              { "default": "pull_up", "sets": 4, "reps": "5" },
+              { "default": "overhead_press", "sets": 3, "reps": "5" }
+            ]
+          },
+          "tuesday": {
+            "name": "Long Ruck with Climbing",
+            "type": "long_effort",
+            "duration": 240,
+            "description": "Vertical gain on technical terrain"
+          },
+          "wednesday": {
+            "name": "Combat Conditioning (Extended)",
+            "type": "conditioning",
+            "duration": 60,
+            "description": "Fatigued fighting simulations"
+          },
+          "thursday": {
+            "name": "Medium Ruck or Active Recovery",
+            "type": "aerobic",
+            "duration": 90,
+            "description": "Based on accumulated fatigue"
+          },
+          "friday": {
+            "name": "Strength Maintenance (Abbreviated)",
+            "type": "strength",
+            "duration": 35,
+            "exercises": [
+              { "default": "trap_bar_deadlift", "sets": 3, "reps": "3", "intensity": "0.85 * 1rm.deadlift" },
+              { "default": "pull_up", "sets": 3, "reps": "5" }
+            ]
+          },
+          "saturday": {
+            "name": "Extended Field Day",
+            "type": "long_effort",
+            "duration": 480,
+            "description": "8-12 hour mission simulation (alternate with 4-5 hr long ruck)"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest",
+            "description": "Mandatory"
+          }
+        }
+      },
+      {
+        "id": "block_d",
+        "name": "Maintenance",
+        "type": "main",
+        "duration": { "min": 4, "max": 52, "unit": "weeks" },
+        "description": "Hold capacity with minimum viable training. ~6-7 hours/week.",
+        "when_to_use": [
+          "Between cycles",
+          "During deployment",
+          "When life limits training",
+          "At target capacity and need to hold it"
+        ],
+        "exit_criteria": [],
+        "week_template": {
+          "monday": {
+            "name": "Strength",
+            "type": "strength",
+            "duration": 40,
+            "exercises": [
+              { "default": "back_squat", "sets": 3, "reps": "5", "intensity": "0.80 * 1rm.squat" },
+              { "default": "pull_up", "sets": 4, "reps": "5" },
+              { "default": "overhead_press", "sets": 3, "reps": "5" }
+            ]
+          },
+          "tuesday": {
+            "name": "Off or Easy Movement",
+            "type": "recovery"
+          },
+          "wednesday": {
+            "name": "Ruck",
+            "type": "aerobic",
+            "duration": 120,
+            "description": "2 hours, 50 lbs, Zone 2"
+          },
+          "thursday": {
+            "name": "Off",
+            "type": "rest"
+          },
+          "friday": {
+            "name": "Combat",
+            "type": "conditioning",
+            "duration": 35,
+            "description": "4 rounds bag, sprints, carries"
+          },
+          "saturday": {
+            "name": "Ruck",
+            "type": "aerobic",
+            "duration": 180,
+            "description": "3 hours, 50 lbs, Zone 2"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest"
+          }
+        }
+      }
+    ],
+
+    "specialty": [
+      {
+        "id": "strength_emphasis",
+        "name": "Strength Emphasis",
+        "type": "specialty",
+        "duration": { "min": 4, "max": 6, "unit": "weeks" },
+        "when_to_use": [
+          "Lifts below acceptable thresholds",
+          "Feel weak",
+          "Off-season with no mission"
+        ],
+        "exit_criteria": ["Lifts back to target numbers"],
+        "sacrifice": [
+          "Aerobic volume drops significantly",
+          "Ruck endurance will decrease"
+        ],
+        "return_to": "block_a",
+        "intensity_progression": {
+          "week_1": { "squat": "5x5 @ 75%", "deadlift": "5x3 @ 75%" },
+          "week_2": { "squat": "5x5 @ 80%", "deadlift": "5x3 @ 80%" },
+          "week_3": { "squat": "5x3 @ 85%", "deadlift": "4x2 @ 85%" },
+          "week_4": { "squat": "3x2 @ 90%", "deadlift": "3x2 @ 90%" },
+          "week_5": { "squat": "Test singles", "deadlift": "Test singles" },
+          "week_6": { "squat": "Deload", "deadlift": "Deload" }
+        },
+        "week_template": {
+          "monday": {
+            "name": "Lower Primary",
+            "type": "strength",
+            "duration": 60,
+            "exercises": [
+              { "default": "back_squat", "sets": 5, "reps": "5", "intensity": "progressive" },
+              { "default": "romanian_deadlift", "sets": 4, "reps": "8" }
+            ]
+          },
+          "tuesday": {
+            "name": "Easy Ruck or Off",
+            "type": "recovery",
+            "duration": 120,
+            "description": "2 hrs max, 35 lbs, recovery pace"
+          },
+          "wednesday": {
+            "name": "Upper Primary",
+            "type": "strength",
+            "duration": 60,
+            "exercises": [
+              { "default": "bench_press", "sets": 5, "reps": "5" },
+              { "default": "barbell_row", "sets": 4, "reps": "8" },
+              { "default": "pull_up", "sets": 4, "reps": "max" }
+            ]
+          },
+          "thursday": {
+            "name": "Off",
+            "type": "rest"
+          },
+          "friday": {
+            "name": "Power + Deadlift",
+            "type": "strength",
+            "duration": 55,
+            "exercises": [
+              { "default": "trap_bar_deadlift", "sets": 5, "reps": "3", "intensity": "progressive" },
+              { "name": "Box Jump", "sets": 4, "reps": "5" },
+              { "name": "Farmer's Carry", "sets": 3, "reps": "50m" }
+            ]
+          },
+          "saturday": {
+            "name": "Medium Ruck",
+            "type": "aerobic",
+            "duration": 150,
+            "description": "2-3 hrs, 45-50 lbs"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest"
+          }
+        }
+      },
+      {
+        "id": "running_emphasis",
+        "name": "Running Emphasis",
+        "type": "specialty",
+        "duration": { "min": 4, "max": 8, "unit": "weeks" },
+        "when_to_use": [
+          "Selection with run component",
+          "Need to pass a timed run standard"
+        ],
+        "exit_criteria": ["Hit your run standard"],
+        "sacrifice": [
+          "Ruck volume drops to near zero",
+          "Strength is bare maintenance"
+        ],
+        "return_to": "block_a",
+        "week_template": {
+          "monday": {
+            "name": "Strength (Abbreviated)",
+            "type": "strength",
+            "duration": 40,
+            "exercises": [
+              { "default": "back_squat", "sets": 3, "reps": "5" },
+              { "default": "romanian_deadlift", "sets": 3, "reps": "8" },
+              { "default": "overhead_press", "sets": 3, "reps": "5" }
+            ]
+          },
+          "tuesday": {
+            "name": "Intervals",
+            "type": "anaerobic",
+            "duration": 45,
+            "description": "6-10 x 400m or 4-6 x 800m, equal rest"
+          },
+          "wednesday": {
+            "name": "Easy Run",
+            "type": "aerobic",
+            "duration": 35,
+            "description": "30-40 min conversational"
+          },
+          "thursday": {
+            "name": "Tempo Run",
+            "type": "threshold",
+            "duration": 30,
+            "description": "20-30 min at threshold - comfortably hard"
+          },
+          "friday": {
+            "name": "Combat Conditioning",
+            "type": "conditioning",
+            "duration": 40
+          },
+          "saturday": {
+            "name": "Long Run",
+            "type": "aerobic",
+            "duration": 75,
+            "description": "60-90 min easy"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest"
+          }
+        }
+      }
+    ],
+
+    "life": [
+      {
+        "id": "post_injury",
+        "name": "Post-Injury Return",
+        "type": "life",
+        "duration": { "min": 4, "max": 8, "unit": "weeks" },
+        "when_to_use": [
+          "Returning from any injury layoff",
+          "Rolled ankle",
+          "Tweaked shoulder",
+          "Minor surgery"
+        ],
+        "exit_criteria": ["Full ROM, no pain under load, cleared for Block A"],
+        "return_to": "block_a",
+        "progression_by_week": {
+          "1-2": { "focus": "Movement only, full ROM, no pain", "loading": "Unloaded" },
+          "3-4": { "focus": "Light loading, volume before intensity", "loading": "50% of previous" },
+          "5-6": { "focus": "Moderate loading, rebuild work capacity", "loading": "70-75%" },
+          "7-8": { "focus": "Return to normal training", "loading": "Block A" }
+        }
+      },
+      {
+        "id": "mental_reset",
+        "name": "Mental Reset",
+        "type": "life",
+        "duration": { "min": 2, "max": 4, "unit": "weeks" },
+        "when_to_use": [
+          "Burned out",
+          "Training feels like a chore",
+          "Motivation gone",
+          "Life stress high",
+          "Dreading training for 2+ weeks",
+          "Sleep quality tanking",
+          "Minor injuries accumulating"
+        ],
+        "exit_criteria": ["You want to train again", "Motivation returns"],
+        "return_to": "block_a",
+        "notes": [
+          "No structure - do whatever sounds fun",
+          "No tracking, no logging, no numbers",
+          "Sleep as much as possible",
+          "Eat at maintenance, high protein"
+        ]
+      },
+      {
+        "id": "field_maintenance",
+        "name": "Field / Deployment Maintenance",
+        "type": "life",
+        "duration": { "min": 1, "max": 52, "unit": "weeks" },
+        "when_to_use": [
+          "Deployed or in the field",
+          "Minimal equipment",
+          "Inconsistent schedule"
+        ],
+        "exit_criteria": [],
+        "return_to": "block_a",
+        "notes": [
+          "Adapt as needed",
+          "Goal: Come home with most capacity intact"
+        ],
+        "week_template": {
+          "monday": {
+            "name": "Bodyweight Strength",
+            "type": "strength",
+            "duration": 30,
+            "description": "Pull-ups 5xmax, Push-ups 5xmax, Object squats, Carry"
+          },
+          "tuesday": {
+            "name": "Ruck",
+            "type": "aerobic",
+            "description": "Whatever mission allows, 50+ lbs"
+          },
+          "wednesday": {
+            "name": "Off or Mobility",
+            "type": "recovery"
+          },
+          "thursday": {
+            "name": "Conditioning",
+            "type": "conditioning",
+            "duration": 25,
+            "description": "5 rounds burpees/pull-ups/run"
+          },
+          "friday": {
+            "name": "Strength Variation",
+            "type": "strength",
+            "duration": 30,
+            "description": "Same as Monday or adapt to available"
+          },
+          "saturday": {
+            "name": "Ruck",
+            "type": "aerobic",
+            "description": "Long if time allows"
+          },
+          "sunday": {
+            "name": "Off",
+            "type": "rest"
+          }
+        }
+      }
+    ]
+  }
+}
