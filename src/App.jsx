@@ -79,7 +79,8 @@ const BENCHMARK_TESTS = {
     name: '5-Mile Time Trial',
     icon: '🏃',
     duration: '30-40 min',
-    frequency: 'Every 4-8 weeks',
+    frequency: 6, // months
+    category: 'aerobic',
     description: 'All-out 5-mile effort to track aerobic progress',
     protocol: [
       'Ensure adequate rest (no hard training 48 hrs prior)',
@@ -97,14 +98,16 @@ const BENCHMARK_TESTS = {
       { key: 'avgPace', label: 'Avg Pace', type: 'pace', unit: 'min/mile' },
     ],
     targetKey: 'fiveMileTime',
-    notes: 'Goal progression: 36:00 → 34:00 → 32:00'
+    notes: 'Goal progression: 36:00 → 34:00 → 32:00',
+    benchmarkTargets: { excellent: '32:00', good: '35:00', passing: '40:00' }
   },
   aetDrift: {
     id: 'aetDrift',
     name: 'Aerobic Threshold (AeT) Drift Test',
     icon: '💓',
     duration: '60 min',
-    frequency: 'Every 4 weeks',
+    frequency: 3, // months
+    category: 'aerobic',
     description: 'Measure cardiac drift to assess aerobic base fitness',
     protocol: [
       'Warm up: 15 min building to AeT pace',
@@ -129,14 +132,43 @@ const BENCHMARK_TESTS = {
       return null;
     },
     targetKey: 'aetDrift',
-    notes: '<5% = strong aerobic base. 5-10% = adequate. >10% = needs work'
+    notes: '<5% = strong aerobic base. 5-10% = adequate. >10% = needs work',
+    benchmarkTargets: { excellent: '<3%', good: '<5%', passing: '<10%' }
+  },
+  anaerobicThreshold: {
+    id: 'anaerobicThreshold',
+    name: 'Anaerobic Threshold (AnT) Test',
+    icon: '🔥',
+    duration: '30-35 min',
+    frequency: 6, // months
+    category: 'aerobic',
+    description: '30-minute time trial to find sustainable threshold pace and HR',
+    protocol: [
+      'Warm up: 15 min progressive (easy → moderate)',
+      'Find flat course or treadmill',
+      'Start timer and run at HARDEST SUSTAINABLE PACE for 30 minutes',
+      'This should feel like a hard tempo - uncomfortable but maintainable',
+      'Record average HR for final 20 minutes (ignore first 10 min)',
+      'This HR is your Anaerobic Threshold',
+      'Cool down: 10 min easy'
+    ],
+    metrics: [
+      { key: 'distance', label: 'Distance', type: 'number', unit: 'miles' },
+      { key: 'avgHRLast20', label: 'Avg HR (last 20 min)', type: 'number', unit: 'bpm' },
+      { key: 'avgPace', label: 'Avg Pace', type: 'pace', unit: 'min/mile' },
+      { key: 'maxHR', label: 'Max HR', type: 'number', unit: 'bpm' },
+    ],
+    targetKey: 'anaerobicThresholdHR',
+    notes: 'AnT HR typically 85-90% of max. Compare to AeT to find your gap.',
+    benchmarkTargets: { excellent: '<10% gap from AeT', good: '<15% gap', passing: '<20% gap' }
   },
   verticalRate: {
     id: 'verticalRate',
     name: 'Vertical Rate Test',
     icon: '⛰️',
     duration: '60 min',
-    frequency: 'Every 4 weeks (Conversion/Specificity phases)',
+    frequency: 3, // months
+    category: 'mountaineering',
     description: 'Measure uphill hiking efficiency under load',
     protocol: [
       'Load pack to 25% bodyweight',
@@ -150,6 +182,7 @@ const BENCHMARK_TESTS = {
     ],
     metrics: [
       { key: 'load', label: 'Pack Weight', type: 'number', unit: 'lbs' },
+      { key: 'loadPercent', label: 'Load % BW', type: 'calculated', unit: '%' },
       { key: 'verticalFeet', label: 'Vertical Gain', type: 'number', unit: 'ft' },
       { key: 'duration', label: 'Duration', type: 'number', unit: 'min' },
       { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
@@ -162,14 +195,53 @@ const BENCHMARK_TESTS = {
       return null;
     },
     targetKey: 'verticalRate',
-    notes: 'Target: 1000 ft/hr at 25% BW while staying in Zone 2'
+    notes: 'Target: 1000 ft/hr at 25% BW while staying in Zone 2',
+    benchmarkTargets: { excellent: '>1200 ft/hr', good: '>1000 ft/hr', passing: '>800 ft/hr' }
+  },
+  ruckMarch: {
+    id: 'ruckMarch',
+    name: '3-Mile Ruck March',
+    icon: '🎒',
+    duration: '35-50 min',
+    frequency: 3, // months
+    category: 'mountaineering',
+    description: 'Loaded 3-mile march for tactical/mountain fitness baseline',
+    protocol: [
+      'Load pack to 35 lbs (or specified weight)',
+      'Find flat to rolling terrain',
+      'Warm up: 5 min easy walk',
+      'Start timer',
+      'Move as fast as possible - run/walk as needed',
+      'Maintain good posture, no shuffling',
+      'Record total time at 3 miles',
+      'Note conditions (terrain, weather)'
+    ],
+    metrics: [
+      { key: 'load', label: 'Pack Weight', type: 'number', unit: 'lbs' },
+      { key: 'time', label: 'Total Time', type: 'time', unit: 'min:sec' },
+      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
+      { key: 'terrain', label: 'Terrain', type: 'select', options: ['Flat', 'Rolling', 'Hilly', 'Trail'] },
+      { key: 'pace', label: 'Pace', type: 'calculated', unit: 'min/mile' },
+    ],
+    calculatePace: (data) => {
+      if (data.time) {
+        const [mins, secs] = data.time.split(':').map(Number);
+        const totalMins = mins + (secs || 0) / 60;
+        return (totalMins / 3).toFixed(2);
+      }
+      return null;
+    },
+    targetKey: 'ruckMarchTime',
+    notes: 'Selection standard: 3 miles in 45 min with 35 lbs',
+    benchmarkTargets: { excellent: '<36:00', good: '<42:00', passing: '<45:00' }
   },
   maxHR: {
     id: 'maxHR',
     name: 'Max Heart Rate Test',
     icon: '❤️‍🔥',
     duration: '20-25 min',
-    frequency: 'Once per training cycle (or if zones feel off)',
+    frequency: 12, // months (once per year)
+    category: 'baseline',
     description: 'Find true max HR for accurate zone calculation',
     protocol: [
       'Ensure full recovery and no fatigue',
@@ -185,7 +257,7 @@ const BENCHMARK_TESTS = {
     ],
     metrics: [
       { key: 'maxHR', label: 'Max HR Achieved', type: 'number', unit: 'bpm' },
-      { key: 'method', label: 'Method', type: 'text', unit: '' },
+      { key: 'method', label: 'Method', type: 'select', options: ['Hill repeats', 'Treadmill', 'Track', 'Other'] },
     ],
     targetKey: 'maxHR',
     notes: 'This will be uncomfortable. Have this number dialed before starting a program.'
@@ -195,7 +267,8 @@ const BENCHMARK_TESTS = {
     name: 'Strength Testing Session',
     icon: '🏋️',
     duration: '90 min',
-    frequency: 'Every 8-12 weeks or between programs',
+    frequency: 6, // months
+    category: 'strength',
     description: 'Establish or re-test 1RM for program calculations',
     protocol: [
       'Full rest day before testing',
@@ -220,6 +293,132 @@ const BENCHMARK_TESTS = {
     ],
     targetKey: 'prs',
     notes: 'Not every lift needs testing every time. Focus on program-relevant lifts.'
+  },
+  meCapacity: {
+    id: 'meCapacity',
+    name: 'Muscular Endurance Capacity Test',
+    icon: '🔄',
+    duration: '30-45 min',
+    frequency: 3, // months
+    category: 'muscular_endurance',
+    description: 'Max step-ups in 20 minutes to benchmark ME fitness',
+    protocol: [
+      'Set up 20" box with dumbbells (start at 20% BW total)',
+      'Warm up: 5 min easy step-ups + mobility',
+      'Start 20-minute timer',
+      'Perform continuous alternating step-ups',
+      'Pace: 1 step every 2 seconds (30/min) or faster',
+      'Count total steps (each foot = 1 step)',
+      'Stop if form breaks or pace drops significantly',
+      'Record total steps and any stops'
+    ],
+    metrics: [
+      { key: 'load', label: 'Total DB Weight', type: 'number', unit: 'lbs' },
+      { key: 'loadPercent', label: 'Load % BW', type: 'calculated', unit: '%' },
+      { key: 'totalSteps', label: 'Total Steps', type: 'number', unit: 'steps' },
+      { key: 'duration', label: 'Actual Duration', type: 'number', unit: 'min' },
+      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
+      { key: 'stepsPerMin', label: 'Steps/min', type: 'calculated', unit: 'spm' },
+    ],
+    calculateStepsPerMin: (data) => {
+      if (data.totalSteps && data.duration) {
+        return (data.totalSteps / data.duration).toFixed(1);
+      }
+      return null;
+    },
+    targetKey: 'meCapacity',
+    notes: 'Target: 600 steps @ 20% BW for Conversion phase exit',
+    benchmarkTargets: { excellent: '>700 steps', good: '>600 steps', passing: '>500 steps' }
+  },
+  gripEndurance: {
+    id: 'gripEndurance',
+    name: 'Grip Strength & Endurance',
+    icon: '✊',
+    duration: '15 min',
+    frequency: 3, // months
+    category: 'strength',
+    description: 'Dead hang and farmer carry to test grip for loaded carries',
+    protocol: [
+      'Test 1: Dead Hang',
+      '  - Hang from pull-up bar with overhand grip',
+      '  - Time until failure (hands release)',
+      '',
+      'Rest 5 minutes',
+      '',
+      'Test 2: Farmer Carry',
+      '  - Load 50% bodyweight total (25% each hand)',
+      '  - Walk until grip fails',
+      '  - Record distance or time'
+    ],
+    metrics: [
+      { key: 'deadHangTime', label: 'Dead Hang Time', type: 'number', unit: 'sec' },
+      { key: 'farmerWeight', label: 'Farmer Carry Weight (total)', type: 'number', unit: 'lbs' },
+      { key: 'farmerDistance', label: 'Farmer Carry Distance', type: 'number', unit: 'ft' },
+      { key: 'farmerTime', label: 'Farmer Carry Time', type: 'number', unit: 'sec' },
+    ],
+    targetKey: 'gripEndurance',
+    notes: 'Dead hang >90 sec and farmer carry 200+ ft at 50% BW = solid grip',
+    benchmarkTargets: { excellent: '>120s hang', good: '>90s hang', passing: '>60s hang' }
+  },
+  workCapacity: {
+    id: 'workCapacity',
+    name: 'Work Capacity Test',
+    icon: '⚡',
+    duration: '20 min',
+    frequency: 6, // months
+    category: 'conditioning',
+    description: 'Timed circuit to measure overall work capacity',
+    protocol: [
+      'Complete the following for time:',
+      '',
+      '5 Rounds:',
+      '  - 10 Box Jumps (20")',
+      '  - 10 Push-ups',
+      '  - 10 KB Swings (53/35 lbs)',
+      '  - 10 Air Squats',
+      '  - 200m Run',
+      '',
+      'Minimal rest between movements',
+      'Record total time',
+      'Note any scaling or modifications'
+    ],
+    metrics: [
+      { key: 'totalTime', label: 'Total Time', type: 'time', unit: 'min:sec' },
+      { key: 'kbWeight', label: 'KB Weight', type: 'number', unit: 'lbs' },
+      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
+      { key: 'maxHR', label: 'Max HR', type: 'number', unit: 'bpm' },
+      { key: 'scaled', label: 'Scaled?', type: 'select', options: ['Rx', 'Scaled', 'Modified'] },
+    ],
+    targetKey: 'workCapacity',
+    notes: 'Rx target: <18 minutes. Tests anaerobic endurance and recovery.',
+    benchmarkTargets: { excellent: '<15:00', good: '<18:00', passing: '<22:00' }
+  },
+  bodyComp: {
+    id: 'bodyComp',
+    name: 'Body Composition Check',
+    icon: '📏',
+    duration: '5 min',
+    frequency: 1, // monthly
+    category: 'baseline',
+    description: 'Track weight and basic measurements for trends',
+    protocol: [
+      'Weigh first thing in morning, after bathroom',
+      'Same scale, same conditions each time',
+      'Optional measurements (relaxed, not flexed):',
+      '  - Waist at navel',
+      '  - Chest at nipple line',
+      '  - Thigh at midpoint',
+      'Note any significant changes in diet or training'
+    ],
+    metrics: [
+      { key: 'weight', label: 'Body Weight', type: 'number', unit: 'lbs' },
+      { key: 'waist', label: 'Waist', type: 'number', unit: 'in' },
+      { key: 'chest', label: 'Chest', type: 'number', unit: 'in' },
+      { key: 'thigh', label: 'Thigh', type: 'number', unit: 'in' },
+      { key: 'notes', label: 'Notes', type: 'text', unit: '' },
+    ],
+    targetKey: 'bodyComp',
+    notes: 'Track trends, not daily fluctuations. Weekly weigh-ins are enough.'
   }
 };
 
@@ -1250,6 +1449,16 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
     if (test.calculateRate && testData.verticalFeet && testData.duration) {
       finalData.rate = test.calculateRate(testData);
     }
+    if (test.calculatePace && testData.time) {
+      finalData.pace = test.calculatePace(testData);
+    }
+    if (test.calculateStepsPerMin && testData.totalSteps && testData.duration) {
+      finalData.stepsPerMin = test.calculateStepsPerMin(testData);
+    }
+    // Calculate load percent if we have load and athlete weight
+    if (testData.load && athleteProfile?.weight) {
+      finalData.loadPercent = ((testData.load / athleteProfile.weight) * 100).toFixed(1);
+    }
 
     // Save to benchmark results
     const result = {
@@ -1274,15 +1483,15 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           updated.prs = { ...updated.prs };
           for (const [key, value] of Object.entries(finalData)) {
             if (value && PR_DISPLAY_NAMES[key]) {
-              if (!updated.prs[key]?.value || value > updated.prs[key].value) {
-                updated.prs[key] = { ...updated.prs[key], value, date: getTodayKey() };
-                updated.history.push({ category: 'prs', key, value, date: new Date().toISOString() });
+              if (!updated.prs[key]?.value || Number(value) > updated.prs[key].value) {
+                updated.prs[key] = { ...updated.prs[key], value: Number(value), date: getTodayKey() };
+                updated.history.push({ category: 'prs', key, value: Number(value), date: new Date().toISOString() });
               }
             }
           }
         } else if (test.targetKey === 'maxHR' && finalData.maxHR) {
           updated.benchmarks = { ...updated.benchmarks };
-          updated.benchmarks.maxHR = { value: finalData.maxHR, date: getTodayKey(), unit: 'bpm' };
+          updated.benchmarks.maxHR = { value: Number(finalData.maxHR), date: getTodayKey(), unit: 'bpm' };
           updated.history.push({ category: 'benchmarks', key: 'maxHR', value: finalData.maxHR, date: new Date().toISOString() });
         } else if (test.targetKey === 'fiveMileTime' && finalData.time) {
           updated.benchmarks = { ...updated.benchmarks };
@@ -1290,12 +1499,36 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           updated.history.push({ category: 'benchmarks', key: 'fiveMileTime', value: finalData.time, date: new Date().toISOString() });
         } else if (test.targetKey === 'verticalRate' && finalData.rate) {
           updated.benchmarks = { ...updated.benchmarks };
-          updated.benchmarks.verticalRate = { value: finalData.rate, date: getTodayKey(), unit: 'ft/hr' };
+          updated.benchmarks.verticalRate = { value: Number(finalData.rate), date: getTodayKey(), unit: 'ft/hr' };
           updated.history.push({ category: 'benchmarks', key: 'verticalRate', value: finalData.rate, date: new Date().toISOString() });
         } else if (test.targetKey === 'aetDrift' && finalData.drift) {
           updated.benchmarks = { ...updated.benchmarks };
-          updated.benchmarks.aetDrift = { value: finalData.drift, date: getTodayKey(), unit: '%' };
+          updated.benchmarks.aetDrift = { value: Number(finalData.drift), date: getTodayKey(), unit: '%' };
           updated.history.push({ category: 'benchmarks', key: 'aetDrift', value: finalData.drift, date: new Date().toISOString() });
+        } else if (test.targetKey === 'anaerobicThresholdHR' && finalData.avgHRLast20) {
+          updated.benchmarks = { ...updated.benchmarks };
+          updated.benchmarks.anaerobicThresholdHR = { value: Number(finalData.avgHRLast20), date: getTodayKey(), unit: 'bpm' };
+          updated.history.push({ category: 'benchmarks', key: 'anaerobicThresholdHR', value: finalData.avgHRLast20, date: new Date().toISOString() });
+        } else if (test.targetKey === 'ruckMarchTime' && finalData.time) {
+          updated.benchmarks = { ...updated.benchmarks };
+          updated.benchmarks.ruckMarchTime = { value: finalData.time, date: getTodayKey(), unit: 'min:sec' };
+          updated.history.push({ category: 'benchmarks', key: 'ruckMarchTime', value: finalData.time, date: new Date().toISOString() });
+        } else if (test.targetKey === 'meCapacity' && finalData.totalSteps) {
+          updated.benchmarks = { ...updated.benchmarks };
+          updated.benchmarks.meCapacity = { value: Number(finalData.totalSteps), date: getTodayKey(), unit: 'steps', load: finalData.loadPercent };
+          updated.history.push({ category: 'benchmarks', key: 'meCapacity', value: finalData.totalSteps, date: new Date().toISOString() });
+        } else if (test.targetKey === 'gripEndurance' && finalData.deadHangTime) {
+          updated.benchmarks = { ...updated.benchmarks };
+          updated.benchmarks.gripEndurance = { value: Number(finalData.deadHangTime), date: getTodayKey(), unit: 'sec' };
+          updated.history.push({ category: 'benchmarks', key: 'gripEndurance', value: finalData.deadHangTime, date: new Date().toISOString() });
+        } else if (test.targetKey === 'workCapacity' && finalData.totalTime) {
+          updated.benchmarks = { ...updated.benchmarks };
+          updated.benchmarks.workCapacity = { value: finalData.totalTime, date: getTodayKey(), unit: 'min:sec' };
+          updated.history.push({ category: 'benchmarks', key: 'workCapacity', value: finalData.totalTime, date: new Date().toISOString() });
+        } else if (test.targetKey === 'bodyComp' && finalData.weight) {
+          // Update athlete weight in profile
+          updated.weight = Number(finalData.weight);
+          updated.history.push({ category: 'bodyComp', key: 'weight', value: finalData.weight, date: new Date().toISOString() });
         }
 
         updated.lastUpdated = new Date().toISOString();
@@ -1643,6 +1876,41 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
     );
   };
 
+  // Calculate if test is due
+  const isTestDue = (testId) => {
+    const test = BENCHMARK_TESTS[testId];
+    const lastResult = getLastResult(testId);
+    if (!lastResult || !test.frequency) return true;
+    
+    const lastDate = new Date(lastResult.date);
+    const now = new Date();
+    const monthsElapsed = (now.getFullYear() - lastDate.getFullYear()) * 12 + (now.getMonth() - lastDate.getMonth());
+    return monthsElapsed >= test.frequency;
+  };
+
+  // Get tests by category
+  const getTestsByCategory = () => {
+    const categories = {
+      baseline: { name: 'Baseline', icon: '📊', tests: [] },
+      aerobic: { name: 'Aerobic Fitness', icon: '🫀', tests: [] },
+      mountaineering: { name: 'Mountaineering', icon: '⛰️', tests: [] },
+      strength: { name: 'Strength', icon: '💪', tests: [] },
+      muscular_endurance: { name: 'Muscular Endurance', icon: '🔄', tests: [] },
+      conditioning: { name: 'Work Capacity', icon: '⚡', tests: [] },
+    };
+    
+    Object.values(BENCHMARK_TESTS).forEach(test => {
+      if (categories[test.category]) {
+        categories[test.category].tests.push(test);
+      }
+    });
+    
+    return Object.entries(categories).filter(([_, cat]) => cat.tests.length > 0);
+  };
+
+  // Get overdue tests count
+  const overdueTests = Object.keys(BENCHMARK_TESTS).filter(id => isTestDue(id)).length;
+
   // Main return - check view mode
   if (viewMode === 'history') {
     return <div className="p-4"><HistoryView /></div>;
@@ -1673,52 +1941,85 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           </button>
         </div>
       </div>
-      <p className={`text-sm ${theme.textMuted}`}>Structured tests with guided protocols and auto-recording.</p>
+      
+      {/* Due tests alert */}
+      {overdueTests > 0 && (
+        <div className={`p-3 ${darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'} border rounded-xl flex items-center gap-3`}>
+          <AlertTriangle className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={20} />
+          <div>
+            <p className={`text-sm font-medium ${theme.text}`}>{overdueTests} test{overdueTests > 1 ? 's' : ''} due</p>
+            <p className={`text-xs ${theme.textMuted}`}>Schedule your benchmark tests for accurate programming</p>
+          </div>
+        </div>
+      )}
 
-      <div className="space-y-3">
-        {Object.values(BENCHMARK_TESTS).map(test => {
-          const lastResult = getLastResult(test.id);
-          const resultCount = benchmarkResults[test.id]?.length || 0;
-          return (
-            <div key={test.id} className={`${theme.card} rounded-xl shadow-sm p-4`}>
-              <div className="flex items-start gap-4">
-                <span className="text-3xl">{test.icon}</span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`font-semibold ${theme.text}`}>{test.name}</h3>
-                    {resultCount > 0 && (
-                      <span className={`text-xs ${theme.textMuted} px-2 py-1 ${theme.cardAlt} rounded-full`}>
-                        {resultCount} test{resultCount > 1 ? 's' : ''}
-                      </span>
+      {/* Tests by category */}
+      {getTestsByCategory().map(([catId, category]) => (
+        <div key={catId} className="space-y-3">
+          <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase flex items-center gap-2`}>
+            <span>{category.icon}</span> {category.name}
+          </h3>
+          
+          {category.tests.map(test => {
+            const lastResult = getLastResult(test.id);
+            const resultCount = benchmarkResults[test.id]?.length || 0;
+            const isDue = isTestDue(test.id);
+            
+            return (
+              <div key={test.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${isDue ? (darkMode ? 'ring-1 ring-amber-500/50' : 'ring-1 ring-amber-300') : ''}`}>
+                <div className="flex items-start gap-4">
+                  <span className="text-3xl">{test.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className={`font-semibold ${theme.text}`}>{test.name}</h3>
+                      <div className="flex items-center gap-2">
+                        {isDue && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${darkMode ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>
+                            Due
+                          </span>
+                        )}
+                        {resultCount > 0 && (
+                          <span className={`text-xs ${theme.textMuted} px-2 py-0.5 ${theme.cardAlt} rounded-full`}>
+                            {resultCount}×
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className={`text-sm ${theme.textMuted} mt-1`}>{test.description}</p>
+                    <div className={`flex flex-wrap gap-3 mt-2 text-xs ${theme.textMuted}`}>
+                      <span>⏱️ {test.duration}</span>
+                      <span>🔄 Every {test.frequency} mo</span>
+                      {test.benchmarkTargets && (
+                        <span className="text-green-500">✓ {test.benchmarkTargets.good}</span>
+                      )}
+                    </div>
+                    {lastResult && (
+                      <div className={`mt-3 p-2 ${theme.cardAlt} rounded-lg text-sm flex flex-wrap items-center gap-2`}>
+                        <span className={theme.textMuted}>Last:</span>
+                        <span className={`font-medium ${theme.text}`}>{formatDateShort(lastResult.date)}</span>
+                        {lastResult.data.time && <span className={`font-mono ${theme.text}`}>⏱️ {lastResult.data.time}</span>}
+                        {lastResult.data.drift && <span className={`font-mono ${parseFloat(lastResult.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>📉 {lastResult.data.drift}%</span>}
+                        {lastResult.data.rate && <span className={`font-mono ${theme.text}`}>⛰️ {lastResult.data.rate} ft/hr</span>}
+                        {lastResult.data.maxHR && <span className={`font-mono ${theme.text}`}>❤️ {lastResult.data.maxHR}</span>}
+                        {lastResult.data.totalSteps && <span className={`font-mono ${theme.text}`}>🔄 {lastResult.data.totalSteps} steps</span>}
+                        {lastResult.data.deadHangTime && <span className={`font-mono ${theme.text}`}>✊ {lastResult.data.deadHangTime}s hang</span>}
+                        {lastResult.data.totalTime && <span className={`font-mono ${theme.text}`}>⚡ {lastResult.data.totalTime}</span>}
+                        {lastResult.data.weight && <span className={`font-mono ${theme.text}`}>⚖️ {lastResult.data.weight} lbs</span>}
+                      </div>
                     )}
                   </div>
-                  <p className={`text-sm ${theme.textMuted} mt-1`}>{test.description}</p>
-                  <div className={`flex gap-4 mt-2 text-xs ${theme.textMuted}`}>
-                    <span>⏱️ {test.duration}</span>
-                    <span>🔄 {test.frequency}</span>
-                  </div>
-                  {lastResult && (
-                    <div className={`mt-3 p-2 ${theme.cardAlt} rounded-lg text-sm`}>
-                      <span className={theme.textMuted}>Last: </span>
-                      <span className={`font-medium ${theme.text}`}>{formatDateShort(lastResult.date)}</span>
-                      {lastResult.data.time && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.time}</span>}
-                      {lastResult.data.drift && <span className={`ml-2 font-mono ${parseFloat(lastResult.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>{lastResult.data.drift}%</span>}
-                      {lastResult.data.rate && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.rate} ft/hr</span>}
-                      {lastResult.data.maxHR && <span className={`ml-2 font-mono ${theme.text}`}>{lastResult.data.maxHR} bpm</span>}
-                    </div>
-                  )}
                 </div>
+                <button
+                  onClick={() => startTest(test.id)}
+                  className={`w-full mt-4 py-2 ${isDue ? 'bg-blue-500 hover:bg-blue-600 text-white' : `${theme.cardAlt} ${theme.text}`} hover:opacity-90 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
+                >
+                  <PlayCircle size={18} /> {isDue ? 'Start Test (Due)' : 'Start Test'}
+                </button>
               </div>
-              <button
-                onClick={() => startTest(test.id)}
-                className={`w-full mt-4 py-2 ${theme.cardAlt} hover:opacity-80 rounded-lg text-sm font-medium ${theme.text} flex items-center justify-center gap-2`}
-              >
-                <PlayCircle size={18} /> Start Test
-              </button>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 };
