@@ -3270,6 +3270,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [newPhaseProgression, setNewPhaseProgression] = useState('linear');
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [exerciseFilter, setExerciseFilter] = useState('all');
+  // NEW: Edit mode state
+  const [editingProgramId, setEditingProgramId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3303,6 +3306,84 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   };
 
   const removePhase = (idx) => setPhases(prev => prev.filter((_, i) => i !== idx));
+
+  // Load a program into the editor for editing or duplicating
+  const loadProgramForEdit = (programId, isDuplicate = false) => {
+    const program = customPrograms[programId];
+    if (!program) return;
+    
+    // Set basic info
+    setProgramName(isDuplicate ? `${program.name} (Copy)` : program.name);
+    setProgramDescription(program.description || '');
+    setProgramIcon(program.icon || '🏋️');
+    setProgramType(program.phases?.length > 1 ? 'macro' : 'meso');
+    
+    // Convert saved phases back to editable format
+    const editablePhases = (program.phases || []).map((phase, idx) => {
+      // Determine progression model from description or default to linear
+      let progression = 'linear';
+      if (phase.description?.includes('Undulating')) progression = 'undulatingDaily';
+      if (phase.description?.includes('Block')) progression = 'block';
+      
+      const phaseWeeks = phase.weeks ? (phase.weeks[1] - phase.weeks[0] + 1) : 4;
+      
+      return {
+        id: isDuplicate ? `phase_${Date.now()}_${idx}` : phase.id || `phase_${idx}`,
+        name: phase.name,
+        weeks: phaseWeeks,
+        progression,
+        weeksRange: phase.weeks || [1, phaseWeeks],
+        weeklyProgression: PROGRESSION_MODELS[progression].generateWeeks(phaseWeeks),
+        weeklyTemplate: (phase.weeklyTemplate || []).map((day, dayIdx) => ({
+          day: day.day || dayIdx + 1,
+          dayName: day.dayName || `Day ${dayIdx + 1}`,
+          session: day.session || '',
+          type: day.type || 'recovery',
+          duration: day.duration || 60,
+          cardioZone: day.prescription?.hrZone || 'zone2',
+          cardioActivity: 'run',
+          exercises: (day.prescription?.exercises || []).map((ex, exIdx) => ({
+            id: `ex_${Date.now()}_${dayIdx}_${exIdx}`,
+            exerciseId: Object.keys(EXERCISE_LIBRARY).find(k => EXERCISE_LIBRARY[k].name === ex.name) || null,
+            name: ex.name,
+            sets: ex.sets || 3,
+            reps: ex.reps || '8-10',
+            intensity: ex.percentage || 70,
+            rpe: ex.rpe || 7,
+            rest: ex.rest || '2 min',
+            prKey: ex.prKey || null,
+          })),
+        })),
+      };
+    });
+    
+    setPhases(editablePhases);
+    setCurrentPhaseIdx(0);
+    setEditingProgramId(isDuplicate ? null : programId);
+    setStep('details');
+  };
+
+  // Delete a custom program
+  const deleteProgram = (programId) => {
+    setCustomPrograms(prev => {
+      const updated = { ...prev };
+      delete updated[programId];
+      return updated;
+    });
+    setShowDeleteConfirm(null);
+  };
+
+  // Reset editor to initial state
+  const resetEditor = () => {
+    setStep('type');
+    setProgramType(null);
+    setProgramName('');
+    setProgramDescription('');
+    setProgramIcon('🏋️');
+    setPhases([]);
+    setCurrentPhaseIdx(0);
+    setEditingProgramId(null);
+  };
 
   const updateDay = (dayIdx, updates) => {
     setPhases(prev => prev.map((ph, i) => i === currentPhaseIdx ? {
@@ -3343,7 +3424,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
   const saveProgram = () => {
     const finalProgram = {
-      id: `custom_${Date.now()}`,
+      id: editingProgramId || `custom_${Date.now()}`,
       name: programName,
       description: programDescription,
       icon: programIcon,
@@ -3357,7 +3438,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       })),
     };
     setCustomPrograms(prev => ({ ...prev, [finalProgram.id]: finalProgram }));
-    setStep('type'); setProgramType(null); setProgramName(''); setProgramDescription(''); setProgramIcon('🏋️'); setPhases([]); setCurrentPhaseIdx(0);
+    resetEditor();
   };
 
   const filteredExercises = Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).filter(e => exerciseFilter === 'all' || e.pattern === exerciseFilter).filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()));
@@ -3372,23 +3453,110 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
       {step === 'type' && (
         <div className="space-y-4">
-          <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to build?</h3>
+          <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to do?</h3>
+          
+          {/* Create New Options */}
           <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
-            <div className="flex items-center gap-4"><span className="text-3xl">📦</span><div><p className={`font-bold ${theme.text}`}>Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div></div>
+            <div className="flex items-center gap-4"><span className="text-3xl">📦</span><div><p className={`font-bold ${theme.text}`}>New Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div></div>
           </button>
           <button onClick={() => { setProgramType('macro'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
-            <div className="flex items-center gap-4"><span className="text-3xl">📅</span><div><p className={`font-bold ${theme.text}`}>Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div></div>
+            <div className="flex items-center gap-4"><span className="text-3xl">📅</span><div><p className={`font-bold ${theme.text}`}>New Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div></div>
           </button>
+          
+          {/* Manage Existing Programs - only show if there are custom programs */}
+          {Object.keys(customPrograms).length > 0 && (
+            <>
+              <div className={`border-t ${theme.border} my-4`} />
+              <h4 className={`font-medium ${theme.text}`}>Your Custom Programs</h4>
+              <div className="space-y-2">
+                {Object.values(customPrograms).map(prog => (
+                  <div key={prog.id} className={`${theme.card} rounded-xl p-4 border ${theme.border}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{prog.icon}</span>
+                        <div>
+                          <p className={`font-medium ${theme.text}`}>{prog.name}</p>
+                          <p className={`text-xs ${theme.textMuted}`}>
+                            {prog.phases?.length || 0} phase{prog.phases?.length !== 1 ? 's' : ''} • 
+                            {prog.phases?.reduce((sum, p) => sum + (p.weeks?.[1] - p.weeks?.[0] + 1 || 0), 0) || 0} weeks
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button 
+                          onClick={() => loadProgramForEdit(prog.id, false)} 
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-blue-500/20`}
+                          title="Edit"
+                        >
+                          <Edit3 size={16} className="text-blue-500" />
+                        </button>
+                        <button 
+                          onClick={() => loadProgramForEdit(prog.id, true)} 
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`}
+                          title="Duplicate"
+                        >
+                          <Copy size={16} className="text-purple-500" />
+                        </button>
+                        <button 
+                          onClick={() => setShowDeleteConfirm(prog.id)} 
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`}
+                          title="Delete"
+                        >
+                          <Trash2 size={16} className="text-red-500" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(null)}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-sm w-full`} onClick={e => e.stopPropagation()}>
+            <h3 className={`font-bold text-lg ${theme.text} mb-2`}>Delete Program?</h3>
+            <p className={`${theme.textMuted} mb-4`}>
+              Are you sure you want to delete "{customPrograms[showDeleteConfirm]?.name}"? This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowDeleteConfirm(null)} 
+                className={`flex-1 py-2 rounded-lg ${theme.cardAlt} ${theme.text}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => deleteProgram(showDeleteConfirm)} 
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {step === 'details' && (
         <div className="space-y-4">
-          <h3 className={`text-lg font-bold ${theme.text}`}>Program Details</h3>
+          <div className="flex items-center justify-between">
+            <h3 className={`text-lg font-bold ${theme.text}`}>
+              {editingProgramId ? 'Edit Program' : 'Program Details'}
+            </h3>
+            <button onClick={resetEditor} className={`text-sm ${theme.textMuted}`}>Cancel</button>
+          </div>
+          {editingProgramId && (
+            <div className={`${theme.cardAlt} rounded-lg p-2 text-center`}>
+              <p className={`text-xs ${theme.textMuted}`}>✏️ Editing existing program</p>
+            </div>
+          )}
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Program Name</label><input type="text" value={programName} onChange={(e) => setProgramName(e.target.value)} placeholder="e.g., Pre-Season Strength" className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Description</label><textarea value={programDescription} onChange={(e) => setProgramDescription(e.target.value)} placeholder="Brief description..." rows={2} className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{ICONS.map(icon => (<button key={icon} onClick={() => setProgramIcon(icon)} className={`text-2xl p-2 rounded-lg ${programIcon === icon ? 'bg-blue-500' : theme.cardAlt}`}>{icon}</button>))}</div></div>
-          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}>Next: Add {programType === 'meso' ? 'Phase' : 'Mesocycles'}</button>
+          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
         </div>
       )}
 
@@ -3470,6 +3638,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       {step === 'review' && (
         <div className="space-y-4">
           <h3 className={`text-lg font-bold ${theme.text}`}>Review Program</h3>
+          {editingProgramId && (
+            <div className={`${theme.cardAlt} rounded-lg p-2 text-center`}>
+              <p className={`text-xs ${theme.textMuted}`}>✏️ Updating existing program</p>
+            </div>
+          )}
           <div className={`${theme.card} rounded-xl p-5`}>
             <div className="flex items-center gap-3 mb-4"><span className="text-4xl">{programIcon}</span><div><h4 className={`text-xl font-bold ${theme.text}`}>{programName}</h4><p className={`text-sm ${theme.textMuted}`}>{programDescription}</p></div></div>
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -3478,7 +3651,12 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             </div>
             {phases.map((phase) => (<div key={phase.id} className={`${theme.cardAlt} rounded-lg p-3 mb-2`}><div className="flex justify-between items-center"><div><p className={`font-medium ${theme.text}`}>{phase.name}</p><p className={`text-xs ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}</p></div><p className={`text-sm ${theme.textMuted}`}>{phase.weeks} wks</p></div></div>))}
           </div>
-          <div className="flex gap-3"><button onClick={() => setStep('phases')} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>Edit</button><button onClick={saveProgram} className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white">Save Program</button></div>
+          <div className="flex gap-3">
+            <button onClick={() => setStep('phases')} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>Edit</button>
+            <button onClick={saveProgram} className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white">
+              {editingProgramId ? 'Update Program' : 'Save Program'}
+            </button>
+          </div>
         </div>
       )}
 
