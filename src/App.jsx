@@ -7,8 +7,16 @@ import {
   ChevronDown, ChevronUp, Edit3, Save, X as XIcon, AlertTriangle,
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
-  RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw
+  RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library
 } from 'lucide-react';
+import { TemplateUploadView } from './TemplateUpload';
+import { 
+  generateWorkoutFromTemplate, 
+  templateToProgram, 
+  checkRequiredFields,
+  getValidSubstitutes,
+  EXERCISE_LIBRARY as TEMPLATE_EXERCISE_LIBRARY 
+} from './TemplateEngine';
 
 // ============== STORAGE HOOK ==============
 const useLocalStorage = (key, initialValue) => {
@@ -2361,11 +2369,13 @@ export default function App() {
   const [readiness, setReadiness] = useLocalStorage('trainingHub_readiness', DEFAULT_READINESS);
   const [benchmarkResults, setBenchmarkResults] = useLocalStorage('trainingHub_benchmarkResults', {});
   const [customPrograms, setCustomPrograms] = useLocalStorage('trainingHub_customPrograms', {});
+  const [programTemplates, setProgramTemplates] = useLocalStorage('trainingHub_programTemplates', {});
   const [programState, setProgramState] = useLocalStorage('trainingHub_programState', { currentProgram: 'combatAlpinist', currentWeek: 1, currentDay: 1, startDate: getTodayKey() });
   const [workoutLogs, setWorkoutLogs] = useLocalStorage('trainingHub_workoutLogs', []);
   const [exerciseCompletion, setExerciseCompletion] = useState({});
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
+  const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -2380,15 +2390,63 @@ export default function App() {
     };
   }, []);
 
-  const allPrograms = { ...DEFAULT_PROGRAMS, ...customPrograms };
+  // Convert uploaded templates to programs with auto-propagated values
+  const templatePrograms = useMemo(() => {
+    const programs = {};
+    Object.entries(programTemplates).forEach(([id, templateData]) => {
+      if (templateData.program) {
+        programs[id] = templateData.program;
+      }
+    });
+    return programs;
+  }, [programTemplates, athleteProfile]);
+
+  const allPrograms = { ...DEFAULT_PROGRAMS, ...templatePrograms, ...customPrograms };
   const program = allPrograms[programState.currentProgram];
   const phase = program?.phases.find(p => programState.currentWeek >= p.weeks[0] && programState.currentWeek <= p.weeks[1]);
-  const todayWorkout = phase?.weeklyTemplate.find(w => w.day === programState.currentDay);
+  
+  // Generate today's workout with auto-propagated values
+  const todayWorkoutRaw = phase?.weeklyTemplate.find(w => w.day === programState.currentDay);
+  const todayWorkout = useMemo(() => {
+    if (!todayWorkoutRaw) return null;
+    // If it's a template-based program, apply auto-propagation
+    if (program?.isTemplate) {
+      return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, programState.currentWeek, readinessScore);
+    }
+    return todayWorkoutRaw;
+  }, [todayWorkoutRaw, athleteProfile, programState.currentWeek, readinessScore, program?.isTemplate]);
 
   // Today's readiness
   const todayReadiness = readiness.logs?.find(l => l.date === getTodayKey());
   const readinessScore = todayReadiness?.score;
   const readinessInfo = readinessScore ? getReadinessLabel(readinessScore) : null;
+
+  // Handle template upload
+  const handleTemplateUpload = ({ template, program, profileCheck }) => {
+    setProgramTemplates(prev => ({
+      ...prev,
+      [template.meta.id]: {
+        template,
+        program,
+        profileCheck,
+        uploadedAt: new Date().toISOString()
+      }
+    }));
+    setShowTemplateUpload(false);
+  };
+
+  // Delete a template
+  const deleteTemplate = (templateId) => {
+    setProgramTemplates(prev => {
+      const updated = { ...prev };
+      delete updated[templateId];
+      return updated;
+    });
+    // If currently using this template, switch to default
+    if (programState.currentProgram === templateId) {
+      setProgramState(prev => ({ ...prev, currentProgram: 'combatAlpinist', currentWeek: 1, currentDay: 1 }));
+    }
+  };
 
   useEffect(() => { if (todayWorkout) setWorkoutData(prev => ({ ...prev, duration: todayWorkout.duration })); }, [todayWorkout?.session]);
 
@@ -2828,24 +2886,47 @@ export default function App() {
             <div className="flex items-center justify-between">
               <h2 className={`text-xl font-bold ${theme.text}`}>Programs</h2>
               <div className="flex gap-2">
+                <button onClick={() => setShowTemplateUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-medium text-white"><Library size={16} />Template</button>
                 <button onClick={() => setCurrentView('programBuilder')} className="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium text-white"><Plus size={16} />Build</button>
-                <button onClick={() => setShowProgramUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium text-white"><FileUp size={16} /></button>
               </div>
             </div>
 
-            {showProgramUpload && (
-              <div className={`${theme.card} rounded-xl shadow-sm p-5 border-2 border-dashed ${theme.border}`}>
-                <h3 className={`font-semibold ${theme.text} mb-3`}>Import Program</h3>
-                <label className="block">
-                  <span className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text} cursor-pointer border ${theme.border}`}><FileUp size={18} />Select File (.json)</span>
-                  <input type="file" accept=".json" onChange={importProgram} className="hidden" />
-                </label>
-                <button onClick={() => setShowProgramUpload(false)} className={`w-full mt-3 text-sm ${theme.textMuted}`}>Cancel</button>
+            {/* Template Programs Section */}
+            {Object.keys(programTemplates).length > 0 && (
+              <div className="space-y-3">
+                <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Templates</h3>
+                {Object.entries(programTemplates).map(([id, data]) => (
+                  <div key={id} className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 border-purple-500 ${programState.currentProgram === id ? 'ring-2 ring-blue-500' : ''}`}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{data.program?.icon || '📋'}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-semibold ${theme.text}`}>{data.program?.name}</p>
+                          <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">Template</span>
+                        </div>
+                        <p className={`text-sm ${theme.textMuted} mt-1`}>{data.program?.description}</p>
+                        {data.profileCheck && !data.profileCheck.complete && (
+                          <p className="text-xs text-orange-500 mt-1">⚠️ Profile {data.profileCheck.percentComplete}% complete</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      {programState.currentProgram === id ? (
+                        <span className="flex-1 text-center py-2 text-green-500 font-medium text-sm">Active</span>
+                      ) : (
+                        <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium">Activate</button>
+                      )}
+                      <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2 bg-red-500/10 text-red-500 rounded-lg"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
+            {/* Built-in & Custom Programs Section */}
             <div className="space-y-3">
-              {Object.values(allPrograms).map(prog => (
+              <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Programs</h3>
+              {Object.values({ ...DEFAULT_PROGRAMS, ...customPrograms }).map(prog => (
                 <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">{prog.icon}</span>
@@ -2936,6 +3017,17 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Template Upload Modal */}
+      {showTemplateUpload && (
+        <TemplateUploadView
+          onUpload={handleTemplateUpload}
+          onClose={() => setShowTemplateUpload(false)}
+          athleteProfile={athleteProfile}
+          existingTemplates={programTemplates}
+          theme={theme}
+        />
+      )}
 
       {/* Bottom Nav */}
       <nav className={`fixed bottom-0 left-0 right-0 ${theme.nav} border-t px-4 py-2 safe-area-pb`}>
