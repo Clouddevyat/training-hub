@@ -3096,6 +3096,248 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
   );
 };
 
+// ============== CALENDAR VIEW COMPONENT ==============
+const CalendarView = ({ programState, setProgramState, workoutLogs, phase, program, theme, darkMode, setCurrentView }) => {
+  const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
+  const [selectedWeek, setSelectedWeek] = useState(programState.currentWeek);
+  
+  // Get total weeks in program
+  const totalWeeks = useMemo(() => {
+    if (!program?.phases) return 12;
+    return Math.max(...program.phases.map(p => p.weeks[1]));
+  }, [program?.phases]);
+  
+  // Get phase for a specific week
+  const getPhaseForWeek = (weekNum) => {
+    return program?.phases?.find(p => weekNum >= p.weeks[0] && weekNum <= p.weeks[1]);
+  };
+  
+  // Get workouts for a specific week
+  const getWorkoutsForWeek = (weekNum) => {
+    const weekPhase = getPhaseForWeek(weekNum);
+    return weekPhase?.weeklyTemplate || [];
+  };
+  
+  // Check if a workout is completed
+  const isWorkoutCompleted = (weekNum, dayNum) => {
+    return workoutLogs.some(log => 
+      log.week === weekNum && 
+      log.day === dayNum && 
+      log.programId === programState.currentProgram && 
+      log.completed
+    );
+  };
+  
+  // Jump to a specific day
+  const jumpToDay = (weekNum, dayNum) => {
+    setProgramState(prev => ({
+      ...prev,
+      currentWeek: weekNum,
+      currentDay: dayNum
+    }));
+    setCurrentView('workout');
+  };
+  
+  // Get workout type color
+  const getTypeColorLight = (type) => {
+    const colors = {
+      strength: darkMode ? 'bg-red-900/60 border-red-700' : 'bg-red-100 border-red-300',
+      aerobic: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
+      long_aerobic: darkMode ? 'bg-sky-900/60 border-sky-700' : 'bg-sky-100 border-sky-300',
+      muscular_endurance: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
+      threshold: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
+      recovery: darkMode ? 'bg-green-900/60 border-green-700' : 'bg-green-100 border-green-300',
+      rest: darkMode ? 'bg-gray-800/60 border-gray-600' : 'bg-gray-100 border-gray-300',
+    };
+    return colors[type] || (darkMode ? 'bg-slate-700/60 border-slate-600' : 'bg-slate-100 border-slate-300');
+  };
+  
+  // Render week view
+  const renderWeekView = (weekNum) => {
+    const weekWorkouts = getWorkoutsForWeek(weekNum);
+    const weekPhase = getPhaseForWeek(weekNum);
+    const isCurrentWeek = weekNum === programState.currentWeek;
+    
+    return (
+      <div key={weekNum} className={`${theme.card} rounded-xl p-4 ${isCurrentWeek ? (darkMode ? 'ring-2 ring-blue-500' : 'ring-2 ring-blue-400') : ''}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className={`font-bold ${theme.text}`}>Week {weekNum}</h3>
+            <p className={`text-xs ${theme.textMuted}`}>{weekPhase?.name || 'Unknown Phase'}</p>
+          </div>
+          {isCurrentWeek && (
+            <span className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">Current</span>
+          )}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {[1, 2, 3, 4, 5, 6, 7].map(dayNum => {
+            const workout = weekWorkouts.find(w => w.day === dayNum);
+            const isCompleted = isWorkoutCompleted(weekNum, dayNum);
+            const isCurrent = isCurrentWeek && dayNum === programState.currentDay;
+            
+            return (
+              <button
+                key={dayNum}
+                onClick={() => workout && jumpToDay(weekNum, dayNum)}
+                disabled={!workout}
+                className={`
+                  relative p-2 rounded-lg text-center transition-all min-h-[60px] flex flex-col items-center justify-center
+                  ${workout ? `border ${getTypeColorLight(workout.type)} cursor-pointer hover:opacity-80` : `${theme.cardAlt} opacity-50 cursor-default`}
+                  ${isCurrent ? 'ring-2 ring-blue-400' : ''}
+                `}
+              >
+                <span className={`text-xs font-medium ${theme.textMuted}`}>D{dayNum}</span>
+                {workout ? (
+                  <>
+                    <span className={`text-[10px] ${theme.text} mt-1 truncate w-full`}>
+                      {workout.type?.replace('_', ' ').slice(0, 6)}
+                    </span>
+                    {isCompleted && (
+                      <CheckCircle2 size={14} className="text-green-500 mt-1" />
+                    )}
+                  </>
+                ) : (
+                  <span className={`text-[10px] ${theme.textMuted} mt-1`}>Rest</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
+  // Calculate weeks to show based on view mode
+  const weeksToShow = viewMode === 'week' 
+    ? [selectedWeek] 
+    : Array.from({ length: Math.min(4, totalWeeks - selectedWeek + 1) }, (_, i) => selectedWeek + i);
+  
+  return (
+    <div className="p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className={`text-xl font-bold ${theme.text}`}>Calendar</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('week')}
+            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'week' 
+                ? 'bg-blue-500 text-white' 
+                : `${theme.cardAlt} ${theme.text}`
+            }`}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setViewMode('month')}
+            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'month' 
+                ? 'bg-blue-500 text-white' 
+                : `${theme.cardAlt} ${theme.text}`
+            }`}
+          >
+            Month
+          </button>
+        </div>
+      </div>
+      
+      {/* Week Navigation */}
+      <div className={`${theme.card} rounded-xl p-3 flex items-center justify-between`}>
+        <button
+          onClick={() => setSelectedWeek(Math.max(1, selectedWeek - (viewMode === 'week' ? 1 : 4)))}
+          disabled={selectedWeek <= 1}
+          className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+        >
+          <ChevronLeft size={20} className={theme.text} />
+        </button>
+        <div className="text-center">
+          <p className={`font-medium ${theme.text}`}>
+            {viewMode === 'week' ? `Week ${selectedWeek}` : `Weeks ${selectedWeek}-${Math.min(selectedWeek + 3, totalWeeks)}`}
+          </p>
+          <p className={`text-xs ${theme.textMuted}`}>
+            {getPhaseForWeek(selectedWeek)?.name || 'Unknown Phase'}
+          </p>
+        </div>
+        <button
+          onClick={() => setSelectedWeek(Math.min(totalWeeks, selectedWeek + (viewMode === 'week' ? 1 : 4)))}
+          disabled={selectedWeek >= totalWeeks}
+          className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+        >
+          <ChevronRight size={20} className={theme.text} />
+        </button>
+      </div>
+      
+      {/* Jump to Current */}
+      {selectedWeek !== programState.currentWeek && (
+        <button
+          onClick={() => setSelectedWeek(programState.currentWeek)}
+          className="w-full py-2 text-sm text-blue-500 hover:text-blue-400"
+        >
+          ↩ Jump to current week (Week {programState.currentWeek})
+        </button>
+      )}
+      
+      {/* Week Cards */}
+      <div className="space-y-4">
+        {weeksToShow.map(weekNum => renderWeekView(weekNum))}
+      </div>
+      
+      {/* Program Overview */}
+      <div className={`${theme.card} rounded-xl p-4`}>
+        <h3 className={`font-semibold ${theme.text} mb-3`}>Program Overview</h3>
+        <div className="space-y-2">
+          {program?.phases?.map((p, idx) => {
+            const isActive = programState.currentWeek >= p.weeks[0] && programState.currentWeek <= p.weeks[1];
+            const completedWeeks = Math.max(0, Math.min(programState.currentWeek, p.weeks[1]) - p.weeks[0] + 1);
+            const totalPhaseWeeks = p.weeks[1] - p.weeks[0] + 1;
+            const progress = programState.currentWeek > p.weeks[1] ? 100 : 
+                           programState.currentWeek < p.weeks[0] ? 0 :
+                           Math.round((completedWeeks / totalPhaseWeeks) * 100);
+            
+            return (
+              <button
+                key={idx}
+                onClick={() => setSelectedWeek(p.weeks[0])}
+                className={`w-full text-left p-3 rounded-lg ${theme.cardAlt} ${isActive ? (darkMode ? 'ring-1 ring-blue-500' : 'ring-1 ring-blue-400') : ''}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`font-medium ${theme.text}`}>{p.name}</span>
+                  <span className={`text-xs ${theme.textMuted}`}>Weeks {p.weeks[0]}-{p.weeks[1]}</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full ${isActive ? 'bg-blue-500' : progress === 100 ? 'bg-green-500' : 'bg-gray-500'}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className={`${theme.card} rounded-xl p-4`}>
+        <h3 className={`font-semibold ${theme.text} mb-3`}>Workout Types</h3>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {[
+            { type: 'strength', label: 'Strength' },
+            { type: 'aerobic', label: 'Aerobic' },
+            { type: 'long_aerobic', label: 'Long Aerobic' },
+            { type: 'threshold', label: 'Threshold' },
+            { type: 'muscular_endurance', label: 'Muscular End.' },
+            { type: 'recovery', label: 'Recovery' },
+          ].map(({ type, label }) => (
+            <div key={type} className={`flex items-center gap-2 p-2 rounded border ${getTypeColorLight(type)}`}>
+              <span className={theme.text}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============== MAIN APP ==============
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -3429,7 +3671,7 @@ export default function App() {
         {menuOpen && (
           <nav className={`absolute top-full left-0 right-0 ${theme.header} border-t border-slate-700 p-4 shadow-lg`}>
             <div className="max-w-2xl mx-auto flex flex-col gap-2">
-              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'charts', label: 'Charts & Trends', icon: LineChart }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: Calendar }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
+              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'calendar', label: 'Calendar', icon: Calendar }, { id: 'charts', label: 'Charts & Trends', icon: LineChart }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: FileText }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
                 <button key={id} onClick={() => { setCurrentView(id); setMenuOpen(false); }} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${currentView === id ? 'bg-slate-600' : 'hover:bg-slate-700'}`}><Icon size={20} /><span>{label}</span></button>
               ))}
             </div>
@@ -3669,6 +3911,20 @@ export default function App() {
           </div>
         )}
         {currentView === 'workout' && !todayWorkout && <div className="p-4"><div className={`${theme.card} rounded-xl shadow-sm p-8 text-center`}><Circle size={48} className={`mx-auto ${theme.textMuted} mb-4`} /><h2 className={`text-xl font-semibold ${theme.text}`}>No Workout</h2></div></div>}
+
+        {/* CALENDAR VIEW */}
+        {currentView === 'calendar' && (
+          <CalendarView 
+            programState={programState} 
+            setProgramState={setProgramState} 
+            workoutLogs={workoutLogs} 
+            phase={phase} 
+            program={program} 
+            theme={theme} 
+            darkMode={darkMode} 
+            setCurrentView={setCurrentView} 
+          />
+        )}
 
         {/* PROFILE VIEW */}
         {currentView === 'profile' && <AthleteProfileView profile={athleteProfile} setProfile={setAthleteProfile} theme={theme} darkMode={darkMode} />}
