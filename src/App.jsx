@@ -3289,6 +3289,23 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     { id: 'mobility', name: 'Mobility', icon: '🧘' },
     { id: 'recovery', name: 'Recovery/Off', icon: '😴' },
   ];
+  
+  const WARMUP_TEMPLATES = [
+    { id: 'none', name: 'None', description: '', duration: 0 },
+    { id: 'general', name: 'General (5 min)', description: '5 min light cardio, dynamic stretches', duration: 5 },
+    { id: 'upper', name: 'Upper Body (8 min)', description: 'Band pull-aparts, arm circles, cat-cow, thoracic rotations', duration: 8 },
+    { id: 'lower', name: 'Lower Body (8 min)', description: 'Leg swings, hip circles, goblet squats, glute bridges', duration: 8 },
+    { id: 'full', name: 'Full Body (10 min)', description: 'Light cardio, world\'s greatest stretch, inchworms, jumping jacks', duration: 10 },
+    { id: 'cardio', name: 'Cardio Prep (5 min)', description: '5 min easy pace building to workout intensity', duration: 5 },
+  ];
+  
+  const COOLDOWN_TEMPLATES = [
+    { id: 'none', name: 'None', description: '', duration: 0 },
+    { id: 'quick', name: 'Quick (3 min)', description: 'Light walking, deep breaths', duration: 3 },
+    { id: 'stretch', name: 'Static Stretch (5 min)', description: 'Hold major muscle stretches 30s each', duration: 5 },
+    { id: 'mobility', name: 'Mobility Flow (8 min)', description: '90/90 stretch, pigeon, couch stretch, foam roll', duration: 8 },
+    { id: 'yoga', name: 'Yoga Cool-down (10 min)', description: 'Child\'s pose, downward dog, supine twist, savasana', duration: 10 },
+  ];
 
   const currentPhase = phases[currentPhaseIdx];
   const totalWeeks = phases.reduce((sum, p) => sum + p.weeks, 0);
@@ -3306,7 +3323,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       progression: newPhaseProgression,
       weeksRange: [startWeek, endWeek],
       weeklyProgression,
-      weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'recovery', exercises: [], duration: 60, cardioZone: 'zone2', cardioActivity: 'run' })),
+      weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'recovery', exercises: [], duration: 60, cardioZone: 'zone2', cardioActivity: 'run', warmup: 'none', cooldown: 'none' })),
     }]);
     setNewPhaseName('');
     setNewPhaseWeeks(4);
@@ -3367,6 +3384,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
           duration: day.duration || 60,
           cardioZone: day.prescription?.hrZone || 'zone2',
           cardioActivity: 'run',
+          warmup: day.warmup || 'none',
+          cooldown: day.cooldown || 'none',
           exercises: (day.prescription?.exercises || []).map((ex, exIdx) => ({
             id: `ex_${Date.now()}_${dayIdx}_${exIdx}`,
             exerciseId: Object.keys(EXERCISE_LIBRARY).find(k => EXERCISE_LIBRARY[k].name === ex.name) || null,
@@ -3379,6 +3398,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             tempo: ex.tempo || '',
             notes: ex.notes || '',
             prKey: ex.prKey || null,
+            groupId: ex.groupId || null,
+            groupType: ex.groupType || null,
           })),
         })),
       };
@@ -3548,9 +3569,79 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     } : ph));
   };
 
-  const addExercise = (dayIdx) => {
+  const addExercise = (dayIdx, groupId = null) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '' }] });
+    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null }] });
+  };
+
+  // Create a new superset/circuit group
+  const createExerciseGroup = (dayIdx, exIdx, groupType) => {
+    const groupId = `group_${Date.now()}`;
+    updateExercise(dayIdx, exIdx, { groupId, groupType });
+  };
+
+  // Add exercise to existing group
+  const addToGroup = (dayIdx, groupId, groupType) => {
+    const day = currentPhase.weeklyTemplate[dayIdx];
+    const newExercise = { 
+      id: `ex_${Date.now()}`, 
+      exerciseId: null, 
+      name: '', 
+      sets: 3, 
+      reps: '8-10', 
+      intensity: 70, 
+      rpe: 7, 
+      rest: '0', // No rest between grouped exercises
+      tempo: '', 
+      notes: '', 
+      groupId, 
+      groupType 
+    };
+    
+    // Find last exercise in this group and insert after it
+    const lastGroupIdx = day.exercises.reduce((last, ex, idx) => ex.groupId === groupId ? idx : last, -1);
+    const newExercises = [...day.exercises];
+    newExercises.splice(lastGroupIdx + 1, 0, newExercise);
+    updateDay(dayIdx, { exercises: newExercises });
+  };
+
+  // Remove exercise from group (but keep exercise)
+  const removeFromGroup = (dayIdx, exIdx) => {
+    updateExercise(dayIdx, exIdx, { groupId: null, groupType: null, rest: '90' });
+  };
+
+  // Get grouped exercises for display
+  const getGroupedExercises = (exercises) => {
+    const groups = [];
+    const processed = new Set();
+    
+    exercises.forEach((ex, idx) => {
+      if (processed.has(idx)) return;
+      
+      if (ex.groupId) {
+        // Find all exercises in this group
+        const groupExercises = exercises
+          .map((e, i) => ({ ...e, originalIndex: i }))
+          .filter(e => e.groupId === ex.groupId);
+        
+        groupExercises.forEach(e => processed.add(e.originalIndex));
+        groups.push({
+          type: 'group',
+          groupId: ex.groupId,
+          groupType: ex.groupType,
+          exercises: groupExercises,
+        });
+      } else {
+        processed.add(idx);
+        groups.push({
+          type: 'single',
+          exercise: ex,
+          originalIndex: idx,
+        });
+      }
+    });
+    
+    return groups;
   };
 
   const updateExercise = (dayIdx, exIdx, updates) => {
@@ -3589,8 +3680,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
         id: phase.id, name: phase.name, weeks: phase.weeksRange,
         description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
         weeklyTemplate: phase.weeklyTemplate.map(day => ({
-          day: day.day, dayName: day.dayName, session: day.session, type: day.type, duration: day.duration || 60,
-          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey })) },
+          day: day.day, dayName: day.dayName, session: day.session, type: day.type, duration: day.duration || 60, warmup: day.warmup || 'none', cooldown: day.cooldown || 'none',
+          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey, groupId: ex.groupId, groupType: ex.groupType })) },
         })),
       })),
     };
@@ -3841,6 +3932,35 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
               {day.type !== 'recovery' && (
                 <>
                   <input type="text" value={day.session} onChange={(e) => updateDay(dayIdx, { session: e.target.value })} placeholder="Session name (e.g., Upper Body A)" className={`w-full p-2 rounded-lg ${theme.input} border text-sm mb-3`} />
+                  
+                  {/* Warmup/Cooldown selectors */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <label className={`text-xs ${theme.textMuted}`}>Warm-up</label>
+                      <select 
+                        value={day.warmup || 'none'} 
+                        onChange={(e) => updateDay(dayIdx, { warmup: e.target.value })}
+                        className={`w-full p-1.5 rounded-lg ${theme.input} text-xs`}
+                      >
+                        {WARMUP_TEMPLATES.map(w => (
+                          <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`text-xs ${theme.textMuted}`}>Cool-down</label>
+                      <select 
+                        value={day.cooldown || 'none'} 
+                        onChange={(e) => updateDay(dayIdx, { cooldown: e.target.value })}
+                        className={`w-full p-1.5 rounded-lg ${theme.input} text-xs`}
+                      >
+                        {COOLDOWN_TEMPLATES.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
                   {day.type === 'cardio' ? (
                     <div className="space-y-2">
                       <select value={day.cardioZone || 'zone2'} onChange={(e) => updateDay(dayIdx, { cardioZone: e.target.value })} className={`w-full p-2 rounded-lg ${theme.input} text-sm`}>{Object.values(CARDIO_ZONES).map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}</select>
@@ -3851,61 +3971,96 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {(day.exercises || []).map((ex, exIdx) => (
-                        <div key={ex.id} className={`${theme.cardAlt} rounded-lg p-3`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <button onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })} className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-blue-500'}`}>{ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}</button>
-                            <div className="flex gap-1">{ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.textMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}<button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button></div>
-                          </div>
-                          {/* Row 1: Sets, Reps, %1RM, RPE */}
-                          <div className="grid grid-cols-4 gap-2 text-xs mb-2">
-                            <div><label className={theme.textMuted}>Sets</label><input type="number" value={ex.sets} onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
-                            <div><label className={theme.textMuted}>Reps</label><input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`w-full p-1 rounded ${theme.input}`} /></div>
-                            <div><label className={theme.textMuted}>%1RM</label><input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
-                            <div><label className={theme.textMuted}>RPE</label><input type="number" value={ex.rpe} onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })} min={1} max={10} className={`w-full p-1 rounded ${theme.input}`} /></div>
-                          </div>
-                          {/* Row 2: Tempo, Rest, Notes */}
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <label className={theme.textMuted}>Tempo</label>
-                              <input 
-                                type="text" 
-                                value={ex.tempo || ''} 
-                                onChange={(e) => updateExercise(dayIdx, exIdx, { tempo: e.target.value })} 
-                                placeholder="3-1-2-0"
-                                className={`w-full p-1 rounded ${theme.input}`} 
-                              />
+                      {(day.exercises || []).map((ex, exIdx) => {
+                        const isInGroup = ex.groupId;
+                        const isFirstInGroup = isInGroup && (exIdx === 0 || day.exercises[exIdx - 1]?.groupId !== ex.groupId);
+                        const isLastInGroup = isInGroup && (exIdx === day.exercises.length - 1 || day.exercises[exIdx + 1]?.groupId !== ex.groupId);
+                        const groupColor = ex.groupType === 'superset' ? 'border-l-orange-500' : ex.groupType === 'circuit' ? 'border-l-purple-500' : '';
+                        
+                        return (
+                          <div key={ex.id} className={`${theme.cardAlt} rounded-lg p-3 ${isInGroup ? `border-l-4 ${groupColor}` : ''} ${isInGroup && !isLastInGroup ? 'mb-0 rounded-b-none' : ''} ${isInGroup && !isFirstInGroup ? 'mt-0 rounded-t-none border-t border-dashed' : ''}`}>
+                            {/* Group Header */}
+                            {isFirstInGroup && (
+                              <div className={`text-xs font-medium mb-2 flex items-center justify-between ${ex.groupType === 'superset' ? 'text-orange-500' : 'text-purple-500'}`}>
+                                <span>{ex.groupType === 'superset' ? '⚡ Superset' : '🔄 Circuit'}</span>
+                                <button onClick={() => removeFromGroup(dayIdx, exIdx)} className="text-xs opacity-70 hover:opacity-100">Remove grouping</button>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between mb-2">
+                              <button onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })} className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-blue-500'}`}>{ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}</button>
+                              <div className="flex gap-1">
+                                {ex.exerciseId && !isInGroup && (
+                                  <>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'superset')} className={`p-1 ${theme.textMuted} hover:text-orange-500`} title="Start Superset"><Zap size={14} /></button>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.textMuted} hover:text-purple-500`} title="Start Circuit"><RefreshCw size={14} /></button>
+                                  </>
+                                )}
+                                {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.textMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}
+                                <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button>
+                              </div>
                             </div>
-                            <div>
-                              <label className={theme.textMuted}>Rest (sec)</label>
-                              <select 
-                                value={ex.rest || '90'} 
-                                onChange={(e) => updateExercise(dayIdx, exIdx, { rest: e.target.value })}
-                                className={`w-full p-1 rounded ${theme.input}`}
+                            {/* Row 1: Sets, Reps, %1RM, RPE */}
+                            <div className="grid grid-cols-4 gap-2 text-xs mb-2">
+                              <div><label className={theme.textMuted}>Sets</label><input type="number" value={ex.sets} onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                              <div><label className={theme.textMuted}>Reps</label><input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                              <div><label className={theme.textMuted}>%1RM</label><input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                              <div><label className={theme.textMuted}>RPE</label><input type="number" value={ex.rpe} onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })} min={1} max={10} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                            </div>
+                            {/* Row 2: Tempo, Rest, Notes */}
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <label className={theme.textMuted}>Tempo</label>
+                                <input 
+                                  type="text" 
+                                  value={ex.tempo || ''} 
+                                  onChange={(e) => updateExercise(dayIdx, exIdx, { tempo: e.target.value })} 
+                                  placeholder="3-1-2-0"
+                                  className={`w-full p-1 rounded ${theme.input}`} 
+                                />
+                              </div>
+                              <div>
+                                <label className={theme.textMuted}>Rest {isInGroup && !isLastInGroup ? '(between)' : ''}</label>
+                                <select 
+                                  value={ex.rest || '90'} 
+                                  onChange={(e) => updateExercise(dayIdx, exIdx, { rest: e.target.value })}
+                                  className={`w-full p-1 rounded ${theme.input}`}
+                                >
+                                  <option value="0">None</option>
+                                  <option value="30">30s</option>
+                                  <option value="45">45s</option>
+                                  <option value="60">60s</option>
+                                  <option value="90">90s</option>
+                                  <option value="120">2 min</option>
+                                  <option value="180">3 min</option>
+                                  <option value="240">4 min</option>
+                                  <option value="300">5 min</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className={theme.textMuted}>Notes</label>
+                                <input 
+                                  type="text" 
+                                  value={ex.notes || ''} 
+                                  onChange={(e) => updateExercise(dayIdx, exIdx, { notes: e.target.value })} 
+                                  placeholder="Cues..."
+                                  className={`w-full p-1 rounded ${theme.input}`} 
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Add to group button */}
+                            {isLastInGroup && (
+                              <button 
+                                onClick={() => addToGroup(dayIdx, ex.groupId, ex.groupType)}
+                                className={`w-full mt-2 py-1 text-xs border border-dashed rounded ${ex.groupType === 'superset' ? 'border-orange-500/50 text-orange-500' : 'border-purple-500/50 text-purple-500'}`}
                               >
-                                <option value="30">30s</option>
-                                <option value="45">45s</option>
-                                <option value="60">60s</option>
-                                <option value="90">90s</option>
-                                <option value="120">2 min</option>
-                                <option value="180">3 min</option>
-                                <option value="240">4 min</option>
-                                <option value="300">5 min</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className={theme.textMuted}>Notes</label>
-                              <input 
-                                type="text" 
-                                value={ex.notes || ''} 
-                                onChange={(e) => updateExercise(dayIdx, exIdx, { notes: e.target.value })} 
-                                placeholder="Cues..."
-                                className={`w-full p-1 rounded ${theme.input}`} 
-                              />
-                            </div>
+                                + Add to {ex.groupType}
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <button onClick={() => addExercise(dayIdx)} className={`w-full py-2 border-2 border-dashed ${theme.border} rounded-lg text-sm ${theme.textMuted}`}><Plus size={16} className="inline mr-1" /> Add Exercise</button>
                     </div>
                   )}
