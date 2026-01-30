@@ -710,29 +710,29 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
     };
     setReadiness(prev => ({
       ...prev,
-      logs: [...(prev.logs || []).filter(l => l.date !== todayKey), entry].slice(-90) // Keep 90 days
+      logs: [...(prev.logs || []).filter(l => l.date !== todayKey), entry].slice(-90)
     }));
   };
 
-  const SliderInput = ({ label, value, onChange, min = 1, max = 5, labels }) => (
+  // Button-based rating selector
+  const RatingButtons = ({ label, value, onChange, options }) => (
     <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <label className={`text-sm font-medium ${theme.text}`}>{label}</label>
-        <span className={`font-mono font-bold ${theme.text}`}>{value}</span>
+      <label className={`text-sm font-medium ${theme.text}`}>{label}</label>
+      <div className="flex gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`flex-1 py-2 px-1 rounded-lg text-xs font-medium transition-all ${
+              value === opt.value
+                ? opt.color || 'bg-blue-500 text-white'
+                : `${theme.cardAlt} ${theme.text} hover:opacity-80`
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full"
-      />
-      {labels && (
-        <div className={`flex justify-between text-xs ${theme.textMuted}`}>
-          {labels.map((l, i) => <span key={i}>{l}</span>)}
-        </div>
-      )}
     </div>
   );
 
@@ -785,50 +785,77 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
       <div className={`${theme.card} rounded-xl shadow-sm p-5 space-y-5`}>
         <h3 className={`font-semibold ${theme.text}`}>Daily Check-in</h3>
 
-        <SliderInput
+        <RatingButtons
           label="😴 Sleep Quality"
           value={formData.sleepQuality}
           onChange={(v) => setFormData(prev => ({ ...prev, sleepQuality: v }))}
-          labels={['Poor', '', 'OK', '', 'Great']}
+          options={[
+            { value: 1, label: 'Poor', color: 'bg-red-500 text-white' },
+            { value: 2, label: 'Fair', color: 'bg-orange-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 4, label: 'Good', color: 'bg-lime-500 text-white' },
+            { value: 5, label: 'Great', color: 'bg-green-500 text-white' },
+          ]}
         />
 
         <div className="space-y-2">
           <label className={`text-sm font-medium ${theme.text}`}>🛏️ Hours of Sleep</label>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            max="14"
-            value={formData.sleepHours}
-            onChange={(e) => setFormData(prev => ({ ...prev, sleepHours: parseFloat(e.target.value) || 0 }))}
-            className={`w-full px-4 py-2 rounded-lg border ${theme.input}`}
-          />
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              min="3"
+              max="12"
+              step="0.5"
+              value={formData.sleepHours}
+              onChange={(e) => setFormData(prev => ({ ...prev, sleepHours: parseFloat(e.target.value) }))}
+              className="flex-1"
+            />
+            <span className={`font-mono font-bold text-lg w-12 text-right ${theme.text}`}>{formData.sleepHours}h</span>
+          </div>
         </div>
 
-        <SliderInput
+        <RatingButtons
           label="⚡ Energy Level"
           value={formData.energyLevel}
           onChange={(v) => setFormData(prev => ({ ...prev, energyLevel: v }))}
-          labels={['Exhausted', '', 'Normal', '', 'Energized']}
+          options={[
+            { value: 1, label: 'Dead', color: 'bg-red-500 text-white' },
+            { value: 2, label: 'Low', color: 'bg-orange-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 4, label: 'Good', color: 'bg-lime-500 text-white' },
+            { value: 5, label: 'High', color: 'bg-green-500 text-white' },
+          ]}
         />
 
-        <SliderInput
+        <RatingButtons
           label="💪 Muscle Soreness"
           value={formData.soreness}
           onChange={(v) => setFormData(prev => ({ ...prev, soreness: v }))}
-          labels={['None', '', 'Moderate', '', 'Severe']}
+          options={[
+            { value: 1, label: 'None', color: 'bg-green-500 text-white' },
+            { value: 2, label: 'Light', color: 'bg-lime-500 text-white' },
+            { value: 3, label: 'Mod', color: 'bg-yellow-500 text-white' },
+            { value: 4, label: 'Heavy', color: 'bg-orange-500 text-white' },
+            { value: 5, label: 'Severe', color: 'bg-red-500 text-white' },
+          ]}
         />
 
-        <SliderInput
+        <RatingButtons
           label="🔥 Motivation"
           value={formData.motivation}
           onChange={(v) => setFormData(prev => ({ ...prev, motivation: v }))}
-          labels={['None', '', 'OK', '', 'High']}
+          options={[
+            { value: 1, label: 'None', color: 'bg-red-500 text-white' },
+            { value: 2, label: 'Low', color: 'bg-orange-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 4, label: 'Ready', color: 'bg-lime-500 text-white' },
+            { value: 5, label: 'Fired Up', color: 'bg-green-500 text-white' },
+          ]}
         />
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <label className={`text-sm font-medium ${theme.text}`}>❤️ Resting HR (opt)</label>
+            <label className={`text-sm font-medium ${theme.text}`}>❤️ Resting HR</label>
             <input
               type="number"
               placeholder={athleteProfile.benchmarks?.restingHR?.value || 'bpm'}
@@ -838,7 +865,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
             />
           </div>
           <div className="space-y-2">
-            <label className={`text-sm font-medium ${theme.text}`}>📊 HRV (opt)</label>
+            <label className={`text-sm font-medium ${theme.text}`}>📊 HRV</label>
             <input
               type="number"
               placeholder={athleteProfile.benchmarks?.hrvBaseline?.value || 'ms'}
@@ -850,7 +877,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
         </div>
 
         <div className="space-y-2">
-          <label className={`text-sm font-medium ${theme.text}`}>📝 Notes (optional)</label>
+          <label className={`text-sm font-medium ${theme.text}`}>📝 Notes</label>
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}

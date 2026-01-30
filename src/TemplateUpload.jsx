@@ -117,14 +117,14 @@ export const TemplateUploadView = ({
           {/* Idle State - Drop Zone */}
           {uploadState === 'idle' && (
             <>
-              <div
+              <label
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                className={`block border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                   dragOver 
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-gray-300 dark:border-gray-600'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
                 }`}
               >
                 <Upload className={`mx-auto mb-3 ${theme.textMuted}`} size={40} />
@@ -134,10 +134,9 @@ export const TemplateUploadView = ({
                   type="file"
                   accept=".json"
                   onChange={handleFileSelect}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  className="hidden"
                 />
-              </div>
+              </label>
 
               <div className={`flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20`}>
                 <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
