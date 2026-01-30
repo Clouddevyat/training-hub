@@ -4438,15 +4438,40 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
 };
 
 // ============== CALENDAR VIEW COMPONENT ==============
-const CalendarView = ({ programState, setProgramState, workoutLogs, phase, program, theme, darkMode, setCurrentView }) => {
-  const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
+const CalendarView = ({ programState, setProgramState, workoutLogs, phase, program, theme, darkMode, setCurrentView, readiness }) => {
+  const [viewMode, setViewMode] = useState('week'); // 'week', 'month', or 'real'
   const [selectedWeek, setSelectedWeek] = useState(programState.currentWeek);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedDayDetails, setSelectedDayDetails] = useState(null); // For showing day details modal
   
   // Get total weeks in program
   const totalWeeks = useMemo(() => {
     if (!program?.phases) return 12;
     return Math.max(...program.phases.map(p => p.weeks[1]));
   }, [program?.phases]);
+  
+  // Calculate real date for a program week/day
+  const getDateForProgramDay = useCallback((weekNum, dayNum) => {
+    if (!programState.startDate) return null;
+    const startDate = new Date(programState.startDate);
+    const daysFromStart = ((weekNum - 1) * 7) + (dayNum - 1);
+    const targetDate = new Date(startDate);
+    targetDate.setDate(startDate.getDate() + daysFromStart);
+    return targetDate;
+  }, [programState.startDate]);
+  
+  // Get program week/day for a real date
+  const getProgramDayForDate = useCallback((date) => {
+    if (!programState.startDate) return null;
+    const startDate = new Date(programState.startDate);
+    const diffTime = date.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return null;
+    const weekNum = Math.floor(diffDays / 7) + 1;
+    const dayNum = (diffDays % 7) + 1;
+    if (weekNum > totalWeeks) return null;
+    return { week: weekNum, day: dayNum };
+  }, [programState.startDate, totalWeeks]);
   
   // Get phase for a specific week
   const getPhaseForWeek = (weekNum) => {
@@ -4467,6 +4492,42 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
       log.programId === programState.currentProgram && 
       log.completed
     );
+  };
+  
+  // Get workout log for a specific day
+  const getWorkoutLog = (weekNum, dayNum) => {
+    return workoutLogs.find(log => 
+      log.week === weekNum && 
+      log.day === dayNum && 
+      log.programId === programState.currentProgram
+    );
+  };
+  
+  // Get readiness for a specific date
+  const getReadinessForDate = (date) => {
+    const dateKey = date.toISOString().split('T')[0];
+    return readiness?.logs?.find(l => l.date === dateKey);
+  };
+  
+  // Calculate week stats
+  const getWeekStats = (weekNum) => {
+    const weekWorkouts = getWorkoutsForWeek(weekNum);
+    const plannedWorkouts = weekWorkouts.filter(w => w.type !== 'recovery' && w.type !== 'rest').length;
+    const completedWorkouts = weekWorkouts.filter(w => isWorkoutCompleted(weekNum, w.day)).length;
+    const totalDuration = workoutLogs
+      .filter(log => log.week === weekNum && log.programId === programState.currentProgram && log.completed)
+      .reduce((sum, log) => sum + (log.actual || log.duration || 0), 0);
+    const avgRPE = workoutLogs
+      .filter(log => log.week === weekNum && log.programId === programState.currentProgram && log.completed && log.rpe)
+      .reduce((acc, log, _, arr) => acc + log.rpe / arr.length, 0);
+    
+    return {
+      planned: plannedWorkouts,
+      completed: completedWorkouts,
+      percentage: plannedWorkouts > 0 ? Math.round((completedWorkouts / plannedWorkouts) * 100) : 0,
+      duration: totalDuration,
+      avgRPE: avgRPE ? avgRPE.toFixed(1) : null
+    };
   };
   
   // Jump to a specific day
@@ -4498,17 +4559,29 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   // Get short label for workout type
   const getTypeLabel = (type) => {
     const labels = {
-      strength: 'Str',
-      aerobic: 'Aero',
-      cardio: 'Aero',
-      long_aerobic: 'Long',
-      long_effort: 'Long',
+      strength: 'STR',
+      aerobic: 'AER',
+      cardio: 'AER',
+      long_aerobic: 'LNG',
+      long_effort: 'LNG',
       muscular_endurance: 'ME',
-      threshold: 'Thresh',
-      recovery: 'Recov',
-      rest: 'Rest',
+      threshold: 'THR',
+      recovery: 'REC',
+      rest: 'OFF',
     };
-    return labels[type] || type?.slice(0, 4) || '?';
+    return labels[type] || type?.slice(0, 3).toUpperCase() || '?';
+  };
+  
+  // Format date short
+  const formatDateShort = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  
+  // Get readiness color
+  const getReadinessColor = (score) => {
+    if (score >= 70) return 'text-green-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-red-500';
   };
   
   // Render week view
@@ -4516,47 +4589,89 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
     const weekWorkouts = getWorkoutsForWeek(weekNum);
     const weekPhase = getPhaseForWeek(weekNum);
     const isCurrentWeek = weekNum === programState.currentWeek;
+    const stats = getWeekStats(weekNum);
+    const weekStartDate = getDateForProgramDay(weekNum, 1);
+    const weekEndDate = getDateForProgramDay(weekNum, 7);
     
     return (
       <div key={weekNum} className={`${theme.card} rounded-xl p-4 ${isCurrentWeek ? (darkMode ? 'ring-2 ring-blue-500' : 'ring-2 ring-blue-400') : ''}`}>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className={`font-bold ${theme.text}`}>Week {weekNum}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className={`font-bold ${theme.text}`}>Week {weekNum}</h3>
+              {isCurrentWeek && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-blue-500 text-white rounded-full">Current</span>
+              )}
+            </div>
             <p className={`text-xs ${theme.textMuted}`}>{weekPhase?.name || 'Unknown Phase'}</p>
+            {weekStartDate && (
+              <p className={`text-xs ${theme.textSubtle}`}>
+                {formatDateShort(weekStartDate)} - {formatDateShort(weekEndDate)}
+              </p>
+            )}
           </div>
-          {isCurrentWeek && (
-            <span className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">Current</span>
-          )}
+          <div className="text-right">
+            <p className={`text-lg font-bold ${stats.percentage === 100 ? 'text-green-500' : stats.percentage > 0 ? 'text-blue-500' : theme.textMuted}`}>
+              {stats.percentage}%
+            </p>
+            <p className={`text-xs ${theme.textMuted}`}>{stats.completed}/{stats.planned} done</p>
+            {stats.duration > 0 && (
+              <p className={`text-xs ${theme.textSubtle}`}>{Math.floor(stats.duration / 60)}h {stats.duration % 60}m</p>
+            )}
+          </div>
         </div>
+        
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+            <div key={i} className={`text-center text-xs font-medium ${theme.textMuted}`}>{d}</div>
+          ))}
+        </div>
+        
         <div className="grid grid-cols-7 gap-1">
           {[1, 2, 3, 4, 5, 6, 7].map(dayNum => {
             const workout = weekWorkouts.find(w => w.day === dayNum);
             const isCompleted = isWorkoutCompleted(weekNum, dayNum);
             const isCurrent = isCurrentWeek && dayNum === programState.currentDay;
+            const dayDate = getDateForProgramDay(weekNum, dayNum);
+            const dayReadiness = dayDate ? getReadinessForDate(dayDate) : null;
+            const workoutLog = getWorkoutLog(weekNum, dayNum);
             
             return (
               <button
                 key={dayNum}
-                onClick={() => workout && jumpToDay(weekNum, dayNum)}
-                disabled={!workout}
+                onClick={() => {
+                  if (workoutLog || isCompleted) {
+                    setSelectedDayDetails({ weekNum, dayNum, workout, workoutLog, dayDate, dayReadiness });
+                  } else if (workout) {
+                    jumpToDay(weekNum, dayNum);
+                  }
+                }}
                 className={`
-                  relative p-2 rounded-lg text-center transition-all min-h-[60px] flex flex-col items-center justify-center
-                  ${workout ? `border ${getTypeColorLight(workout.type)} cursor-pointer hover:opacity-80` : `${theme.cardAlt} opacity-50 cursor-default`}
+                  relative p-1.5 rounded-lg text-center transition-all min-h-[56px] flex flex-col items-center justify-center
+                  ${workout ? `border ${getTypeColorLight(workout.type)} cursor-pointer hover:opacity-80` : `${theme.cardAlt} opacity-50`}
                   ${isCurrent ? 'ring-2 ring-blue-400' : ''}
                 `}
               >
-                <span className={`text-xs font-medium ${theme.textMuted}`}>D{dayNum}</span>
+                {dayDate && (
+                  <span className={`text-[10px] ${theme.textSubtle}`}>{dayDate.getDate()}</span>
+                )}
                 {workout ? (
                   <>
-                    <span className={`text-[10px] font-medium ${theme.text} mt-1`}>
+                    <span className={`text-[10px] font-bold ${theme.text}`}>
                       {getTypeLabel(workout.type)}
                     </span>
-                    {isCompleted && (
-                      <CheckCircle2 size={14} className="text-green-500 mt-1" />
-                    )}
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      {isCompleted && <CheckCircle2 size={12} className="text-green-500" />}
+                      {dayReadiness && (
+                        <span className={`text-[9px] font-bold ${getReadinessColor(dayReadiness.score)}`}>
+                          {dayReadiness.score}
+                        </span>
+                      )}
+                    </div>
                   </>
                 ) : (
-                  <span className={`text-[10px] ${theme.textMuted} mt-1`}>Rest</span>
+                  <span className={`text-[9px] ${theme.textMuted}`}>OFF</span>
                 )}
               </button>
             );
@@ -4566,20 +4681,317 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
     );
   };
   
+  // Calculate current streak
+  const calculateStreak = useMemo(() => {
+    if (!workoutLogs || workoutLogs.length === 0) return { current: 0, longest: 0 };
+    
+    // Get all completed workout dates, sorted descending
+    const completedDates = workoutLogs
+      .filter(log => log.completed && log.programId === programState.currentProgram)
+      .map(log => {
+        const date = getDateForProgramDay(log.week, log.day);
+        return date ? date.toISOString().split('T')[0] : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.localeCompare(a)); // Descending
+    
+    if (completedDates.length === 0) return { current: 0, longest: 0 };
+    
+    // Remove duplicates
+    const uniqueDates = [...new Set(completedDates)];
+    
+    // Calculate current streak (from today backwards)
+    const today = new Date().toISOString().split('T')[0];
+    let currentStreak = 0;
+    let checkDate = new Date(today);
+    
+    // Check if we trained today or yesterday to start streak
+    const todayTrained = uniqueDates.includes(today);
+    if (!todayTrained) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    while (true) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      if (uniqueDates.includes(dateStr)) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 1;
+    const sortedAsc = [...uniqueDates].sort();
+    
+    for (let i = 1; i < sortedAsc.length; i++) {
+      const prevDate = new Date(sortedAsc[i - 1]);
+      const currDate = new Date(sortedAsc[i]);
+      const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+    
+    return { current: currentStreak, longest: longestStreak };
+  }, [workoutLogs, programState.currentProgram, getDateForProgramDay]);
+  
+  // Render real calendar grid for a month
+  const renderRealCalendarGrid = () => {
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    const daysInMonth = lastDay.getDate();
+    
+    // Adjust for Monday start (0 = Monday)
+    const adjustedStart = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+    
+    // Build calendar grid
+    const calendarDays = [];
+    
+    // Empty cells before first day
+    for (let i = 0; i < adjustedStart; i++) {
+      calendarDays.push(null);
+    }
+    
+    // Actual days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const programDay = getProgramDayForDate(date);
+      const workout = programDay ? getWorkoutsForWeek(programDay.week).find(w => w.day === programDay.day) : null;
+      const isCompleted = programDay ? isWorkoutCompleted(programDay.week, programDay.day) : false;
+      const workoutLog = programDay ? getWorkoutLog(programDay.week, programDay.day) : null;
+      const dayReadiness = getReadinessForDate(date);
+      const isToday = date.toDateString() === new Date().toDateString();
+      
+      calendarDays.push({
+        date,
+        day,
+        programDay,
+        workout,
+        isCompleted,
+        workoutLog,
+        dayReadiness,
+        isToday
+      });
+    }
+    
+    return (
+      <div className={`${theme.card} rounded-xl p-4`}>
+        {/* Month navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSelectedMonth(new Date(year, month - 1, 1))}
+            className={`p-2 rounded-lg ${theme.cardAlt}`}
+          >
+            <ChevronLeft size={20} className={theme.text} />
+          </button>
+          <div className="text-center">
+            <p className={`font-bold text-lg ${theme.text}`}>
+              {selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+          <button
+            onClick={() => setSelectedMonth(new Date(year, month + 1, 1))}
+            className={`p-2 rounded-lg ${theme.cardAlt}`}
+          >
+            <ChevronRight size={20} className={theme.text} />
+          </button>
+        </div>
+        
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+            <div key={d} className={`text-center text-xs font-medium ${theme.textMuted} py-1`}>{d}</div>
+          ))}
+        </div>
+        
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarDays.map((dayData, idx) => {
+            if (!dayData) {
+              return <div key={idx} className="aspect-square" />;
+            }
+            
+            const { date, day, programDay, workout, isCompleted, workoutLog, dayReadiness, isToday } = dayData;
+            
+            return (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (programDay && (workoutLog || workout)) {
+                    setSelectedDayDetails({ 
+                      weekNum: programDay.week, 
+                      dayNum: programDay.day, 
+                      workout, 
+                      workoutLog, 
+                      dayDate: date, 
+                      dayReadiness 
+                    });
+                  }
+                }}
+                className={`
+                  aspect-square p-1 rounded-lg text-center transition-all flex flex-col items-center justify-center relative
+                  ${isToday ? 'ring-2 ring-blue-400' : ''}
+                  ${workout ? `border ${getTypeColorLight(workout.type)} cursor-pointer hover:opacity-80` : 
+                    programDay ? `${theme.cardAlt}` : `${theme.cardAlt} opacity-30`}
+                `}
+              >
+                <span className={`text-xs font-medium ${theme.text}`}>{day}</span>
+                {workout && (
+                  <span className={`text-[8px] ${theme.textMuted}`}>{getTypeLabel(workout.type)}</span>
+                )}
+                {isCompleted && (
+                  <CheckCircle2 size={10} className="text-green-500 absolute bottom-0.5 right-0.5" />
+                )}
+                {dayReadiness && (
+                  <span className={`text-[8px] absolute top-0.5 right-0.5 ${getReadinessColor(dayReadiness.score)}`}>
+                    {dayReadiness.score}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Jump to today */}
+        <button
+          onClick={() => setSelectedMonth(new Date())}
+          className="w-full mt-3 py-2 text-sm text-blue-500 hover:text-blue-400"
+        >
+          ↩ Jump to today
+        </button>
+      </div>
+    );
+  };
+  
   // Calculate weeks to show based on view mode
   const weeksToShow = viewMode === 'week' 
     ? [selectedWeek] 
-    : Array.from({ length: Math.min(4, totalWeeks - selectedWeek + 1) }, (_, i) => selectedWeek + i);
+    : viewMode === 'month' 
+      ? Array.from({ length: Math.min(4, totalWeeks - selectedWeek + 1) }, (_, i) => selectedWeek + i)
+      : [];
   
   return (
     <div className="p-4 space-y-4">
-      {/* Header */}
+      {/* Day Details Modal */}
+      {selectedDayDetails && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedDayDetails(null)}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-sm w-full max-h-[80vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className={`font-bold text-lg ${theme.text}`}>
+                  Week {selectedDayDetails.weekNum}, Day {selectedDayDetails.dayNum}
+                </h3>
+                {selectedDayDetails.dayDate && (
+                  <p className={`text-sm ${theme.textMuted}`}>
+                    {selectedDayDetails.dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setSelectedDayDetails(null)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                <XIcon size={20} className={theme.text} />
+              </button>
+            </div>
+            
+            {/* Workout Info */}
+            {selectedDayDetails.workout && (
+              <div className={`p-3 rounded-lg border ${getTypeColorLight(selectedDayDetails.workout.type)} mb-4`}>
+                <p className={`font-medium ${theme.text} capitalize`}>{selectedDayDetails.workout.type.replace('_', ' ')}</p>
+                {selectedDayDetails.workout.duration && (
+                  <p className={`text-sm ${theme.textMuted}`}>{selectedDayDetails.workout.duration} min planned</p>
+                )}
+              </div>
+            )}
+            
+            {/* Completion Status */}
+            {selectedDayDetails.workoutLog ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="text-green-500" size={20} />
+                  <span className={`font-medium ${theme.text}`}>Completed</span>
+                </div>
+                
+                {selectedDayDetails.workoutLog.actual && (
+                  <div className={`${theme.cardAlt} p-3 rounded-lg`}>
+                    <p className={`text-sm ${theme.textMuted}`}>Duration</p>
+                    <p className={`font-bold ${theme.text}`}>{selectedDayDetails.workoutLog.actual} min</p>
+                  </div>
+                )}
+                
+                {selectedDayDetails.workoutLog.rpe && (
+                  <div className={`${theme.cardAlt} p-3 rounded-lg`}>
+                    <p className={`text-sm ${theme.textMuted}`}>RPE</p>
+                    <p className={`font-bold ${theme.text}`}>{selectedDayDetails.workoutLog.rpe}/10</p>
+                  </div>
+                )}
+                
+                {selectedDayDetails.workoutLog.notes && (
+                  <div className={`${theme.cardAlt} p-3 rounded-lg`}>
+                    <p className={`text-sm ${theme.textMuted}`}>Notes</p>
+                    <p className={`text-sm ${theme.text}`}>{selectedDayDetails.workoutLog.notes}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={`${theme.cardAlt} p-4 rounded-lg text-center`}>
+                <p className={`${theme.textMuted}`}>Not yet completed</p>
+              </div>
+            )}
+            
+            {/* Readiness */}
+            {selectedDayDetails.dayReadiness && (
+              <div className={`${theme.cardAlt} p-3 rounded-lg mt-3`}>
+                <p className={`text-sm ${theme.textMuted} mb-1`}>Readiness Score</p>
+                <p className={`font-bold text-xl ${getReadinessColor(selectedDayDetails.dayReadiness.score)}`}>
+                  {selectedDayDetails.dayReadiness.score}
+                </p>
+              </div>
+            )}
+            
+            {/* Actions */}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => {
+                  jumpToDay(selectedDayDetails.weekNum, selectedDayDetails.dayNum);
+                  setSelectedDayDetails(null);
+                }}
+                className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg font-medium"
+              >
+                Go to Workout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Header with Streak */}
       <div className="flex items-center justify-between">
-        <h2 className={`text-xl font-bold ${theme.text}`}>Calendar</h2>
-        <div className="flex gap-2">
+        <div>
+          <h2 className={`text-xl font-bold ${theme.text}`}>Calendar</h2>
+          {calculateStreak.current > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              <Flame size={14} className="text-orange-500" />
+              <span className={`text-sm font-medium text-orange-500`}>{calculateStreak.current} day streak</span>
+              {calculateStreak.longest > calculateStreak.current && (
+                <span className={`text-xs ${theme.textMuted}`}>(best: {calculateStreak.longest})</span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-1">
           <button
             onClick={() => setViewMode('week')}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
               viewMode === 'week' 
                 ? 'bg-blue-500 text-white' 
                 : `${theme.cardAlt} ${theme.text}`
@@ -4589,45 +5001,57 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
           </button>
           <button
             onClick={() => setViewMode('month')}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
               viewMode === 'month' 
                 ? 'bg-blue-500 text-white' 
                 : `${theme.cardAlt} ${theme.text}`
             }`}
           >
-            Month
+            Program
+          </button>
+          <button
+            onClick={() => setViewMode('real')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              viewMode === 'real' 
+                ? 'bg-blue-500 text-white' 
+                : `${theme.cardAlt} ${theme.text}`
+            }`}
+          >
+            Calendar
           </button>
         </div>
       </div>
       
-      {/* Week Navigation */}
-      <div className={`${theme.card} rounded-xl p-3 flex items-center justify-between`}>
-        <button
-          onClick={() => setSelectedWeek(Math.max(1, selectedWeek - (viewMode === 'week' ? 1 : 4)))}
-          disabled={selectedWeek <= 1}
-          className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
-        >
-          <ChevronLeft size={20} className={theme.text} />
-        </button>
-        <div className="text-center">
-          <p className={`font-medium ${theme.text}`}>
-            {viewMode === 'week' ? `Week ${selectedWeek}` : `Weeks ${selectedWeek}-${Math.min(selectedWeek + 3, totalWeeks)}`}
-          </p>
-          <p className={`text-xs ${theme.textMuted}`}>
-            {getPhaseForWeek(selectedWeek)?.name || 'Unknown Phase'}
-          </p>
+      {/* Week Navigation - show for week and month views */}
+      {viewMode !== 'real' && (
+        <div className={`${theme.card} rounded-xl p-3 flex items-center justify-between`}>
+          <button
+            onClick={() => setSelectedWeek(Math.max(1, selectedWeek - (viewMode === 'week' ? 1 : 4)))}
+            disabled={selectedWeek <= 1}
+            className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+          >
+            <ChevronLeft size={20} className={theme.text} />
+          </button>
+          <div className="text-center">
+            <p className={`font-medium ${theme.text}`}>
+              {viewMode === 'week' ? `Week ${selectedWeek}` : `Weeks ${selectedWeek}-${Math.min(selectedWeek + 3, totalWeeks)}`}
+            </p>
+            <p className={`text-xs ${theme.textMuted}`}>
+              {getPhaseForWeek(selectedWeek)?.name || 'Unknown Phase'}
+            </p>
+          </div>
+          <button
+            onClick={() => setSelectedWeek(Math.min(totalWeeks, selectedWeek + (viewMode === 'week' ? 1 : 4)))}
+            disabled={selectedWeek >= totalWeeks}
+            className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+          >
+            <ChevronRight size={20} className={theme.text} />
+          </button>
         </div>
-        <button
-          onClick={() => setSelectedWeek(Math.min(totalWeeks, selectedWeek + (viewMode === 'week' ? 1 : 4)))}
-          disabled={selectedWeek >= totalWeeks}
-          className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
-        >
-          <ChevronRight size={20} className={theme.text} />
-        </button>
-      </div>
+      )}
       
-      {/* Jump to Current */}
-      {selectedWeek !== programState.currentWeek && (
+      {/* Jump to Current - for week/month views */}
+      {viewMode !== 'real' && selectedWeek !== programState.currentWeek && (
         <button
           onClick={() => setSelectedWeek(programState.currentWeek)}
           className="w-full py-2 text-sm text-blue-500 hover:text-blue-400"
@@ -4636,10 +5060,15 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
         </button>
       )}
       
-      {/* Week Cards */}
-      <div className="space-y-4">
-        {weeksToShow.map(weekNum => renderWeekView(weekNum))}
-      </div>
+      {/* Real Calendar Grid */}
+      {viewMode === 'real' && renderRealCalendarGrid()}
+      
+      {/* Week Cards - for week/month views */}
+      {viewMode !== 'real' && (
+        <div className="space-y-4">
+          {weeksToShow.map(weekNum => renderWeekView(weekNum))}
+        </div>
+      )}
       
       {/* Program Overview */}
       <div className={`${theme.card} rounded-xl p-4`}>
