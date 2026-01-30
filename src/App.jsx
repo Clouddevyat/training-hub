@@ -629,51 +629,294 @@ const DEFAULT_PROGRAMS = {
   combatAlpinist: {
     id: 'combatAlpinist',
     name: 'Combat Alpinist',
-    description: 'Integrated mountaineering protocol',
+    description: 'Integrated mountaineering protocol - 40 week periodized program',
     icon: '⛰️',
     isDefault: true,
+    isTemplate: false,
+    globalRules: {
+      deload_every_4th_week: true,
+      one_specialty_at_a_time: true,
+      always_return_to_base: true
+    },
+    quarterlyTesting: {
+      frequency: 'every_12_weeks',
+      tests: [
+        { name: 'AeT Drift Test', protocol: '60 min @ AeT HR, measure drift', track: ['hr_drift_percent'] },
+        { name: '5-Mile Run', protocol: 'All-out effort on flat terrain', track: ['time'] },
+        { name: 'Strength Check', protocol: 'Trap bar deadlift to heavy single', track: ['weight'] },
+        { name: 'Loaded Carry', protocol: '25% BW pack, max distance in 60 min', track: ['distance', 'vert'] }
+      ]
+    },
+    availableDetours: {
+      specialty: [
+        {
+          id: 'strength_emphasis',
+          name: 'Strength Emphasis',
+          type: 'specialty',
+          duration: { min: 4, max: 6, unit: 'weeks' },
+          when_to_use: [
+            'Strength numbers have dropped >10%',
+            'Feeling weak on heavy carries',
+            'Pre-expedition strength peak needed',
+            'Coming off long aerobic focus'
+          ],
+          sacrifice: [
+            'Long aerobic sessions reduced to maintenance',
+            'ME work paused',
+            'Expect temporary cardio regression'
+          ],
+          exit_criteria: [
+            'Hit target strength numbers',
+            'Completed 4-6 weeks',
+            'Ready to rebuild aerobic base'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Heavy Lower', type: 'strength', duration: 75, prescription: { exercises: [{ name: 'Trap Bar Deadlift', sets: 5, reps: '3', percentage: 87 }, { name: 'Back Squat', sets: 4, reps: '5', percentage: 82 }, { name: 'Bulgarian Split Squat', sets: 3, reps: '8' }] } },
+            { day: 2, session: 'Zone 2 (Short)', type: 'cardio', duration: 40, prescription: { hrZone: 'zone2', description: 'Maintenance only' } },
+            { day: 3, session: 'Heavy Upper', type: 'strength', duration: 70, prescription: { exercises: [{ name: 'Weighted Pull-Up', sets: 5, reps: '3', percentage: 90 }, { name: 'Overhead Press', sets: 4, reps: '5', percentage: 80 }, { name: 'Barbell Row', sets: 4, reps: '6' }] } },
+            { day: 4, session: 'Active Recovery', type: 'recovery', duration: 30, prescription: { description: 'Mobility and light movement' } },
+            { day: 5, session: 'Power + Accessories', type: 'strength', duration: 60, prescription: { exercises: [{ name: 'Trap Bar Deadlift', sets: 3, reps: '2', percentage: 90 }, { name: 'Weighted Dip', sets: 4, reps: '5' }, { name: 'Farmer Carry', sets: 4, reps: '40m' }] } },
+            { day: 6, session: 'Easy Hike', type: 'cardio', duration: 90, prescription: { hrZone: 'zone2', description: 'Unloaded, conversational pace' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0, prescription: { description: 'Complete rest' } }
+          ]
+        },
+        {
+          id: 'running_emphasis',
+          name: 'Running Emphasis',
+          type: 'specialty',
+          duration: { min: 4, max: 8, unit: 'weeks' },
+          when_to_use: [
+            '5-mile time has regressed',
+            'Preparing for running-heavy selection',
+            'AeT/AnT gap too wide (>15%)',
+            'Need speed work before event'
+          ],
+          sacrifice: [
+            'Heavy strength work reduced',
+            'Long loaded carries paused',
+            'Upper body maintenance only'
+          ],
+          exit_criteria: [
+            '5-mile goal time achieved',
+            'AeT/AnT gap <12%',
+            'Completed 4-8 weeks'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Tempo Run', type: 'cardio', duration: 50, prescription: { warmup: '10 min easy', mainSet: '20-30 min at tempo', cooldown: '10 min easy', hrZone: 'zone3' } },
+            { day: 2, session: 'Strength (Maintenance)', type: 'strength', duration: 45, prescription: { exercises: [{ name: 'Trap Bar Deadlift', sets: 3, reps: '5', percentage: 80 }, { name: 'Weighted Pull-Up', sets: 3, reps: '5' }] } },
+            { day: 3, session: 'Easy Run', type: 'cardio', duration: 45, prescription: { hrZone: 'zone2', description: 'Recovery pace' } },
+            { day: 4, session: 'Interval Session', type: 'cardio', duration: 55, prescription: { warmup: '15 min', mainSet: '6 x 800m at 5K pace', recovery: '400m jog', cooldown: '10 min' } },
+            { day: 5, session: 'Easy Run + Strides', type: 'cardio', duration: 40, prescription: { description: '30 min easy + 6 x 100m strides' } },
+            { day: 6, session: 'Long Run', type: 'long_effort', duration: 90, prescription: { hrZone: 'zone2', description: '75-90 min progressive' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0, prescription: { description: 'Complete rest' } }
+          ]
+        },
+        {
+          id: 'me_emphasis',
+          name: 'Muscular Endurance Peak',
+          type: 'specialty',
+          duration: { min: 3, max: 5, unit: 'weeks' },
+          when_to_use: [
+            'Event requiring sustained loaded effort',
+            'Need to peak ME before expedition',
+            'Testing max loaded capacity'
+          ],
+          sacrifice: [
+            'Max strength work paused',
+            'Running volume reduced',
+            'High fatigue accumulation expected'
+          ],
+          exit_criteria: [
+            'Hit target step count at target load',
+            'Event completed',
+            'Completed 3-5 weeks'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Gym ME Circuit', type: 'muscular_endurance', duration: 70, prescription: { description: '600-800 steps at 20-25% BW', tempo: '1 step/2 sec' } },
+            { day: 2, session: 'Zone 2', type: 'cardio', duration: 45, prescription: { hrZone: 'zone2' } },
+            { day: 3, session: 'Outdoor ME (Water Jug)', type: 'muscular_endurance', duration: 90, prescription: { description: 'Loaded uphill, dump water, descend empty', load: '20-25% BW' } },
+            { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Strength (Light)', type: 'strength', duration: 40, prescription: { exercises: [{ name: 'Trap Bar Deadlift', sets: 2, reps: '5', percentage: 75 }] } },
+            { day: 6, session: 'Peak ME Test', type: 'muscular_endurance', duration: 120, prescription: { description: 'Max steps at target load, or long loaded hike' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        }
+      ],
+      life: [
+        {
+          id: 'post_injury',
+          name: 'Post-Injury Return',
+          type: 'life',
+          duration: { min: 2, max: 8, unit: 'weeks' },
+          when_to_use: [
+            'Returning from injury',
+            'Medical clearance received',
+            'Pain-free in daily activities'
+          ],
+          exit_criteria: [
+            'Full ROM restored',
+            'No pain during training',
+            'Cleared for full intensity'
+          ],
+          notes: [
+            'Start at 50% of previous volume',
+            'Progress 10-15% per week if asymptomatic',
+            'Prioritize movement quality over load'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Movement Assessment', type: 'strength', duration: 45, prescription: { description: 'Light load, assess ROM and pain' } },
+            { day: 2, session: 'Easy Cardio', type: 'cardio', duration: 30, prescription: { hrZone: 'zone1', description: 'Walking or cycling' } },
+            { day: 3, session: 'Rehab + Light Strength', type: 'strength', duration: 40, prescription: { description: 'Focus on weak links' } },
+            { day: 4, session: 'Rest or Mobility', type: 'recovery', duration: 20 },
+            { day: 5, session: 'Progressive Load Test', type: 'strength', duration: 45, prescription: { description: 'Gradually increase load, stop at discomfort' } },
+            { day: 6, session: 'Easy Hike', type: 'cardio', duration: 60, prescription: { hrZone: 'zone1', description: 'Unloaded, flat terrain' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'mental_reset',
+          name: 'Mental Reset',
+          type: 'life',
+          duration: { min: 1, max: 3, unit: 'weeks' },
+          when_to_use: [
+            'Burnout symptoms present',
+            'Motivation at zero',
+            'Life stress overwhelming',
+            'Dreading every workout'
+          ],
+          exit_criteria: [
+            'Excitement to train returns',
+            'Stress levels manageable',
+            'Completed minimum 1 week'
+          ],
+          notes: [
+            'No structured training required',
+            'Move only if it feels good',
+            'Focus on sleep and nutrition',
+            'Social activity encouraged'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'Only if desired - walk, swim, play' } },
+            { day: 2, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'No obligation' } },
+            { day: 3, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'Listen to your body' } },
+            { day: 4, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'Rest if needed' } },
+            { day: 5, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'Enjoy movement' } },
+            { day: 6, session: 'Optional Movement', type: 'recovery', duration: 30, prescription: { description: 'Outdoor time encouraged' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'field_maintenance',
+          name: 'Field/Deployment Maintenance',
+          type: 'life',
+          duration: { min: 1, max: 52, unit: 'weeks' },
+          when_to_use: [
+            'Deployed with limited equipment',
+            'Extended field exercise',
+            'Travel with minimal gym access'
+          ],
+          exit_criteria: [
+            'Return to normal training environment',
+            'Full equipment access restored'
+          ],
+          notes: [
+            'Maintain what you can',
+            'Bodyweight + running focus',
+            'Accept some detraining'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Bodyweight Strength', type: 'strength', duration: 30, prescription: { exercises: [{ name: 'Push-ups', sets: 4, reps: 'max' }, { name: 'Pull-ups', sets: 4, reps: 'max' }, { name: 'Lunges', sets: 3, reps: '20' }, { name: 'Plank', sets: 3, reps: '60s' }] } },
+            { day: 2, session: 'Run', type: 'cardio', duration: 30, prescription: { description: 'Easy to moderate' } },
+            { day: 3, session: 'Bodyweight Circuit', type: 'conditioning', duration: 25, prescription: { description: 'AMRAP style' } },
+            { day: 4, session: 'Rest or Walk', type: 'recovery', duration: 20 },
+            { day: 5, session: 'Bodyweight Strength', type: 'strength', duration: 30, prescription: { description: 'Same as Day 1' } },
+            { day: 6, session: 'Long Walk/Ruck', type: 'cardio', duration: 60, prescription: { description: 'Whatever load available' } },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'taper',
+          name: 'Pre-Event Taper',
+          type: 'life',
+          duration: { min: 1, max: 2, unit: 'weeks' },
+          when_to_use: [
+            '1-2 weeks before major event',
+            'Selection course starting',
+            'Expedition departure'
+          ],
+          exit_criteria: [
+            'Event begins'
+          ],
+          notes: [
+            'Reduce volume 40-60%',
+            'Maintain intensity on key sessions',
+            'Prioritize sleep and nutrition',
+            'Stay sharp, arrive fresh'
+          ],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Light Strength', type: 'strength', duration: 35, prescription: { description: '60% volume, maintain intensity' } },
+            { day: 2, session: 'Easy Run', type: 'cardio', duration: 25, prescription: { hrZone: 'zone2' } },
+            { day: 3, session: 'Short Intervals', type: 'cardio', duration: 30, prescription: { description: '4 x 2 min hard, stay sharp' } },
+            { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+            { day: 5, session: 'Shakeout', type: 'cardio', duration: 20, prescription: { description: 'Easy movement + strides' } },
+            { day: 6, session: 'Rest', type: 'recovery', duration: 0 },
+            { day: 7, session: 'Event or Travel', type: 'recovery', duration: 0 }
+          ]
+        }
+      ]
+    },
     phases: [
       {
         id: 'foundation', name: 'Foundation', weeks: [1, 16],
         description: 'Build aerobic engine, maintain strength. 80% Zone 1-2.',
+        exitCriteria: ['AeT HR drift <5%', '5-mile under 36:00', 'Strength maintained'],
         weeklyTemplate: [
-          { day: 1, dayName: 'Day 1', session: 'Strength A', type: 'strength', duration: 60, prescription: { warmup: '10 min easy cardio + dynamic stretching', exercises: [ { name: 'Trap Bar Deadlift', sets: 4, reps: '3-5', rest: '3 min', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up (each leg)', sets: 4, reps: '3-5', rest: '3 min', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedDip', percentage: 85 } ], cooldown: '5 min walk + static stretching', intensity: '85% 1RM - leave 1-2 reps in tank' } },
-          { day: 2, dayName: 'Day 2', session: 'Zone 2 Run', type: 'cardio', duration: 70, prescription: { description: 'Easy conversational pace', hrZone: 'zone2', notes: ['Nasal breathing preferred', 'If HR drifts up, slow down'], intensity: 'Zone 2' } },
-          { day: 3, dayName: 'Day 3', session: 'Zone 2 + Mobility', type: 'cardio', duration: 55, prescription: { description: '30-40 min easy aerobic + 15-20 min mobility', hrZone: 'zone2', exercises: [ { name: 'Pigeon Pose', duration: '2 min each side' }, { name: 'Cat-Cow', reps: 20 }, { name: 'Thread the Needle', reps: '10 each side' }, { name: "Child's Pose", duration: '2 min' }, { name: "World's Greatest Stretch", reps: '5 each side' } ], intensity: 'Zone 1-2' } },
-          { day: 4, dayName: 'Day 4', session: 'Threshold Intervals', type: 'cardio', duration: 45, prescription: { warmup: '10 min easy jog', mainSet: '4 x 8 min at Aerobic Threshold', recovery: '2 min easy jog between', hrZone: 'zone3', cooldown: '5-10 min easy jog', intensity: 'Zone 3-4', notes: ['Comfortably hard', 'HR at AeT'] } },
-          { day: 5, dayName: 'Day 5', session: 'Strength B', type: 'strength', duration: 60, prescription: { warmup: '10 min easy cardio + dynamic stretching', exercises: [ { name: 'Trap Bar Deadlift', sets: 4, reps: '3-5', rest: '3 min', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up (each leg)', sets: 4, reps: '3-5', rest: '3 min', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedDip', percentage: 85 } ], accessory: [ { name: 'Face Pulls', sets: 2, reps: 15 }, { name: 'Pallof Press', sets: 2, reps: 15 } ], cooldown: '5 min walk', intensity: '85% 1RM' } },
-          { day: 6, dayName: 'Day 6', session: 'Long Aerobic', type: 'long_effort', duration: 150, prescription: { description: 'Long Zone 1-2 effort', hrZone: 'zone2', options: ['Long hike', 'Long run', 'Combo'], nutrition: '30-60g carbs/hr after first hour', hydration: '16-24 oz/hr', intensity: 'Zone 1-2', progression: { 'Weeks 1-4': '2 hours', 'Weeks 5-8': '2.5 hours', 'Weeks 9-12': '2.5-3 hours', 'Weeks 13-16': '3+ hours' } } },
-          { day: 7, dayName: 'Day 7', session: 'Active Recovery', type: 'recovery', duration: 30, prescription: { description: 'Very easy movement or complete rest', hrZone: 'zone1', options: ['Easy walk', 'Light yoga', 'Swimming', 'Foam rolling'], intensity: 'Zone 1 or rest', notes: ['This is NOT a workout'] } }
+          { day: 1, session: 'Strength A', type: 'strength', duration: 60, prescription: { warmup: '10 min easy cardio + dynamic stretching', exercises: [{ name: 'Trap Bar Deadlift', sets: 4, reps: '3-5', rest: '3 min', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up', sets: 4, reps: '3-5 each', rest: '3 min', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 4, reps: '3-5', rest: '3 min', prKey: 'weightedDip', percentage: 85 }], cooldown: '5 min walk', intensity: '85% 1RM' } },
+          { day: 2, session: 'Zone 2 Run', type: 'cardio', duration: 70, prescription: { description: 'Easy conversational pace', hrZone: 'zone2', notes: ['Nasal breathing preferred', 'If HR drifts up, slow down'] } },
+          { day: 3, session: 'Zone 2 + Mobility', type: 'cardio', duration: 55, prescription: { description: '30-40 min easy + 15-20 min mobility', hrZone: 'zone2' } },
+          { day: 4, session: 'Threshold Intervals', type: 'cardio', duration: 45, prescription: { warmup: '10 min easy', mainSet: '4 x 8 min at AeT', recovery: '2 min jog', hrZone: 'zone3', cooldown: '5-10 min easy' } },
+          { day: 5, session: 'Strength B', type: 'strength', duration: 60, prescription: { warmup: '10 min easy cardio', exercises: [{ name: 'Trap Bar Deadlift', sets: 4, reps: '3-5', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up', sets: 4, reps: '3-5 each', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 4, reps: '3-5', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 4, reps: '3-5', prKey: 'weightedDip', percentage: 85 }], accessory: [{ name: 'Face Pulls', sets: 2, reps: 15 }, { name: 'Pallof Press', sets: 2, reps: 15 }], cooldown: '5 min walk' } },
+          { day: 6, session: 'Long Aerobic', type: 'long_effort', duration: 150, prescription: { description: 'Long Zone 1-2 effort', hrZone: 'zone2', options: ['Long hike', 'Long run', 'Combo'], nutrition: '30-60g carbs/hr after first hour' } },
+          { day: 7, session: 'Active Recovery', type: 'recovery', duration: 30, prescription: { description: 'Very easy movement or complete rest', options: ['Easy walk', 'Light yoga', 'Swimming', 'Foam rolling'] } }
         ],
-        benchmarks: [ { name: 'AeT HR Drift', target: '<5%', key: 'aetDrift' }, { name: '5-Mile Run', target: '<36:00', key: 'fiveMileTime' }, { name: 'Strength', target: 'Maintained', key: 'strengthMaintenance' } ]
+        benchmarks: [{ name: 'AeT HR Drift', target: '<5%' }, { name: '5-Mile Run', target: '<36:00' }, { name: 'Strength', target: 'Maintained' }]
       },
       {
         id: 'conversion', name: 'Conversion', weeks: [17, 28],
-        description: 'Convert strength to muscular endurance.',
+        description: 'Convert strength to muscular endurance. Introduce loaded carries.',
+        exitCriteria: ['600 steps @ 20% BW', '5-mile under 34:00', 'AeT/AnT gap <12%'],
         weeklyTemplate: [
-          { day: 1, dayName: 'Day 1', session: 'Strength (Reduced)', type: 'strength', duration: 45, prescription: { warmup: '10 min easy cardio', exercises: [ { name: 'Trap Bar Deadlift', sets: 3, reps: '3-5', rest: '3 min', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up', sets: 3, reps: '3-5', rest: '3 min', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 3, reps: '3-5', rest: '3 min', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 3, reps: '3-5', rest: '3 min', prKey: 'weightedDip', percentage: 85 } ], intensity: 'Maintenance only' } },
-          { day: 2, dayName: 'Day 2', session: 'Zone 2 Run', type: 'cardio', duration: 60, prescription: { description: 'Easy recovery-pace run', hrZone: 'zone2', intensity: 'Zone 2' } },
-          { day: 3, dayName: 'Day 3', session: 'Gym ME Session', type: 'muscular_endurance', duration: 70, prescription: { warmup: '10 min easy cardio', description: 'Continuous circuit, minimal rest', exercises: [ { name: 'Box Step-Up' }, { name: 'Walking Lunge' }, { name: 'Split Squat' }, { name: 'Heel Touch' } ], tempo: '1 rep every 2 seconds', loadType: 'bodyweight_percentage', progression: { 'Weeks 17-20': { load: 0, steps: 400 }, 'Weeks 21-24': { load: 10, steps: 500 }, 'Weeks 25-28': { load: 20, steps: 600 } } } },
-          { day: 4, dayName: 'Day 4', session: 'Zone 2 + Mobility', type: 'cardio', duration: 45, prescription: { description: '30 min easy + 15 min mobility', hrZone: 'zone2' } },
-          { day: 5, dayName: 'Day 5', session: 'Threshold Intervals', type: 'cardio', duration: 45, prescription: { warmup: '10 min building', mainSet: '5 x 6 min at tempo', recovery: '2 min jog', hrZone: 'zone3', cooldown: '5-10 min easy' } },
-          { day: 6, dayName: 'Day 6', session: 'Outdoor ME (Water Jug)', type: 'muscular_endurance', duration: 90, prescription: { description: 'THE WATER JUG PROTOCOL', steps: ['Fill pack to target weight', 'Find steep terrain 30%+', 'Hike up 60-90 min', 'DUMP WATER at top', 'Descend empty'], loadType: 'bodyweight_percentage', progression: { 'Weeks 17-20': { load: 15, duration: 60 }, 'Weeks 21-24': { load: 20, duration: 75 }, 'Weeks 25-28': { load: 25, duration: 90 } } } },
-          { day: 7, dayName: 'Day 7', session: 'Active Recovery', type: 'recovery', duration: 30, prescription: { description: 'Easy movement or rest', hrZone: 'zone1' } }
+          { day: 1, session: 'Strength (Reduced)', type: 'strength', duration: 45, prescription: { warmup: '10 min easy', exercises: [{ name: 'Trap Bar Deadlift', sets: 3, reps: '3-5', prKey: 'trapBarDeadlift', percentage: 85 }, { name: 'Box Step-Up', sets: 3, reps: '3-5 each', prKey: 'boxStepUp', percentage: 100 }, { name: 'Weighted Pull-Up', sets: 3, reps: '3-5', prKey: 'weightedPullUp', percentage: 85 }, { name: 'Dip', sets: 3, reps: '3-5', prKey: 'weightedDip', percentage: 85 }], intensity: 'Maintenance only' } },
+          { day: 2, session: 'Zone 2 Run', type: 'cardio', duration: 60, prescription: { description: 'Easy recovery-pace run', hrZone: 'zone2' } },
+          { day: 3, session: 'Gym ME Session', type: 'muscular_endurance', duration: 70, prescription: { warmup: '10 min easy', description: 'Continuous circuit, minimal rest', exercises: [{ name: 'Box Step-Up' }, { name: 'Walking Lunge' }, { name: 'Split Squat' }, { name: 'Heel Touch' }], tempo: '1 rep every 2 seconds' } },
+          { day: 4, session: 'Zone 2 + Mobility', type: 'cardio', duration: 45, prescription: { description: '30 min easy + 15 min mobility', hrZone: 'zone2' } },
+          { day: 5, session: 'Threshold Intervals', type: 'cardio', duration: 45, prescription: { warmup: '10 min building', mainSet: '5 x 6 min at tempo', recovery: '2 min jog', hrZone: 'zone3', cooldown: '5-10 min easy' } },
+          { day: 6, session: 'Outdoor ME (Water Jug)', type: 'muscular_endurance', duration: 90, prescription: { description: 'THE WATER JUG PROTOCOL', steps: ['Fill pack to target weight', 'Find steep terrain 30%+', 'Hike up 60-90 min', 'DUMP WATER at top', 'Descend empty'] } },
+          { day: 7, session: 'Active Recovery', type: 'recovery', duration: 30, prescription: { description: 'Easy movement or rest', hrZone: 'zone1' } }
         ],
-        benchmarks: [ { name: 'Gym ME', target: '600 steps @ 20% BW', key: 'gymME' }, { name: '5-Mile', target: '<34:00', key: 'fiveMileTime' }, { name: 'AeT/AnT Gap', target: '<12%', key: 'thresholdGap' } ]
+        benchmarks: [{ name: 'Gym ME', target: '600 steps @ 20% BW' }, { name: '5-Mile', target: '<34:00' }, { name: 'AeT/AnT Gap', target: '<12%' }]
       },
       {
         id: 'specificity', name: 'Specificity', weeks: [29, 40],
-        description: 'Expedition simulation. Peak loads.',
+        description: 'Expedition simulation. Peak loads. Sawtooth training.',
+        exitCriteria: ['1000 ft/hr @ 25% BW', '5-mile under 32:00', 'AeT/AnT gap <10%'],
         weeklyTemplate: [
-          { day: 1, dayName: 'Day 1', session: 'Strength (Minimal)', type: 'strength', duration: 40, prescription: { exercises: [ { name: 'Trap Bar Deadlift', sets: 3, reps: '3-5', rest: '3 min', prKey: 'trapBarDeadlift', percentage: 82 }, { name: 'Weighted Pull-Up', sets: 3, reps: '3-5', rest: '3 min', prKey: 'weightedPullUp', percentage: 82 } ], intensity: '80-85% 1RM' } },
-          { day: 2, dayName: 'Day 2', session: 'Zone 2 Run', type: 'cardio', duration: 55, prescription: { description: 'Easy recovery', hrZone: 'zone2' } },
-          { day: 3, dayName: 'Day 3', session: 'Peak ME Session', type: 'muscular_endurance', duration: 75, prescription: { description: 'Circuit at peak load', target: '800-1000 steps', loadType: 'bodyweight_percentage', load: 25, tempo: '1 step/2 sec' } },
-          { day: 4, dayName: 'Day 4', session: 'Off or Mobility', type: 'recovery', duration: 30, prescription: { description: 'TRUE RECOVERY - needed for sawtooth', options: ['Complete rest', 'Light mobility'] } },
-          { day: 5, dayName: 'Day 5', session: 'Tempo Run', type: 'cardio', duration: 45, prescription: { warmup: '10 min building', mainSet: '3 x 1 mile at goal pace', recovery: '2-3 min jog', cooldown: '10 min easy', intensity: 'Goal 5-mile pace (6:24/mi for 32:00)' } },
-          { day: 6, dayName: 'Day 6', session: 'Sawtooth Day 1', type: 'long_effort', duration: 300, prescription: { description: 'LONG LOADED EFFORT', loadType: 'bodyweight_percentage', load: 27, duration: '4-6 hours', benchmark: '1000 ft/hr in Zone 2', nutrition: '60-90g carbs/hr', hydration: '16-24 oz/hr' } },
-          { day: 7, dayName: 'Day 7', session: 'Sawtooth Day 2', type: 'long_effort', duration: 150, prescription: { description: 'BACK-TO-BACK fatigue resistance', loadType: 'bodyweight_percentage', load: 15, duration: '2-3 hours', hrZone: 'zone2' } }
+          { day: 1, session: 'Strength (Minimal)', type: 'strength', duration: 40, prescription: { exercises: [{ name: 'Trap Bar Deadlift', sets: 3, reps: '3-5', prKey: 'trapBarDeadlift', percentage: 82 }, { name: 'Weighted Pull-Up', sets: 3, reps: '3-5', prKey: 'weightedPullUp', percentage: 82 }], intensity: '80-85% 1RM' } },
+          { day: 2, session: 'Zone 2 Run', type: 'cardio', duration: 55, prescription: { description: 'Easy recovery', hrZone: 'zone2' } },
+          { day: 3, session: 'Peak ME Session', type: 'muscular_endurance', duration: 75, prescription: { description: 'Circuit at peak load', target: '800-1000 steps', load: '25% BW', tempo: '1 step/2 sec' } },
+          { day: 4, session: 'Off or Mobility', type: 'recovery', duration: 30, prescription: { description: 'TRUE RECOVERY - needed for sawtooth', options: ['Complete rest', 'Light mobility'] } },
+          { day: 5, session: 'Tempo Run', type: 'cardio', duration: 45, prescription: { warmup: '10 min building', mainSet: '3 x 1 mile at goal pace', recovery: '2-3 min jog', cooldown: '10 min easy' } },
+          { day: 6, session: 'Sawtooth Day 1', type: 'long_effort', duration: 300, prescription: { description: 'LONG LOADED EFFORT', load: '27% BW', duration: '4-6 hours', benchmark: '1000 ft/hr in Zone 2', nutrition: '60-90g carbs/hr' } },
+          { day: 7, session: 'Sawtooth Day 2', type: 'long_effort', duration: 150, prescription: { description: 'BACK-TO-BACK fatigue resistance', load: '15% BW', duration: '2-3 hours', hrZone: 'zone2' } }
         ],
-        benchmarks: [ { name: 'Vertical Rate', target: '1000 ft/hr @ 25% BW', key: 'verticalRate' }, { name: '5-Mile', target: '<32:00', key: 'fiveMileTime' }, { name: 'AeT/AnT Gap', target: '<10%', key: 'thresholdGap' } ]
+        benchmarks: [{ name: 'Vertical Rate', target: '1000 ft/hr @ 25% BW' }, { name: '5-Mile', target: '<32:00' }, { name: 'AeT/AnT Gap', target: '<10%' }]
       }
     ]
   }
