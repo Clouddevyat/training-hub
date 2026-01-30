@@ -3277,6 +3277,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewWeek, setPreviewWeek] = useState(1);
   const [showCopyDayPicker, setShowCopyDayPicker] = useState(null); // { sourceDayIdx: number }
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importError, setImportError] = useState('');
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3310,6 +3313,24 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   };
 
   const removePhase = (idx) => setPhases(prev => prev.filter((_, i) => i !== idx));
+
+  // Duplicate a phase
+  const duplicatePhase = (idx) => {
+    const sourcePhase = phases[idx];
+    const newPhase = {
+      ...sourcePhase,
+      id: `phase_${Date.now()}`,
+      name: `${sourcePhase.name} (Copy)`,
+      weeklyTemplate: sourcePhase.weeklyTemplate.map(day => ({
+        ...day,
+        exercises: (day.exercises || []).map(ex => ({
+          ...ex,
+          id: `ex_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        })),
+      })),
+    };
+    setPhases(prev => [...prev, newPhase]);
+  };
 
   // Load a program into the editor for editing or duplicating
   const loadProgramForEdit = (programId, isDuplicate = false) => {
@@ -3390,6 +3411,69 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     setCurrentPhaseIdx(0);
     setEditingProgramId(null);
     setShowPreview(false);
+  };
+
+  // Export a program to JSON
+  const exportProgram = (programId) => {
+    const program = customPrograms[programId];
+    if (!program) return;
+    
+    const exportData = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      program: program,
+    };
+    
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${program.name.replace(/[^a-z0-9]/gi, '_')}_program.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Import a program from JSON
+  const importProgram = () => {
+    try {
+      setImportError('');
+      const data = JSON.parse(importText);
+      
+      // Validate structure
+      if (!data.program || !data.program.name) {
+        throw new Error('Invalid program file: missing program data');
+      }
+      
+      // Create new program with fresh ID
+      const importedProgram = {
+        ...data.program,
+        id: `custom_${Date.now()}`,
+        name: `${data.program.name} (Imported)`,
+      };
+      
+      setCustomPrograms(prev => ({ ...prev, [importedProgram.id]: importedProgram }));
+      setShowImportModal(false);
+      setImportText('');
+    } catch (err) {
+      setImportError(err.message || 'Failed to parse JSON');
+    }
+  };
+
+  // Handle file upload for import
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImportText(event.target?.result || '');
+      setImportError('');
+    };
+    reader.onerror = () => setImportError('Failed to read file');
+    reader.readAsText(file);
   };
 
   // Copy a day's template to another day
@@ -3526,7 +3610,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
       {step === 'type' && (
         <div className="space-y-4">
-          <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to do?</h3>
+          <div className="flex items-center justify-between">
+            <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to do?</h3>
+            <button 
+              onClick={() => setShowImportModal(true)} 
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg ${theme.cardAlt} text-sm ${theme.text}`}
+            >
+              <Upload size={14} /> Import
+            </button>
+          </div>
           
           {/* Create New Options */}
           <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
@@ -3571,6 +3663,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                           <Copy size={16} className="text-purple-500" />
                         </button>
                         <button 
+                          onClick={() => exportProgram(prog.id)} 
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-green-500/20`}
+                          title="Export"
+                        >
+                          <Download size={16} className="text-green-500" />
+                        </button>
+                        <button 
                           onClick={() => setShowDeleteConfirm(prog.id)} 
                           className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`}
                           title="Delete"
@@ -3613,6 +3712,59 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
         </div>
       )}
 
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setShowImportModal(false); setImportText(''); setImportError(''); }}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-md w-full`} onClick={e => e.stopPropagation()}>
+            <h3 className={`font-bold text-lg ${theme.text} mb-2`}>Import Program</h3>
+            <p className={`text-sm ${theme.textMuted} mb-4`}>
+              Upload a .json file or paste the program JSON below.
+            </p>
+            
+            {/* File Upload */}
+            <label className={`block w-full py-3 px-4 mb-3 rounded-lg border-2 border-dashed ${theme.border} text-center cursor-pointer hover:border-blue-500`}>
+              <input 
+                type="file" 
+                accept=".json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+              <Upload size={20} className={`mx-auto mb-1 ${theme.textMuted}`} />
+              <span className={`text-sm ${theme.textMuted}`}>Click to upload .json file</span>
+            </label>
+            
+            {/* Or paste JSON */}
+            <textarea 
+              value={importText} 
+              onChange={(e) => { setImportText(e.target.value); setImportError(''); }}
+              placeholder='{"version": 1, "program": {...}}'
+              rows={5}
+              className={`w-full p-3 rounded-lg ${theme.input} border text-sm font-mono mb-3`}
+            />
+            
+            {importError && (
+              <p className="text-red-500 text-sm mb-3">{importError}</p>
+            )}
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowImportModal(false); setImportText(''); setImportError(''); }} 
+                className={`flex-1 py-2 rounded-lg ${theme.cardAlt} ${theme.text}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={importProgram}
+                disabled={!importText.trim()}
+                className={`flex-1 py-2 rounded-lg font-medium ${importText.trim() ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {step === 'details' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -3640,7 +3792,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between">
                 <div><p className={`font-medium ${theme.text}`}>{phase.name}</p><p className={`text-sm ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}</p></div>
-                <div className="flex gap-2"><button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm">Edit Days</button><button onClick={() => removePhase(idx)} className="px-3 py-1 bg-red-500/20 text-red-500 rounded-lg text-sm"><Trash2 size={16} /></button></div>
+                <div className="flex gap-1">
+                  <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs">Edit</button>
+                  <button onClick={() => duplicatePhase(idx)} className={`p-1 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`} title="Duplicate Phase"><Copy size={16} className="text-purple-500" /></button>
+                  <button onClick={() => removePhase(idx)} className={`p-1 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`} title="Delete Phase"><Trash2 size={16} className="text-red-500" /></button>
+                </div>
               </div>
             </div>
           ))}
