@@ -2781,10 +2781,23 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
     ? calculateWorkingWeight(profile.prs[exercise.prKey].value, exercise.percentage) : null;
   const prValue = exercise.prKey ? profile.prs?.[exercise.prKey]?.value : null;
   
-  // Find the pattern for this exercise
-  const originalExerciseId = Object.keys(EXERCISE_LIBRARY).find(k => 
-    EXERCISE_LIBRARY[k].name === exercise.name || k === exercise.name?.toLowerCase().replace(/\s+/g, '')
-  );
+  // Find the pattern for this exercise - improved lookup with name normalization
+  const normalizeExerciseName = (name) => {
+    if (!name) return '';
+    return name.toLowerCase()
+      .replace(/weighted\s*/i, '')  // Remove "weighted" prefix
+      .replace(/[-\s]+/g, '_')      // Convert spaces/hyphens to underscores
+      .replace(/_+/g, '_')          // Collapse multiple underscores
+      .replace(/^_|_$/g, '');       // Trim leading/trailing underscores
+  };
+  
+  const normalizedName = normalizeExerciseName(exercise.name);
+  const originalExerciseId = Object.keys(EXERCISE_LIBRARY).find(k => {
+    const libEx = EXERCISE_LIBRARY[k];
+    return k === normalizedName || 
+           normalizeExerciseName(libEx.name) === normalizedName ||
+           libEx.name === exercise.name;
+  });
   const exerciseData = EXERCISE_LIBRARY[originalExerciseId];
   const pattern = exerciseData?.pattern;
   const patternInfo = MOVEMENT_PATTERNS[pattern];
