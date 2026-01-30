@@ -7,9 +7,11 @@ import {
   ChevronDown, ChevronUp, Edit3, Save, X as XIcon, AlertTriangle,
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
-  RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library
+  RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
+  Cloud, CloudOff, Loader
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
+import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud } from './useCloudSync';
 import { 
   generateWorkoutFromTemplate, 
   templateToProgram, 
@@ -4176,29 +4178,48 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useLocalStorage('trainingHub_darkMode', window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const [athleteProfile, setAthleteProfile] = useLocalStorage('trainingHub_athleteProfile', DEFAULT_ATHLETE_PROFILE);
-  const [readiness, setReadiness] = useLocalStorage('trainingHub_readiness', DEFAULT_READINESS);
-  const [benchmarkResults, setBenchmarkResults] = useLocalStorage('trainingHub_benchmarkResults', {});
-  const [customPrograms, setCustomPrograms] = useLocalStorage('trainingHub_customPrograms', {});
-  const [programTemplates, setProgramTemplates] = useLocalStorage('trainingHub_programTemplates', {});
-  const [programState, setProgramState] = useLocalStorage('trainingHub_programState', { 
+  const [cloudLoaded, setCloudLoaded] = useState(false);
+  
+  // Cloud sync status
+  const [syncStatus, setSyncStatus] = useSyncStatus();
+  
+  // Use synced storage for all important data
+  const [darkMode, setDarkMode] = useSyncedStorage('trainingHub_darkMode', window.matchMedia('(prefers-color-scheme: dark)').matches, syncStatus, setSyncStatus);
+  const [athleteProfile, setAthleteProfile] = useSyncedStorage('trainingHub_athleteProfile', DEFAULT_ATHLETE_PROFILE, syncStatus, setSyncStatus);
+  const [readiness, setReadiness] = useSyncedStorage('trainingHub_readiness', DEFAULT_READINESS, syncStatus, setSyncStatus);
+  const [benchmarkResults, setBenchmarkResults] = useSyncedStorage('trainingHub_benchmarkResults', {}, syncStatus, setSyncStatus);
+  const [customPrograms, setCustomPrograms] = useSyncedStorage('trainingHub_customPrograms', {}, syncStatus, setSyncStatus);
+  const [programTemplates, setProgramTemplates] = useSyncedStorage('trainingHub_programTemplates', {}, syncStatus, setSyncStatus);
+  const [programState, setProgramState] = useSyncedStorage('trainingHub_programState', { 
     currentProgram: 'combatAlpinist', 
     currentWeek: 1, 
     currentDay: 1, 
     startDate: getTodayKey(),
     // Detour tracking
     activeDetour: null, // { blockId, blockType, weekInDetour, returnToWeek, startedAt }
-  });
-  const [workoutLogs, setWorkoutLogs] = useLocalStorage('trainingHub_workoutLogs', []);
+  }, syncStatus, setSyncStatus);
+  const [workoutLogs, setWorkoutLogs] = useSyncedStorage('trainingHub_workoutLogs', [], syncStatus, setSyncStatus);
   const [exerciseCompletion, setExerciseCompletion] = useState({});
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   const [viewingProgramId, setViewingProgramId] = useState(null); // For program overview
   const [showDetourPicker, setShowDetourPicker] = useState(false); // For detour selection
-  const [exerciseSwaps, setExerciseSwaps] = useLocalStorage('trainingHub_exerciseSwaps', {}); // { "originalExerciseName": "swappedExerciseId" }
+  const [exerciseSwaps, setExerciseSwaps] = useSyncedStorage('trainingHub_exerciseSwaps', {}, syncStatus, setSyncStatus); // { "originalExerciseName": "swappedExerciseId" }
   const [swappingExercise, setSwappingExercise] = useState(null); // { name, pattern } for swap picker
+  
+  // Load from cloud on app start
+  useEffect(() => {
+    const initCloudSync = async () => {
+      const result = await loadFromCloud();
+      if (result.success && result.loaded > 0) {
+        // Reload the page to pick up cloud data
+        window.location.reload();
+      }
+      setCloudLoaded(true);
+    };
+    initCloudSync();
+  }, []);
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -4503,6 +4524,16 @@ export default function App() {
             <h1 className="text-lg font-bold">Training Hub <span className="text-xs font-normal opacity-50">v2.1</span></h1>
           </div>
           <div className="flex items-center gap-2">
+            {/* Cloud Sync Status */}
+            <div className="flex items-center gap-1 text-xs opacity-70">
+              {syncStatus.syncing ? (
+                <Loader size={14} className="animate-spin" />
+              ) : isOffline ? (
+                <CloudOff size={14} />
+              ) : (
+                <Cloud size={14} className="text-green-400" />
+              )}
+            </div>
             {readinessScore && (
               <div className={`px-2 py-1 rounded-lg ${readinessScore >= 70 ? 'bg-green-500/20' : readinessScore >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}`}>
                 <span className={`text-sm font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore}</span>
@@ -5095,6 +5126,54 @@ export default function App() {
                     <button onClick={() => setProgramState(prev => ({ ...prev, currentDay: Math.min(7, prev.currentDay + 1) }))} className={`p-2 rounded-lg ${theme.cardAlt}`}><ChevronRight size={20} className={theme.text} /></button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+              <h3 className={`font-semibold ${theme.text} mb-4`}>Cloud Sync</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {syncStatus.syncing ? (
+                      <Loader size={18} className="animate-spin text-blue-500" />
+                    ) : isOffline ? (
+                      <CloudOff size={18} className="text-amber-500" />
+                    ) : (
+                      <Cloud size={18} className="text-green-500" />
+                    )}
+                    <span className={theme.text}>
+                      {syncStatus.syncing ? 'Syncing...' : isOffline ? 'Offline' : 'Connected'}
+                    </span>
+                  </div>
+                  {syncStatus.lastSync && (
+                    <span className={`text-xs ${theme.textMuted}`}>
+                      Last sync: {new Date(syncStatus.lastSync).toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+                {syncStatus.error && (
+                  <div className="p-2 bg-red-500/10 rounded-lg text-red-500 text-sm">
+                    {syncStatus.error}
+                  </div>
+                )}
+                <button 
+                  onClick={async () => {
+                    const result = await syncAllToCloud(setSyncStatus);
+                    if (result.success) {
+                      alert(`Synced ${result.synced} items to cloud!`);
+                    } else {
+                      alert(`Sync failed: ${result.error}`);
+                    }
+                  }}
+                  disabled={syncStatus.syncing || isOffline}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl text-sm font-medium text-white`}
+                >
+                  <Cloud size={18} />
+                  {syncStatus.syncing ? 'Syncing...' : 'Sync Now'}
+                </button>
+                <p className={`text-xs ${theme.textMuted} text-center`}>
+                  Data automatically syncs to cloud. Use this button to force a full sync.
+                </p>
               </div>
             </div>
 
