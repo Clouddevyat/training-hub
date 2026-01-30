@@ -2360,6 +2360,287 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     </div>
   );
 };
+
+// ============== PROGRAM OVERVIEW VIEW ==============
+const ProgramOverviewView = ({ programId, program, templateData, onClose, onActivate, isActive, theme }) => {
+  const [expandedPhase, setExpandedPhase] = useState(null);
+  const [expandedBlock, setExpandedBlock] = useState(null);
+
+  if (!program) return null;
+
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
+  const getTypeColor = (type) => {
+    const colors = {
+      strength: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      aerobic: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      cardio: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      conditioning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      threshold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      long_effort: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      recovery: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      rest: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+      muscular_endurance: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-600';
+  };
+
+  // Get detours if this is a block-based template
+  const availableDetours = program.availableDetours || {};
+  const hasDetours = (availableDetours.specialty?.length > 0) || (availableDetours.life?.length > 0);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+      <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-2xl md:mx-auto md:my-8 md:rounded-2xl`}>
+        {/* Header */}
+        <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{program.icon}</span>
+            <div>
+              <h2 className={`font-bold text-lg ${theme.text}`}>{program.name}</h2>
+              {program.isTemplate && (
+                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">Template</span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+            <X size={24} className={theme.text} />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-6 pb-24">
+          {/* Description */}
+          <p className={`${theme.textMuted}`}>{program.description}</p>
+
+          {/* Global Rules if present */}
+          {program.globalRules && Object.keys(program.globalRules).length > 0 && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-2`}>📋 Program Rules</h3>
+              <ul className={`text-sm ${theme.textMuted} space-y-1`}>
+                {program.globalRules.deload_every_4th_week && <li>• Deload every 4th week</li>}
+                {program.globalRules.one_specialty_at_a_time && <li>• One specialty block at a time</li>}
+                {program.globalRules.always_return_to_base && <li>• Always return to base after specialty blocks</li>}
+              </ul>
+            </div>
+          )}
+
+          {/* Quarterly Testing if present */}
+          {program.quarterlyTesting && (
+            <div className={`${theme.card} rounded-xl p-4`}>
+              <h3 className={`font-semibold ${theme.text} mb-2`}>📊 Quarterly Testing</h3>
+              <ul className={`text-sm ${theme.textMuted} space-y-1`}>
+                {program.quarterlyTesting.tests?.map((test, i) => (
+                  <li key={i}>• <span className="font-medium">{test.name}</span>: {test.protocol}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Main Phases */}
+          <div>
+            <h3 className={`font-semibold ${theme.text} mb-3`}>
+              {hasDetours ? '🔄 Main Cycle' : '📅 Phases'}
+            </h3>
+            <div className="space-y-3">
+              {program.phases?.map((phase, idx) => (
+                <div key={phase.id} className={`${theme.card} rounded-xl overflow-hidden`}>
+                  <button
+                    onClick={() => setExpandedPhase(expandedPhase === phase.id ? null : phase.id)}
+                    className="w-full p-4 flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        idx === 0 ? 'bg-blue-500 text-white' :
+                        idx === 1 ? 'bg-green-500 text-white' :
+                        idx === 2 ? 'bg-orange-500 text-white' :
+                        'bg-gray-500 text-white'
+                      }`}>{idx + 1}</span>
+                      <div>
+                        <p className={`font-semibold ${theme.text}`}>{phase.name}</p>
+                        <p className={`text-sm ${theme.textMuted}`}>
+                          Weeks {phase.weeks[0]}-{phase.weeks[1]} ({phase.weeks[1] - phase.weeks[0] + 1} weeks)
+                        </p>
+                      </div>
+                    </div>
+                    {expandedPhase === phase.id ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+                  </button>
+
+                  {expandedPhase === phase.id && (
+                    <div className={`px-4 pb-4 border-t ${theme.border}`}>
+                      {phase.description && (
+                        <p className={`text-sm ${theme.textMuted} mt-3 mb-4`}>{phase.description}</p>
+                      )}
+
+                      {/* Exit Criteria */}
+                      {phase.exitCriteria?.length > 0 && (
+                        <div className="mb-4">
+                          <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-2`}>Exit Criteria</p>
+                          <ul className={`text-sm ${theme.text} space-y-1`}>
+                            {phase.exitCriteria.map((c, i) => <li key={i} className="flex items-start gap-2"><Target size={14} className="text-green-500 mt-0.5 flex-shrink-0" />{c}</li>)}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Weekly Template */}
+                      <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-2`}>Weekly Template</p>
+                      <div className="space-y-2">
+                        {phase.weeklyTemplate?.map((day, i) => (
+                          <div key={i} className={`flex items-center gap-3 p-2 rounded-lg ${theme.cardAlt}`}>
+                            <span className={`text-xs font-medium w-12 ${theme.textMuted}`}>{dayNames[i]?.slice(0, 3)}</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(day.type)}`}>
+                              {day.type?.replace('_', ' ')}
+                            </span>
+                            <span className={`text-sm ${theme.text} flex-1`}>{day.session || day.name}</span>
+                            {day.duration > 0 && <span className={`text-xs ${theme.textMuted}`}>{day.duration}m</span>}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Benchmarks */}
+                      {phase.benchmarks?.length > 0 && (
+                        <div className="mt-4">
+                          <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-2`}>Benchmarks</p>
+                          <div className="flex flex-wrap gap-2">
+                            {phase.benchmarks.map((b, i) => (
+                              <span key={i} className={`px-2 py-1 rounded-lg text-xs ${theme.cardAlt} ${theme.text}`}>
+                                {b.name}: {b.target}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Specialty Blocks */}
+          {availableDetours.specialty?.length > 0 && (
+            <div>
+              <h3 className={`font-semibold ${theme.text} mb-3`}>⚡ Specialty Blocks</h3>
+              <p className={`text-sm ${theme.textMuted} mb-3`}>Inject when specific demands arise, then return to main cycle.</p>
+              <div className="space-y-3">
+                {availableDetours.specialty.map(block => (
+                  <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-orange-500`}>
+                    <button
+                      onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)}
+                      className="w-full p-4 flex items-center justify-between text-left"
+                    >
+                      <div>
+                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                        <p className={`text-sm ${theme.textMuted}`}>
+                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                        </p>
+                      </div>
+                      {expandedBlock === block.id ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+                    </button>
+                    
+                    {expandedBlock === block.id && (
+                      <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
+                        {block.when_to_use?.length > 0 && (
+                          <div className="mt-3">
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>When to Use</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.when_to_use.map((w, i) => <li key={i}>• {w}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.sacrifice?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold text-red-500 uppercase mb-1`}>⚠️ Sacrifices</p>
+                            <ul className={`text-sm text-red-600 dark:text-red-400`}>
+                              {block.sacrifice.map((s, i) => <li key={i}>• {s}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.exit_criteria?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>Exit Criteria</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.exit_criteria.map((e, i) => <li key={i}>✓ {e}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Life Blocks */}
+          {availableDetours.life?.length > 0 && (
+            <div>
+              <h3 className={`font-semibold ${theme.text} mb-3`}>🛡️ Life Blocks</h3>
+              <p className={`text-sm ${theme.textMuted} mb-3`}>Situational responses for injuries, burnout, deployment, etc.</p>
+              <div className="space-y-3">
+                {availableDetours.life.map(block => (
+                  <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-green-500`}>
+                    <button
+                      onClick={() => setExpandedBlock(expandedBlock === `life_${block.id}` ? null : `life_${block.id}`)}
+                      className="w-full p-4 flex items-center justify-between text-left"
+                    >
+                      <div>
+                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                        <p className={`text-sm ${theme.textMuted}`}>
+                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                        </p>
+                      </div>
+                      {expandedBlock === `life_${block.id}` ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+                    </button>
+                    
+                    {expandedBlock === `life_${block.id}` && (
+                      <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
+                        {block.when_to_use?.length > 0 && (
+                          <div className="mt-3">
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>When to Use</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.when_to_use.map((w, i) => <li key={i}>• {w}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.exit_criteria?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>Exit Criteria</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.exit_criteria.map((e, i) => <li key={i}>✓ {e}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Fixed Footer */}
+        <div className={`fixed bottom-0 left-0 right-0 md:relative ${theme.card} border-t ${theme.border} p-4`}>
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <button onClick={onClose} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>
+              Close
+            </button>
+            {isActive ? (
+              <span className="flex-1 py-3 rounded-xl font-medium text-center text-green-500 bg-green-50 dark:bg-green-900/20">
+                ✓ Active
+              </span>
+            ) : (
+              <button onClick={onActivate} className="flex-1 py-3 rounded-xl font-medium bg-blue-500 text-white hover:bg-blue-600">
+                Activate Program
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============== MAIN APP ==============
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -2376,6 +2657,7 @@ export default function App() {
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+  const [viewingProgramId, setViewingProgramId] = useState(null); // For program overview
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -2911,6 +3193,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
+                      <button onClick={() => setViewingProgramId(id)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">View</button>
                       {programState.currentProgram === id ? (
                         <span className="flex-1 text-center py-2 text-green-500 font-medium text-sm">Active</span>
                       ) : (
@@ -2936,6 +3219,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
+                    <button onClick={() => setViewingProgramId(prog.id)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">View</button>
                     {programState.currentProgram === prog.id ? (
                       <span className="flex-1 text-center py-2 text-green-500 font-medium text-sm">Active</span>
                     ) : (
@@ -3025,6 +3309,22 @@ export default function App() {
           onClose={() => setShowTemplateUpload(false)}
           athleteProfile={athleteProfile}
           existingTemplates={programTemplates}
+          theme={theme}
+        />
+      )}
+
+      {/* Program Overview Modal */}
+      {viewingProgramId && (
+        <ProgramOverviewView
+          programId={viewingProgramId}
+          program={allPrograms[viewingProgramId]}
+          templateData={programTemplates[viewingProgramId]}
+          onClose={() => setViewingProgramId(null)}
+          onActivate={() => {
+            setProgramState(prev => ({ ...prev, currentProgram: viewingProgramId, currentWeek: 1, currentDay: 1 }));
+            setViewingProgramId(null);
+          }}
+          isActive={programState.currentProgram === viewingProgramId}
           theme={theme}
         />
       )}
