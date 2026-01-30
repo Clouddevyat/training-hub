@@ -2668,6 +2668,166 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
   );
 };
 
+// ============== DETOUR PICKER VIEW ==============
+const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
+  const [expandedBlock, setExpandedBlock] = useState(null);
+  
+  if (!program?.availableDetours) return null;
+  
+  const { specialty = [], life = [] } = program.availableDetours;
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+      <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-lg md:mx-auto md:my-8 md:rounded-2xl`}>
+        {/* Header */}
+        <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
+          <div>
+            <h2 className={`font-bold text-lg ${theme.text}`}>Take a Detour</h2>
+            <p className={`text-sm ${theme.textMuted}`}>Inject a block, then return to main cycle</p>
+          </div>
+          <button onClick={onClose} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+            <X size={24} className={theme.text} />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-6 pb-8">
+          {/* Specialty Blocks */}
+          {specialty.length > 0 && (
+            <div>
+              <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
+                <Zap size={18} className="text-orange-500" />
+                Specialty Blocks
+              </h3>
+              <p className={`text-sm ${theme.textMuted} mb-3`}>
+                Focused training when specific demands arise.
+              </p>
+              <div className="space-y-3">
+                {specialty.map(block => (
+                  <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-orange-500`}>
+                    <button
+                      onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)}
+                      className="w-full p-4 flex items-center justify-between text-left"
+                    >
+                      <div>
+                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                        <p className={`text-sm ${theme.textMuted}`}>
+                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                        </p>
+                      </div>
+                      {expandedBlock === block.id ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+                    </button>
+                    
+                    {expandedBlock === block.id && (
+                      <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
+                        {block.when_to_use?.length > 0 && (
+                          <div className="mt-3">
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>When to Use</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.when_to_use.map((w, i) => <li key={i}>• {w}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.sacrifice?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold text-red-500 uppercase mb-1`}>⚠️ Sacrifices</p>
+                            <ul className={`text-sm text-red-600 dark:text-red-400`}>
+                              {block.sacrifice.map((s, i) => <li key={i}>• {s}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.exit_criteria?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>Exit When</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.exit_criteria.map((e, i) => <li key={i}>✓ {e}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => onSelect(block.id, 'specialty')}
+                          className="w-full mt-2 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium"
+                        >
+                          Start {block.name}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Life Blocks */}
+          {life.length > 0 && (
+            <div>
+              <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
+                <Heart size={18} className="text-green-500" />
+                Life Blocks
+              </h3>
+              <p className={`text-sm ${theme.textMuted} mb-3`}>
+                Adaptive responses for injuries, burnout, deployment, etc.
+              </p>
+              <div className="space-y-3">
+                {life.map(block => (
+                  <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-green-500`}>
+                    <button
+                      onClick={() => setExpandedBlock(expandedBlock === `life_${block.id}` ? null : `life_${block.id}`)}
+                      className="w-full p-4 flex items-center justify-between text-left"
+                    >
+                      <div>
+                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                        <p className={`text-sm ${theme.textMuted}`}>
+                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                        </p>
+                      </div>
+                      {expandedBlock === `life_${block.id}` ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+                    </button>
+                    
+                    {expandedBlock === `life_${block.id}` && (
+                      <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
+                        {block.when_to_use?.length > 0 && (
+                          <div className="mt-3">
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>When to Use</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.when_to_use.map((w, i) => <li key={i}>• {w}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.exit_criteria?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>Exit When</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.exit_criteria.map((e, i) => <li key={i}>✓ {e}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {block.notes?.length > 0 && (
+                          <div>
+                            <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-1`}>Notes</p>
+                            <ul className={`text-sm ${theme.text}`}>
+                              {block.notes.map((n, i) => <li key={i}>• {n}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => onSelect(block.id, 'life')}
+                          className="w-full mt-2 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium"
+                        >
+                          Start {block.name}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============== MAIN APP ==============
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -2678,13 +2838,21 @@ export default function App() {
   const [benchmarkResults, setBenchmarkResults] = useLocalStorage('trainingHub_benchmarkResults', {});
   const [customPrograms, setCustomPrograms] = useLocalStorage('trainingHub_customPrograms', {});
   const [programTemplates, setProgramTemplates] = useLocalStorage('trainingHub_programTemplates', {});
-  const [programState, setProgramState] = useLocalStorage('trainingHub_programState', { currentProgram: 'combatAlpinist', currentWeek: 1, currentDay: 1, startDate: getTodayKey() });
+  const [programState, setProgramState] = useLocalStorage('trainingHub_programState', { 
+    currentProgram: 'combatAlpinist', 
+    currentWeek: 1, 
+    currentDay: 1, 
+    startDate: getTodayKey(),
+    // Detour tracking
+    activeDetour: null, // { blockId, blockType, weekInDetour, returnToWeek, startedAt }
+  });
   const [workoutLogs, setWorkoutLogs] = useLocalStorage('trainingHub_workoutLogs', []);
   const [exerciseCompletion, setExerciseCompletion] = useState({});
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   const [viewingProgramId, setViewingProgramId] = useState(null); // For program overview
+  const [showDetourPicker, setShowDetourPicker] = useState(false); // For detour selection
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -2712,7 +2880,32 @@ export default function App() {
 
   const allPrograms = { ...DEFAULT_PROGRAMS, ...templatePrograms, ...customPrograms };
   const program = allPrograms[programState.currentProgram];
-  const phase = program?.phases.find(p => programState.currentWeek >= p.weeks[0] && programState.currentWeek <= p.weeks[1]);
+  
+  // Check if we're in a detour block
+  const activeDetour = programState.activeDetour;
+  const detourBlock = useMemo(() => {
+    if (!activeDetour || !program?.availableDetours) return null;
+    const { blockId, blockType } = activeDetour;
+    const blocks = program.availableDetours[blockType] || [];
+    return blocks.find(b => b.id === blockId);
+  }, [activeDetour, program?.availableDetours]);
+
+  // Get current phase - either from detour or main cycle
+  const phase = useMemo(() => {
+    if (detourBlock) {
+      // In a detour - use detour block's template
+      return {
+        ...detourBlock,
+        weeks: [1, detourBlock.duration?.max || 8], // Detours use their own week count
+        weeklyTemplate: detourBlock.weeklyTemplate || []
+      };
+    }
+    // Normal main cycle phase
+    return program?.phases?.find(p => programState.currentWeek >= p.weeks[0] && programState.currentWeek <= p.weeks[1]);
+  }, [detourBlock, program?.phases, programState.currentWeek]);
+
+  // Current week number (detour week or main cycle week)
+  const currentWeekNum = activeDetour ? activeDetour.weekInDetour : programState.currentWeek;
   
   // Today's readiness - MUST be defined before todayWorkout useMemo
   const todayReadiness = readiness.logs?.find(l => l.date === getTodayKey());
@@ -2720,15 +2913,81 @@ export default function App() {
   const readinessInfo = readinessScore ? getReadinessLabel(readinessScore) : null;
 
   // Generate today's workout with auto-propagated values
-  const todayWorkoutRaw = phase?.weeklyTemplate.find(w => w.day === programState.currentDay);
+  const todayWorkoutRaw = phase?.weeklyTemplate?.find(w => w.day === programState.currentDay);
   const todayWorkout = useMemo(() => {
     if (!todayWorkoutRaw) return null;
     // If it's a template-based program, apply auto-propagation
     if (program?.isTemplate) {
-      return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, programState.currentWeek, readinessScore);
+      return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore);
     }
     return todayWorkoutRaw;
-  }, [todayWorkoutRaw, athleteProfile, programState.currentWeek, readinessScore, program?.isTemplate]);
+  }, [todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore, program?.isTemplate]);
+
+  // Check if program has available detours
+  const hasDetours = program?.availableDetours && 
+    ((program.availableDetours.specialty?.length > 0) || (program.availableDetours.life?.length > 0));
+
+  // Start a detour
+  const startDetour = (blockId, blockType) => {
+    setProgramState(prev => ({
+      ...prev,
+      activeDetour: {
+        blockId,
+        blockType,
+        weekInDetour: 1,
+        returnToWeek: prev.currentWeek,
+        returnToDay: prev.currentDay,
+        startedAt: getTodayKey()
+      },
+      currentDay: 1 // Reset to day 1 of detour
+    }));
+    setShowDetourPicker(false);
+  };
+
+  // End detour and return to main cycle
+  const endDetour = () => {
+    if (!activeDetour) return;
+    setProgramState(prev => ({
+      ...prev,
+      currentWeek: prev.activeDetour.returnToWeek,
+      currentDay: 1, // Start fresh on return
+      activeDetour: null
+    }));
+  };
+
+  // Advance day (handles both main cycle and detour)
+  const advanceDay = () => {
+    if (activeDetour) {
+      // In detour - check if we need to advance detour week
+      const maxDetourWeek = detourBlock?.duration?.max || 8;
+      if (programState.currentDay >= 7) {
+        if (activeDetour.weekInDetour >= maxDetourWeek) {
+          // Detour complete - prompt to return (but don't auto-return)
+          setProgramState(prev => ({
+            ...prev,
+            currentDay: 1,
+            activeDetour: { ...prev.activeDetour, weekInDetour: prev.activeDetour.weekInDetour + 1 }
+          }));
+        } else {
+          setProgramState(prev => ({
+            ...prev,
+            currentDay: 1,
+            activeDetour: { ...prev.activeDetour, weekInDetour: prev.activeDetour.weekInDetour + 1 }
+          }));
+        }
+      } else {
+        setProgramState(prev => ({ ...prev, currentDay: prev.currentDay + 1 }));
+      }
+    } else {
+      // Normal main cycle advancement
+      const maxWeek = program?.phases?.[program.phases.length - 1]?.weeks?.[1] || 40;
+      if (programState.currentDay >= 7) {
+        setProgramState(prev => ({ ...prev, currentDay: 1, currentWeek: Math.min(prev.currentWeek + 1, maxWeek) }));
+      } else {
+        setProgramState(prev => ({ ...prev, currentDay: prev.currentDay + 1 }));
+      }
+    }
+  };
 
   // Handle template upload
   const handleTemplateUpload = ({ template, program, profileCheck }) => {
@@ -2759,18 +3018,9 @@ export default function App() {
 
   useEffect(() => { if (todayWorkout) setWorkoutData(prev => ({ ...prev, duration: todayWorkout.duration })); }, [todayWorkout?.session]);
 
-  const thisWeekLogs = workoutLogs.filter(log => log.week === programState.currentWeek && log.programId === programState.currentProgram);
+  const thisWeekLogs = workoutLogs.filter(log => log.week === (activeDetour ? activeDetour.weekInDetour : programState.currentWeek) && log.programId === programState.currentProgram);
   const completedThisWeek = thisWeekLogs.filter(log => log.completed).length;
   const toggleExercise = (name) => setExerciseCompletion(prev => ({ ...prev, [name]: !prev[name] }));
-
-  const advanceDay = () => {
-    const maxWeek = program?.phases[program.phases.length - 1]?.weeks[1] || 40;
-    if (programState.currentDay >= 7) {
-      setProgramState(prev => ({ ...prev, currentDay: 1, currentWeek: Math.min(prev.currentWeek + 1, maxWeek) }));
-    } else {
-      setProgramState(prev => ({ ...prev, currentDay: prev.currentDay + 1 }));
-    }
-  };
 
   const completeWorkout = () => {
     if (Object.keys(workoutData.newPRs || {}).length > 0) {
@@ -2786,7 +3036,25 @@ export default function App() {
         return updated;
       });
     }
-    const newLog = { id: Date.now(), date: getTodayKey(), week: programState.currentWeek, day: programState.currentDay, phase: phase?.name, session: todayWorkout.session, type: todayWorkout.type, programId: programState.currentProgram, prescribed: todayWorkout.duration, actual: workoutData.duration, rpe: workoutData.rpe, notes: workoutData.notes, prsHit: workoutData.newPRs, readinessScore, completed: true };
+    const newLog = { 
+      id: Date.now(), 
+      date: getTodayKey(), 
+      week: activeDetour ? activeDetour.weekInDetour : programState.currentWeek, 
+      day: programState.currentDay, 
+      phase: phase?.name, 
+      session: todayWorkout?.session, 
+      type: todayWorkout?.type, 
+      programId: programState.currentProgram, 
+      prescribed: todayWorkout?.duration, 
+      actual: workoutData.duration, 
+      rpe: workoutData.rpe, 
+      notes: workoutData.notes, 
+      prsHit: workoutData.newPRs, 
+      readinessScore, 
+      completed: true,
+      // Track if this was a detour workout
+      detour: activeDetour ? { blockId: activeDetour.blockId, blockType: activeDetour.blockType } : null
+    };
     setWorkoutLogs(prev => [...prev.filter(log => !(log.date === newLog.date && log.session === newLog.session && log.programId === newLog.programId)), newLog]);
     setExerciseCompletion({});
     setWorkoutData({ duration: todayWorkout?.duration || 0, rpe: 5, notes: '', newPRs: {} });
@@ -2903,6 +3171,33 @@ export default function App() {
         {/* DASHBOARD */}
         {currentView === 'dashboard' && (
           <div className="p-4 space-y-4">
+            {/* Active Detour Banner */}
+            {activeDetour && detourBlock && (
+              <div className={`p-4 rounded-xl border-2 ${activeDetour.blockType === 'specialty' ? 'border-orange-500 bg-orange-500/10' : 'border-green-500 bg-green-500/10'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs uppercase font-semibold ${activeDetour.blockType === 'specialty' ? 'text-orange-500' : 'text-green-500'}`}>
+                      {activeDetour.blockType === 'specialty' ? '⚡ Specialty Block' : '🛡️ Life Block'}
+                    </p>
+                    <p className={`font-bold ${theme.text}`}>{detourBlock.name}</p>
+                    <p className={`text-sm ${theme.textMuted}`}>Week {activeDetour.weekInDetour} of {detourBlock.duration?.max || '?'}</p>
+                  </div>
+                  <button 
+                    onClick={endDetour}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium ${theme.cardAlt} ${theme.text}`}
+                  >
+                    End & Return
+                  </button>
+                </div>
+                {detourBlock.exit_criteria?.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-current/20">
+                    <p className={`text-xs ${theme.textMuted} mb-1`}>Exit when:</p>
+                    <p className={`text-sm ${theme.text}`}>{detourBlock.exit_criteria[0]}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {!todayReadiness && (
               <button onClick={() => setCurrentView('readiness')} className={`w-full p-4 ${darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'} border rounded-xl flex items-center gap-3`}>
                 <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
@@ -2931,9 +3226,26 @@ export default function App() {
               <ChevronRight className={theme.textMuted} />
             </button>
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-              <div className="flex items-center justify-between mb-3"><div><p className={`text-xs ${theme.textMuted} uppercase`}>{program?.name}</p><h2 className={`text-lg font-bold ${theme.text}`}>{phase?.name} Phase</h2></div><span className="text-3xl">{program?.icon}</span></div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className={`text-xs ${theme.textMuted} uppercase`}>{program?.name}</p>
+                  <h2 className={`text-lg font-bold ${theme.text}`}>{phase?.name} {activeDetour ? '' : 'Phase'}</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Detour Button - only show if program has detours and not already in one */}
+                  {hasDetours && !activeDetour && (
+                    <button 
+                      onClick={() => setShowDetourPicker(true)}
+                      className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium rounded-lg"
+                    >
+                      Detour
+                    </button>
+                  )}
+                  <span className="text-3xl">{program?.icon}</span>
+                </div>
+              </div>
               <div className="grid grid-cols-4 gap-2">
-                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{programState.currentWeek}</p><p className={`text-xs ${theme.textMuted}`}>Week</p></div>
+                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{activeDetour ? activeDetour.weekInDetour : programState.currentWeek}</p><p className={`text-xs ${theme.textMuted}`}>Week</p></div>
                 <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{programState.currentDay}</p><p className={`text-xs ${theme.textMuted}`}>Day</p></div>
                 <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{completedThisWeek}/7</p><p className={`text-xs ${theme.textMuted}`}>Done</p></div>
                 <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{workoutLogs.filter(l => l.programId === programState.currentProgram).length}</p><p className={`text-xs ${theme.textMuted}`}>Total</p></div>
@@ -2959,15 +3271,15 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-3`}>This Week</h3>
               <div className="space-y-2">
-                {phase?.weeklyTemplate.map((w, idx) => {
+                {phase?.weeklyTemplate?.map((w, idx) => {
                   const isCurrent = w.day === programState.currentDay;
                   const logged = thisWeekLogs.find(l => l.day === w.day && l.completed);
                   return (
                     <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? (darkMode ? 'bg-blue-900/40 border border-blue-700' : 'bg-blue-50 border border-blue-200') : theme.cardAlt}`}>
                       {logged ? <CheckCircle2 size={18} className="text-green-500" /> : <Circle size={18} className={theme.textSubtle} />}
-                      <span className={`flex-1 text-sm font-medium ${theme.text} truncate`}>{w.session}</span>
+                      <span className={`flex-1 text-sm font-medium ${theme.text} truncate`}>{w.session || w.name}</span>
                       <span className={`text-xs ${theme.textMuted}`}>D{w.day}</span>
-                      <span className={`text-xs ${theme.textMuted}`}>{w.duration}m</span>
+                      <span className={`text-xs ${theme.textMuted}`}>{w.duration || 0}m</span>
                     </div>
                   );
                 })}
@@ -3352,6 +3664,16 @@ export default function App() {
             setViewingProgramId(null);
           }}
           isActive={programState.currentProgram === viewingProgramId}
+          theme={theme}
+        />
+      )}
+
+      {/* Detour Picker Modal */}
+      {showDetourPicker && (
+        <DetourPickerView
+          program={program}
+          onSelect={startDetour}
+          onClose={() => setShowDetourPicker(false)}
           theme={theme}
         />
       )}
