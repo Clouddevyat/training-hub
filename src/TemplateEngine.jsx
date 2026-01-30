@@ -596,16 +596,291 @@ export const evaluateExpression = (expression, athleteProfile) => {
   return expression;
 };
 
+// ============== PROGRESSION ENGINE ==============
+// Handles week-over-week auto-adjustment based on phase and workout type
+
+// Progression models
+export const PROGRESSION_MODELS = {
+  // Linear: steady increase each week, with deload
+  linear: {
+    getMultiplier: (weekInPhase, totalWeeks, deloadEvery = 4) => {
+      const isDeload = weekInPhase % deloadEvery === 0;
+      if (isDeload) return 0.6; // Deload week
+      const progression = (weekInPhase - 1) / Math.max(1, totalWeeks - 1);
+      return 1 + (progression * 0.25); // Up to 25% increase over phase
+    }
+  },
+  
+  // Undulating: light/medium/heavy rotation
+  undulating: {
+    getMultiplier: (weekInPhase) => {
+      const pattern = [0.85, 1.0, 1.1, 0.7]; // Light, Medium, Heavy, Deload
+      return pattern[(weekInPhase - 1) % 4];
+    },
+    getIntensity: (weekInPhase) => {
+      const pattern = ['light', 'medium', 'heavy', 'deload'];
+      return pattern[(weekInPhase - 1) % 4];
+    }
+  },
+  
+  // Block: 3 weeks build, 1 week deload
+  block: {
+    getMultiplier: (weekInPhase) => {
+      const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+      if (weekInBlock === 4) return 0.6; // Deload
+      return 0.9 + (weekInBlock * 0.1); // 100%, 110%, 120%, then deload
+    }
+  },
+  
+  // Strength-specific: percentage adjustments
+  strength: {
+    getPercentage: (basePercentage, weekInPhase) => {
+      const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+      const adjustments = [0, 3, 5, -10]; // Week 1: base, Week 2: +3%, Week 3: +5%, Week 4: deload -10%
+      return Math.min(95, Math.max(60, basePercentage + adjustments[weekInBlock - 1]));
+    },
+    getReps: (baseReps, weekInPhase) => {
+      const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+      // As percentage goes up, reps go down
+      const repAdjustments = [0, -1, -1, 2]; // Week 4 is higher rep deload
+      const newReps = baseReps + repAdjustments[weekInBlock - 1];
+      return Math.max(1, newReps);
+    }
+  }
+};
+
+// Calculate week within the current phase
+export const getWeekInPhase = (currentWeek, phaseStartWeek) => {
+  return currentWeek - phaseStartWeek + 1;
+};
+
+// Apply progression to duration (aerobic work)
+export const applyDurationProgression = (baseDuration, weekInPhase, workoutType, progressionModel = 'linear') => {
+  if (!baseDuration) return baseDuration;
+  
+  // Long aerobic should progress more aggressively
+  if (workoutType === 'long_effort' || workoutType === 'long_aerobic') {
+    const model = PROGRESSION_MODELS[progressionModel] || PROGRESSION_MODELS.linear;
+    const multiplier = model.getMultiplier(weekInPhase, 12); // Assume 12-week phases
+    
+    // Cap long efforts at reasonable max
+    const newDuration = Math.round(baseDuration * multiplier);
+    return Math.min(360, newDuration); // Max 6 hours
+  }
+  
+  // Regular cardio: minor progression
+  if (workoutType === 'cardio' || workoutType === 'aerobic') {
+    const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+    if (weekInBlock === 4) return Math.round(baseDuration * 0.8); // Deload
+    return Math.round(baseDuration * (1 + (weekInBlock - 1) * 0.05)); // 5% per week
+  }
+  
+  return baseDuration;
+};
+
+// Apply progression to ME work (steps, load)
+export const applyMEProgression = (prescription, weekInPhase, athleteProfile) => {
+  if (!prescription) return prescription;
+  
+  const updated = { ...prescription };
+  const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+  const isDeload = weekInBlock === 4;
+  
+  // Step count progression
+  if (updated.target && typeof updated.target === 'string' && updated.target.includes('steps')) {
+    const baseSteps = parseInt(updated.target.match(/(\d+)/)?.[1]) || 400;
+    let newSteps;
+    
+    if (isDeload) {
+      newSteps = Math.round(baseSteps * 0.6);
+    } else {
+      // Progress 10% per week within block
+      newSteps = Math.round(baseSteps * (1 + (weekInBlock - 1) * 0.1));
+    }
+    
+    updated.target = `${newSteps} steps`;
+    updated.progressionNote = isDeload ? 'Deload week' : `Week ${weekInBlock}/4 progression`;
+  }
+  
+  // Load progression (% bodyweight)
+  if (updated.load && typeof updated.load === 'string' && updated.load.includes('%')) {
+    const baseLoad = parseInt(updated.load.match(/(\d+)/)?.[1]) || 15;
+    let newLoad;
+    
+    if (isDeload) {
+      newLoad = Math.round(baseLoad * 0.7);
+    } else {
+      // Progress 2% BW per week within block
+      newLoad = baseLoad + ((weekInBlock - 1) * 2);
+    }
+    
+    updated.load = `${newLoad}% BW`;
+    
+    // Calculate actual weight if we have athlete weight
+    if (athleteProfile?.weight) {
+      updated.calculatedLoad = Math.round(athleteProfile.weight * (newLoad / 100));
+      updated.loadDisplay = `${updated.calculatedLoad} lbs (${newLoad}% BW)`;
+    }
+  }
+  
+  return updated;
+};
+
+// Apply progression to strength exercises
+export const applyStrengthProgression = (exercises, weekInPhase, athleteProfile) => {
+  if (!exercises || !Array.isArray(exercises)) return exercises;
+  
+  return exercises.map(ex => {
+    const updated = { ...ex };
+    
+    // Apply percentage progression
+    if (ex.percentage) {
+      updated.originalPercentage = ex.percentage;
+      updated.percentage = PROGRESSION_MODELS.strength.getPercentage(ex.percentage, weekInPhase);
+      
+      // Calculate working weight
+      if (ex.prKey && athleteProfile?.prs?.[ex.prKey]?.value) {
+        const prValue = athleteProfile.prs[ex.prKey].value;
+        updated.workingWeight = Math.round((updated.percentage / 100) * prValue / 5) * 5;
+        updated.workingWeightDisplay = `${updated.workingWeight} lbs (${updated.percentage}%)`;
+      }
+    }
+    
+    // Apply rep progression
+    if (ex.reps && typeof ex.reps === 'string') {
+      const baseReps = parseInt(ex.reps.match(/(\d+)/)?.[1]) || 5;
+      const newReps = PROGRESSION_MODELS.strength.getReps(baseReps, weekInPhase);
+      
+      // Handle rep ranges like "3-5"
+      if (ex.reps.includes('-')) {
+        const [low, high] = ex.reps.split('-').map(n => parseInt(n));
+        const diff = high - low;
+        updated.reps = `${Math.max(1, newReps - Math.floor(diff/2))}-${newReps + Math.ceil(diff/2)}`;
+      } else if (ex.reps.includes('each')) {
+        updated.reps = `${newReps} each`;
+      } else {
+        updated.reps = `${newReps}`;
+      }
+    }
+    
+    // Add week indicator
+    const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+    const weekLabels = ['Week 1: Base', 'Week 2: Build', 'Week 3: Peak', 'Week 4: Deload'];
+    updated.progressionNote = weekLabels[weekInBlock - 1];
+    
+    return updated;
+  });
+};
+
+// Apply progression to interval work
+export const applyIntervalProgression = (prescription, weekInPhase) => {
+  if (!prescription || !prescription.mainSet) return prescription;
+  
+  const updated = { ...prescription };
+  const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+  const isDeload = weekInBlock === 4;
+  
+  // Parse mainSet like "4 x 8 min at AeT"
+  const match = updated.mainSet.match(/(\d+)\s*x\s*(\d+)\s*min/i);
+  if (match) {
+    let [_, sets, duration] = match;
+    sets = parseInt(sets);
+    duration = parseInt(duration);
+    
+    if (isDeload) {
+      // Reduce both sets and duration for deload
+      sets = Math.max(2, sets - 1);
+      duration = Math.round(duration * 0.75);
+    } else {
+      // Progress: add a set or increase duration
+      if (weekInBlock === 2) {
+        duration = duration + 1;
+      } else if (weekInBlock === 3) {
+        sets = sets + 1;
+      }
+    }
+    
+    // Reconstruct mainSet
+    const intensity = updated.mainSet.match(/at\s+(.+)$/i)?.[1] || 'threshold';
+    updated.mainSet = `${sets} x ${duration} min at ${intensity}`;
+    updated.progressionNote = isDeload ? 'Deload week - reduced volume' : `Week ${weekInBlock}/4`;
+  }
+  
+  return updated;
+};
+
+// Main progression function - applies all relevant progressions
+export const applyProgressions = (workout, weekInPhase, athleteProfile, phaseType) => {
+  if (!workout) return workout;
+  
+  const updated = { ...workout };
+  
+  // Apply duration progression
+  updated.duration = applyDurationProgression(
+    workout.duration, 
+    weekInPhase, 
+    workout.type
+  );
+  
+  if (updated.duration !== workout.duration) {
+    updated.originalDuration = workout.duration;
+    updated.durationProgressed = true;
+  }
+  
+  // Apply prescription-level progressions
+  if (workout.prescription) {
+    updated.prescription = { ...workout.prescription };
+    
+    // ME work progression
+    if (workout.type === 'muscular_endurance') {
+      updated.prescription = applyMEProgression(
+        updated.prescription, 
+        weekInPhase, 
+        athleteProfile
+      );
+    }
+    
+    // Interval progression
+    if (workout.prescription.mainSet) {
+      updated.prescription = applyIntervalProgression(
+        updated.prescription, 
+        weekInPhase
+      );
+    }
+    
+    // Strength exercise progression
+    if (workout.prescription.exercises) {
+      updated.prescription.exercises = applyStrengthProgression(
+        workout.prescription.exercises, 
+        weekInPhase, 
+        athleteProfile
+      );
+    }
+  }
+  
+  // Add week-in-phase indicator
+  const weekInBlock = ((weekInPhase - 1) % 4) + 1;
+  updated.weekInPhase = weekInPhase;
+  updated.weekInBlock = weekInBlock;
+  updated.blockPhase = ['Base', 'Build', 'Peak', 'Deload'][weekInBlock - 1];
+  
+  return updated;
+};
+
 // ============== WORKOUT GENERATOR ==============
 // Generate concrete workout from template slot
-export const generateWorkoutFromTemplate = (templateWorkout, athleteProfile, week, readinessScore) => {
+export const generateWorkoutFromTemplate = (templateWorkout, athleteProfile, week, readinessScore, phaseStartWeek = 1) => {
   if (!templateWorkout) return null;
+
+  // Calculate week within the current phase
+  const weekInPhase = week - phaseStartWeek + 1;
 
   const workout = {
     ...templateWorkout,
     exercises: [],
     generatedAt: new Date().toISOString(),
-    weekNumber: week
+    weekNumber: week,
+    weekInPhase: weekInPhase
   };
 
   // Apply readiness modifiers
@@ -619,6 +894,13 @@ export const generateWorkoutFromTemplate = (templateWorkout, athleteProfile, wee
       workout.readinessAdjustment = 'Volume reduced 25% due to moderate readiness';
     }
   }
+
+  // === APPLY PROGRESSION ENGINE ===
+  // Apply week-over-week progressions based on workout type and phase
+  const progressedWorkout = applyProgressions(workout, weekInPhase, athleteProfile, templateWorkout.type);
+  
+  // Copy progressed values back
+  Object.assign(workout, progressedWorkout);
 
   // Process exercises/slots
   if (templateWorkout.exercises) {
@@ -664,9 +946,7 @@ export const generateWorkoutFromTemplate = (templateWorkout, athleteProfile, wee
 
   // Process prescription if present (for cardio/ME work)
   if (templateWorkout.prescription) {
-    workout.prescription = { ...templateWorkout.prescription };
-
-    // Handle progression rules
+    // Prescription already processed by applyProgressions, but handle legacy progression rules
     if (workout.prescription.progression) {
       const prog = workout.prescription.progression;
       // Find which week range we're in
@@ -691,8 +971,8 @@ export const generateWorkoutFromTemplate = (templateWorkout, athleteProfile, wee
       }
     }
 
-    // Process exercises within prescription
-    if (workout.prescription.exercises) {
+    // Process exercises within prescription (if not already processed by progression engine)
+    if (workout.prescription.exercises && !workout.prescription.exercises[0]?.progressionNote) {
       workout.prescription.exercises = workout.prescription.exercises.map(ex => {
         const generated = { ...ex };
         if (ex.percentage && ex.prKey) {

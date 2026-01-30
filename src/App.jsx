@@ -2342,6 +2342,14 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
               <span className={`text-xs ${theme.textMuted}`}>({exercise.percentage}% of {prValue})</span>
             </div>
           )}
+          {exercise.progressionNote && (
+            <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+              <TrendingUp size={12} /><span>{exercise.progressionNote}</span>
+              {exercise.originalPercentage && exercise.percentage !== exercise.originalPercentage && (
+                <span className={theme.textMuted}>(base: {exercise.originalPercentage}%)</span>
+              )}
+            </div>
+          )}
           {exercise.prKey && !prValue && (
             <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
               <AlertTriangle size={12} /><span>Set {PR_DISPLAY_NAMES[exercise.prKey]} PR in Profile</span>
@@ -3753,14 +3761,16 @@ export default function App() {
 
   // Generate today's workout with auto-propagated values
   const todayWorkoutRaw = phase?.weeklyTemplate?.find(w => w.day === programState.currentDay);
+  const phaseStartWeek = phase?.weeks?.[0] || 1;
   const todayWorkout = useMemo(() => {
     if (!todayWorkoutRaw) return null;
-    // If it's a template-based program, apply auto-propagation
+    // If it's a template-based program, apply auto-propagation with progression
     if (program?.isTemplate) {
-      return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore);
+      return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore, phaseStartWeek);
     }
-    return todayWorkoutRaw;
-  }, [todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore, program?.isTemplate]);
+    // For non-template programs, still apply progressions
+    return generateWorkoutFromTemplate(todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore, phaseStartWeek);
+  }, [todayWorkoutRaw, athleteProfile, currentWeekNum, readinessScore, program?.isTemplate, phaseStartWeek]);
 
   // Check if program has available detours
   const hasDetours = program?.availableDetours && 
@@ -4139,9 +4149,16 @@ export default function App() {
               <p className="text-sm opacity-80 uppercase">Week {programState.currentWeek} • Day {programState.currentDay}</p>
               <h2 className="text-2xl font-bold mt-1">{todayWorkout.session}</h2>
               <div className="flex items-center gap-4 mt-3 text-sm opacity-90">
-                <span className="flex items-center gap-1"><Clock size={16} />{todayWorkout.duration} min</span>
+                <span className="flex items-center gap-1"><Clock size={16} />{todayWorkout.duration} min{todayWorkout.durationProgressed && todayWorkout.originalDuration && ` (was ${todayWorkout.originalDuration})`}</span>
                 <span className="capitalize">{todayWorkout.type.replace('_', ' ')}</span>
               </div>
+              {/* Progression indicator */}
+              {todayWorkout.blockPhase && (
+                <div className="mt-3 flex items-center gap-2 text-sm opacity-80">
+                  <TrendingUp size={14} />
+                  <span>Phase Week {todayWorkout.weekInPhase} • {todayWorkout.blockPhase}</span>
+                </div>
+              )}
               {todayLog?.completed && <div className="mt-4 bg-white/20 rounded-lg p-3 flex items-center gap-2"><CheckCircle2 size={18} /><span>Completed</span></div>}
             </div>
 
