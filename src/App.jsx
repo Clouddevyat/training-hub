@@ -3280,6 +3280,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
+  const [equipmentFilter, setEquipmentFilter] = useState('all');
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3392,6 +3393,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             name: ex.name,
             sets: ex.sets || 3,
             reps: ex.reps || '8-10',
+            isAmrap: ex.isAmrap || false,
             intensity: ex.percentage || 70,
             rpe: ex.rpe || 7,
             rest: ex.rest || '90',
@@ -3571,7 +3573,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
   const addExercise = (dayIdx, groupId = null) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null }] });
+    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', isAmrap: false, intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null }] });
   };
 
   // Create a new superset/circuit group
@@ -3661,6 +3663,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     setShowExercisePicker(null);
     setExerciseSearch('');
     setExerciseFilter('all');
+    setEquipmentFilter('all');
   };
 
   const selectSwap = (exerciseId) => {
@@ -3681,7 +3684,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
         description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
         weeklyTemplate: phase.weeklyTemplate.map(day => ({
           day: day.day, dayName: day.dayName, session: day.session, type: day.type, duration: day.duration || 60, warmup: day.warmup || 'none', cooldown: day.cooldown || 'none',
-          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey, groupId: ex.groupId, groupType: ex.groupType })) },
+          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, isAmrap: ex.isAmrap, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey, groupId: ex.groupId, groupType: ex.groupType })) },
         })),
       })),
     };
@@ -3689,7 +3692,14 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     resetEditor();
   };
 
-  const filteredExercises = Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).filter(e => exerciseFilter === 'all' || e.pattern === exerciseFilter).filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()));
+  // Get unique equipment from all exercises
+  const EQUIPMENT_OPTIONS = [...new Set(Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).flatMap(e => e.equipment))].sort();
+  
+  const filteredExercises = Object.values(EXERCISE_LIBRARY)
+    .filter(e => !e.isCardio && !e.isMobility)
+    .filter(e => exerciseFilter === 'all' || e.pattern === exerciseFilter)
+    .filter(e => equipmentFilter === 'all' || e.equipment.includes(equipmentFilter))
+    .filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()));
 
   return (
     <div className="p-4">
@@ -4003,7 +4013,23 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                             {/* Row 1: Sets, Reps, %1RM, RPE */}
                             <div className="grid grid-cols-4 gap-2 text-xs mb-2">
                               <div><label className={theme.textMuted}>Sets</label><input type="number" value={ex.sets} onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
-                              <div><label className={theme.textMuted}>Reps</label><input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                              <div>
+                                <label className={theme.textMuted}>Reps</label>
+                                <div className="flex gap-1">
+                                  {ex.isAmrap ? (
+                                    <span className={`flex-1 p-1 rounded ${theme.input} text-center font-medium text-green-500`}>AMRAP</span>
+                                  ) : (
+                                    <input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`flex-1 p-1 rounded ${theme.input} min-w-0`} />
+                                  )}
+                                  <button 
+                                    onClick={() => updateExercise(dayIdx, exIdx, { isAmrap: !ex.isAmrap })}
+                                    className={`px-1 rounded text-[10px] font-bold ${ex.isAmrap ? 'bg-green-500 text-white' : theme.cardAlt}`}
+                                    title="As Many Reps As Possible"
+                                  >
+                                    ∞
+                                  </button>
+                                </div>
+                              </div>
                               <div><label className={theme.textMuted}>%1RM</label><input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
                               <div><label className={theme.textMuted}>RPE</label><input type="number" value={ex.rpe} onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })} min={1} max={10} className={`w-full p-1 rounded ${theme.input}`} /></div>
                             </div>
@@ -4109,10 +4135,38 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       {showExercisePicker && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[80vh] overflow-auto`}>
-            <div className="flex items-center justify-between mb-4"><h3 className={`font-bold ${theme.text}`}>Select Exercise</h3><button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); }}><X size={24} className={theme.text} /></button></div>
+            <div className="flex items-center justify-between mb-4"><h3 className={`font-bold ${theme.text}`}>Select Exercise</h3><button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); setEquipmentFilter('all'); }}><X size={24} className={theme.text} /></button></div>
             <input type="text" placeholder="Search exercises..." value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} className={`w-full p-3 rounded-lg ${theme.input} border mb-3`} />
-            <div className="flex flex-wrap gap-2 mb-4"><button onClick={() => setExerciseFilter('all')} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}>All</button>{Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (<button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}>{pattern.icon} {pattern.name}</button>))}</div>
-            <div className="space-y-2 max-h-[40vh] overflow-auto">{filteredExercises.map(ex => (<button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left`}><p className={`font-medium ${theme.text}`}>{ex.name}</p><p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}</p></button>))}</div>
+            
+            {/* Movement Pattern Filter */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}>All</button>
+              {Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (
+                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}>{pattern.icon} {pattern.name}</button>
+              ))}
+            </div>
+            
+            {/* Equipment Filter */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className={`text-xs ${theme.textMuted} self-center`}>Equipment:</span>
+              <button onClick={() => setEquipmentFilter('all')} className={`px-2 py-0.5 rounded-full text-xs ${equipmentFilter === 'all' ? 'bg-green-500 text-white' : theme.cardAlt}`}>All</button>
+              {EQUIPMENT_OPTIONS.map(eq => (
+                <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2 py-0.5 rounded-full text-xs ${equipmentFilter === eq ? 'bg-green-500 text-white' : theme.cardAlt}`}>{eq}</button>
+              ))}
+            </div>
+            
+            <div className="space-y-2 max-h-[40vh] overflow-auto">
+              {filteredExercises.length === 0 ? (
+                <p className={`text-center py-4 ${theme.textMuted}`}>No exercises match your filters</p>
+              ) : (
+                filteredExercises.map(ex => (
+                  <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left`}>
+                    <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                    <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}</p>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
