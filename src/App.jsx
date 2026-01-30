@@ -731,6 +731,119 @@ const BENCHMARK_DISPLAY_NAMES = {
   aetDrift: 'AeT Drift %',
 };
 
+// ============== PROGRESSION ANALYSIS SYSTEM ==============
+const analyzeProgressionForExercise = (exerciseName, workoutLogs, profile, weeks = 4) => {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - (weeks * 7));
+  
+  // Normalize name for matching
+  const normalizeForMatch = (name) => {
+    if (!name) return '';
+    return name.toLowerCase().replace(/weighted\s*/i, '').replace(/[-\s]+/g, '_').trim();
+  };
+  const normalizedName = normalizeForMatch(exerciseName);
+  
+  // Find all instances of this exercise
+  const exerciseInstances = workoutLogs
+    .filter(log => log.completed && log.exerciseData && new Date(log.date) >= cutoffDate)
+    .flatMap(log => 
+      (log.exerciseData || [])
+        .filter(ex => normalizeForMatch(ex.name) === normalizedName)
+        .map(ex => ({
+          ...ex,
+          date: log.date,
+          sessionRpe: log.rpe,
+          sessionNotes: log.notes
+        }))
+    )
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  if (exerciseInstances.length < 3) {
+    return { recommendation: null, reason: 'Not enough data', instances: exerciseInstances.length };
+  }
+  
+  // Analyze patterns
+  const completedCount = exerciseInstances.filter(ex => ex.completed).length;
+  const completionRate = completedCount / exerciseInstances.length;
+  const avgRpe = exerciseInstances.reduce((sum, ex) => sum + (ex.sessionRpe || 5), 0) / exerciseInstances.length;
+  const weights = exerciseInstances.filter(ex => ex.weight).map(ex => ex.weight);
+  const latestWeight = weights.length > 0 ? weights[weights.length - 1] : null;
+  const avgWeight = weights.length > 0 ? Math.round(weights.reduce((a, b) => a + b, 0) / weights.length) : null;
+  
+  // Check for PR key and current PR
+  const prKey = exerciseInstances[0]?.prKey;
+  const currentPR = prKey ? profile.prs?.[prKey]?.value : null;
+  
+  // Generate recommendation
+  let recommendation = null;
+  let confidence = 'medium';
+  let suggestedAction = null;
+  
+  if (completionRate >= 0.9 && avgRpe <= 7) {
+    // Crushing it - ready to progress
+    recommendation = 'increase';
+    confidence = avgRpe <= 6 ? 'high' : 'medium';
+    if (currentPR && latestWeight) {
+      // Suggest 2.5-5% increase
+      const increase = avgRpe <= 6 ? 0.05 : 0.025;
+      suggestedAction = {
+        type: 'increase_percentage',
+        amount: Math.round(increase * 100),
+        newWeight: Math.round(latestWeight * (1 + increase))
+      };
+    }
+  } else if (completionRate < 0.7 || avgRpe >= 9) {
+    // Struggling - suggest regression
+    recommendation = 'decrease';
+    confidence = avgRpe >= 9.5 ? 'high' : 'medium';
+    if (latestWeight) {
+      suggestedAction = {
+        type: 'decrease_percentage',
+        amount: 5,
+        newWeight: Math.round(latestWeight * 0.95)
+      };
+    }
+  } else if (completionRate >= 0.8 && avgRpe >= 7.5 && avgRpe <= 8.5) {
+    // Good challenge level - hold steady
+    recommendation = 'maintain';
+    confidence = 'high';
+  }
+  
+  return {
+    recommendation,
+    confidence,
+    suggestedAction,
+    stats: {
+      instances: exerciseInstances.length,
+      completionRate: Math.round(completionRate * 100),
+      avgRpe: avgRpe.toFixed(1),
+      latestWeight,
+      avgWeight,
+      currentPR
+    }
+  };
+};
+
+const analyzeAllProgressions = (workoutLogs, profile, todayExercises = []) => {
+  const analyses = [];
+  
+  // Analyze exercises from today's workout that have PR keys
+  todayExercises.forEach(ex => {
+    if (ex.prKey) {
+      const analysis = analyzeProgressionForExercise(ex.name, workoutLogs, profile);
+      if (analysis.recommendation) {
+        analyses.push({
+          exerciseName: ex.name,
+          prKey: ex.prKey,
+          ...analysis
+        });
+      }
+    }
+  });
+  
+  return analyses;
+};
+
 // ============== EXERCISE LIBRARY ==============
 const MOVEMENT_PATTERNS = {
   hipHinge: { id: 'hipHinge', name: 'Hip Hinge', icon: '🏋️' },
@@ -3002,6 +3115,102 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
   );
 };
 
+// ============== PROGRESSION INSIGHTS COMPONENT ==============
+const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, darkMode }) => {
+  if (!analyses || analyses.length === 0) return null;
+  
+  const actionableAnalyses = analyses.filter(a => a.recommendation === 'increase' || a.recommendation === 'decrease');
+  if (actionableAnalyses.length === 0) return null;
+  
+  const applyProgression = (analysis) => {
+    if (!analysis.suggestedAction || !analysis.prKey) return;
+    
+    // Update PR if this is an increase and we have a suggested new weight
+    if (analysis.recommendation === 'increase' && analysis.suggestedAction.newWeight) {
+      const currentPR = profile.prs?.[analysis.prKey]?.value;
+      // Only update if new weight would be higher than current PR
+      if (!currentPR || analysis.suggestedAction.newWeight > currentPR) {
+        setAthleteProfile(prev => ({
+          ...prev,
+          prs: {
+            ...prev.prs,
+            [analysis.prKey]: {
+              ...prev.prs?.[analysis.prKey],
+              value: analysis.suggestedAction.newWeight,
+              date: new Date().toISOString().split('T')[0],
+              note: 'Auto-adjusted based on progression'
+            }
+          },
+          history: [
+            ...(prev.history || []),
+            {
+              category: 'prs',
+              key: analysis.prKey,
+              value: analysis.suggestedAction.newWeight,
+              date: new Date().toISOString(),
+              note: 'Progression adjustment'
+            }
+          ]
+        }));
+      }
+    }
+  };
+  
+  return (
+    <div className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 ${
+      actionableAnalyses.some(a => a.recommendation === 'increase') 
+        ? 'border-green-500' 
+        : 'border-amber-500'
+    }`}>
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp size={18} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
+        <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
+      </div>
+      <div className="space-y-3">
+        {actionableAnalyses.slice(0, 3).map((analysis, idx) => (
+          <div key={idx} className={`p-3 ${theme.cardAlt} rounded-lg`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <p className={`font-medium ${theme.text}`}>{analysis.exerciseName}</p>
+                <p className={`text-sm ${theme.textMuted} mt-1`}>
+                  {analysis.recommendation === 'increase' ? (
+                    <>
+                      <span className="text-green-500">↑ Ready to progress</span>
+                      {analysis.stats.avgRpe && <span className="ml-2">Avg RPE: {analysis.stats.avgRpe}</span>}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-amber-500">↓ Consider reducing</span>
+                      {analysis.stats.completionRate && <span className="ml-2">{analysis.stats.completionRate}% completion</span>}
+                    </>
+                  )}
+                </p>
+                {analysis.suggestedAction && (
+                  <p className={`text-xs ${theme.textMuted} mt-1`}>
+                    Suggested: {analysis.suggestedAction.newWeight} lbs 
+                    ({analysis.recommendation === 'increase' ? '+' : '-'}{analysis.suggestedAction.amount}%)
+                  </p>
+                )}
+              </div>
+              {analysis.suggestedAction && analysis.recommendation === 'increase' && (
+                <button
+                  onClick={() => applyProgression(analysis)}
+                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg font-medium"
+                >
+                  Apply
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className={`text-xs ${theme.textMuted} mt-3`}>
+        Based on last 4 weeks of training data
+      </p>
+    </div>
+  );
+};
+
 // ============== HR ZONE & LOAD DISPLAYS ==============
 const HRZoneDisplay = ({ hrZone, profile, theme, darkMode }) => {
   const zones = calculateZones(profile.benchmarks?.maxHR?.value, profile.benchmarks?.aerobicThresholdHR?.value, profile.benchmarks?.anaerobicThresholdHR?.value);
@@ -4660,6 +4869,12 @@ export default function App() {
   const chronicLoad = ctl;
   const loadRatio = acr;
 
+  // Progression analysis for today's exercises
+  const progressionAnalyses = useMemo(() => {
+    const exercises = todayWorkout?.prescription?.exercises || [];
+    return analyzeAllProgressions(workoutLogs, athleteProfile, exercises);
+  }, [workoutLogs, athleteProfile, todayWorkout?.prescription?.exercises]);
+
   const theme = {
     bg: darkMode ? 'bg-gray-900' : 'bg-slate-100',
     card: darkMode ? 'bg-gray-800' : 'bg-white',
@@ -4965,6 +5180,17 @@ export default function App() {
 
             {/* Load Target */}
             <SmartLoadDisplay prescription={todayWorkout.prescription} profile={athleteProfile} theme={theme} darkMode={darkMode} currentWeek={programState.currentWeek} />
+
+            {/* Progression Insights */}
+            {todayWorkout.type === 'strength' && progressionAnalyses.length > 0 && (
+              <ProgressionInsights 
+                analyses={progressionAnalyses} 
+                profile={athleteProfile} 
+                setAthleteProfile={setAthleteProfile} 
+                theme={theme} 
+                darkMode={darkMode} 
+              />
+            )}
 
             <div className={`${theme.card} rounded-xl shadow-sm overflow-hidden`}>
               {todayWorkout.prescription.warmup && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Warm-up</p><p className={theme.text}>{todayWorkout.prescription.warmup}</p></div>}
