@@ -539,6 +539,173 @@ const getReadinessLabel = (score) => {
   return { text: 'Recovery Needed', icon: Battery, recommendation: 'Active recovery or rest day recommended' };
 };
 
+// ============== TRAINING LOAD SYSTEM ==============
+// Type multipliers for training stress calculation
+const LOAD_TYPE_MULTIPLIERS = {
+  strength: 1.2,        // High CNS load
+  threshold: 1.3,       // High cardiovascular stress
+  muscular_endurance: 1.3,
+  long_effort: 0.8,     // Volume but lower intensity
+  long_aerobic: 0.8,
+  cardio: 0.6,          // Easy/moderate cardio
+  aerobic: 0.6,
+  recovery: 0.3,        // Active recovery
+  rest: 0,
+};
+
+// Calculate load for a single workout
+const calculateWorkoutLoad = (workout) => {
+  if (!workout || !workout.completed) return 0;
+  
+  const duration = workout.actual || workout.duration || workout.actualDuration || 60;
+  const rpe = workout.rpe || 5;
+  const type = workout.type || 'cardio';
+  const typeMultiplier = LOAD_TYPE_MULTIPLIERS[type] || 0.7;
+  
+  // Load = Duration × RPE × Type Multiplier
+  // Normalized so a 60-min moderate (RPE 5) strength session = ~360 load
+  return Math.round(duration * rpe * typeMultiplier);
+};
+
+// Calculate Acute Training Load (ATL) - 7 day rolling sum
+const calculateATL = (workoutLogs, asOfDate = new Date()) => {
+  const cutoff = new Date(asOfDate);
+  cutoff.setDate(cutoff.getDate() - 7);
+  
+  const recentLogs = workoutLogs.filter(log => {
+    const logDate = new Date(log.date);
+    return logDate >= cutoff && logDate <= asOfDate && log.completed;
+  });
+  
+  return recentLogs.reduce((sum, log) => sum + calculateWorkoutLoad(log), 0);
+};
+
+// Calculate Chronic Training Load (CTL) - 28 day rolling average (per day)
+const calculateCTL = (workoutLogs, asOfDate = new Date()) => {
+  const cutoff = new Date(asOfDate);
+  cutoff.setDate(cutoff.getDate() - 28);
+  
+  const monthLogs = workoutLogs.filter(log => {
+    const logDate = new Date(log.date);
+    return logDate >= cutoff && logDate <= asOfDate && log.completed;
+  });
+  
+  const totalLoad = monthLogs.reduce((sum, log) => sum + calculateWorkoutLoad(log), 0);
+  return Math.round(totalLoad / 28); // Average per day
+};
+
+// Calculate Acute:Chronic Ratio (ACR)
+const calculateACR = (workoutLogs, asOfDate = new Date()) => {
+  const atl = calculateATL(workoutLogs, asOfDate);
+  const ctl = calculateCTL(workoutLogs, asOfDate);
+  
+  if (ctl === 0) return atl > 0 ? 2.0 : 1.0; // No baseline yet
+  
+  // ATL is 7-day sum, CTL is daily average, so normalize ATL to daily
+  const atlDaily = atl / 7;
+  return Number((atlDaily / ctl).toFixed(2));
+};
+
+// Get training load status and recommendations
+const getLoadStatus = (acr, atl, ctl) => {
+  // Check if we have enough data
+  if (ctl < 50) {
+    return {
+      zone: 'building',
+      color: 'blue',
+      label: 'Building Baseline',
+      description: 'Not enough training history yet. Keep logging workouts.',
+      recommendation: 'Continue training as programmed',
+      icon: '📊'
+    };
+  }
+  
+  if (acr < 0.8) {
+    return {
+      zone: 'detraining',
+      color: 'yellow',
+      label: 'Detraining Risk',
+      description: 'Training load dropping. You may be losing fitness.',
+      recommendation: 'Increase training volume or intensity if recovered',
+      icon: '📉'
+    };
+  }
+  
+  if (acr <= 1.3) {
+    return {
+      zone: 'optimal',
+      color: 'green',
+      label: 'Optimal Zone',
+      description: 'Training load is balanced. Good adaptation stimulus.',
+      recommendation: 'Continue as planned. You\'re in the sweet spot.',
+      icon: '✅'
+    };
+  }
+  
+  if (acr <= 1.5) {
+    return {
+      zone: 'caution',
+      color: 'orange',
+      label: 'Caution',
+      description: 'Ramping up quickly. Monitor recovery closely.',
+      recommendation: 'Consider an easier day soon. Watch for fatigue signs.',
+      icon: '⚠️'
+    };
+  }
+  
+  return {
+    zone: 'danger',
+    color: 'red',
+    label: 'Overreach Warning',
+    description: 'High injury/burnout risk. Acute load far exceeds chronic.',
+    recommendation: 'Strongly recommend recovery day. Reduce intensity.',
+    icon: '🚨'
+  };
+};
+
+// Calculate load-adjusted readiness (combines subjective readiness with objective load)
+const calculateLoadAdjustedReadiness = (baseReadiness, acr, loadStatus) => {
+  if (!baseReadiness) return null;
+  
+  let adjustment = 0;
+  
+  // Penalize high ACR
+  if (acr > 1.5) adjustment -= 15;
+  else if (acr > 1.3) adjustment -= 8;
+  else if (acr < 0.8) adjustment += 5; // Slight boost if undertrained
+  
+  // Factor in load zone
+  if (loadStatus.zone === 'danger') adjustment -= 10;
+  else if (loadStatus.zone === 'caution') adjustment -= 5;
+  
+  return Math.max(0, Math.min(100, baseReadiness + adjustment));
+};
+
+// Get historical load data for charting
+const getLoadHistory = (workoutLogs, days = 28) => {
+  const history = [];
+  const today = new Date();
+  
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    
+    const dayLog = workoutLogs.find(l => l.date === dateKey && l.completed);
+    const dayLoad = dayLog ? calculateWorkoutLoad(dayLog) : 0;
+    
+    history.push({
+      date: dateKey,
+      load: dayLoad,
+      atl: calculateATL(workoutLogs, date),
+      ctl: calculateCTL(workoutLogs, date),
+      acr: calculateACR(workoutLogs, date)
+    });
+  }
+  
+  return history;
+};
+
 const PR_DISPLAY_NAMES = {
   trapBarDeadlift: 'Trap Bar Deadlift',
   backSquat: 'Back Squat',
@@ -4260,12 +4427,19 @@ export default function App() {
 
   const todayLog = workoutLogs.find(log => log.week === programState.currentWeek && log.day === programState.currentDay && log.programId === programState.currentProgram && log.completed);
 
-  // Training load
-  const last7DaysLogs = workoutLogs.filter(log => { const d = new Date(log.date); const w = new Date(); w.setDate(w.getDate() - 7); return d >= w && log.completed; });
-  const acuteLoad = last7DaysLogs.reduce((sum, log) => sum + (log.actual || 0), 0);
-  const last28DaysLogs = workoutLogs.filter(log => { const d = new Date(log.date); const m = new Date(); m.setDate(m.getDate() - 28); return d >= m && log.completed; });
-  const chronicLoad = last28DaysLogs.length > 0 ? Math.round(last28DaysLogs.reduce((sum, log) => sum + (log.actual || 0), 0) / 4) : 0;
-  const loadRatio = chronicLoad > 0 ? (acuteLoad / chronicLoad).toFixed(2) : '-';
+  // Training load calculations using new system
+  const atl = calculateATL(workoutLogs);
+  const ctl = calculateCTL(workoutLogs);
+  const acr = calculateACR(workoutLogs);
+  const loadStatus = getLoadStatus(acr, atl, ctl);
+  
+  // Load-adjusted readiness (combines subjective + objective)
+  const adjustedReadinessScore = readinessScore ? calculateLoadAdjustedReadiness(readinessScore, acr, loadStatus) : null;
+  const adjustedReadinessInfo = adjustedReadinessScore ? getReadinessLabel(adjustedReadinessScore) : null;
+  
+  // Legacy values for backward compatibility
+  const acuteLoad = atl;
+  const loadRatio = acr;
 
   const theme = {
     bg: darkMode ? 'bg-gray-900' : 'bg-slate-100',
@@ -4357,13 +4531,63 @@ export default function App() {
             )}
             {todayReadiness && (
               <div className={`${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between`}>
-                <div><p className={`text-xs ${theme.textMuted} uppercase`}>Today's Readiness</p><p className={`text-2xl font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore} <span className="text-sm font-normal">{readinessInfo?.text}</span></p></div>
+                <div>
+                  <p className={`text-xs ${theme.textMuted} uppercase`}>Today's Readiness</p>
+                  <p className={`text-2xl font-bold ${getReadinessColor(adjustedReadinessScore || readinessScore)}`}>
+                    {adjustedReadinessScore || readinessScore} 
+                    <span className="text-sm font-normal ml-1">{adjustedReadinessInfo?.text || readinessInfo?.text}</span>
+                  </p>
+                  {adjustedReadinessScore && adjustedReadinessScore !== readinessScore && (
+                    <p className={`text-xs ${theme.textMuted}`}>Base: {readinessScore} (adjusted for load)</p>
+                  )}
+                </div>
                 <button onClick={() => setCurrentView('readiness')} className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={18} className={theme.textMuted} /></button>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>Acute (7d)</p><p className={`text-2xl font-bold ${theme.text}`}>{acuteLoad}<span className={`text-sm ${theme.textMuted} ml-1`}>min</span></p></div>
-              <div className={`${theme.card} rounded-xl shadow-sm p-4`}><p className={`text-xs ${theme.textMuted} uppercase`}>A:C Ratio</p><p className={`text-2xl font-bold ${loadRatio !== '-' && loadRatio > 1.5 ? 'text-red-500' : loadRatio !== '-' && loadRatio < 0.8 ? 'text-amber-500' : 'text-green-500'}`}>{loadRatio}</p></div>
+            
+            {/* Training Load Card */}
+            <div className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 ${
+              loadStatus.color === 'red' ? 'border-red-500' :
+              loadStatus.color === 'orange' ? 'border-orange-500' :
+              loadStatus.color === 'yellow' ? 'border-yellow-500' :
+              loadStatus.color === 'green' ? 'border-green-500' :
+              'border-blue-500'
+            }`}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className={`text-xs ${theme.textMuted} uppercase`}>Training Load</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xl">{loadStatus.icon}</span>
+                    <span className={`font-bold ${
+                      loadStatus.color === 'red' ? 'text-red-500' :
+                      loadStatus.color === 'orange' ? 'text-orange-500' :
+                      loadStatus.color === 'yellow' ? 'text-yellow-500' :
+                      loadStatus.color === 'green' ? 'text-green-500' :
+                      'text-blue-500'
+                    }`}>{loadStatus.label}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`text-2xl font-bold font-mono ${
+                    loadStatus.color === 'red' ? 'text-red-500' :
+                    loadStatus.color === 'orange' ? 'text-orange-500' :
+                    loadStatus.color === 'green' ? 'text-green-500' :
+                    theme.text
+                  }`}>{acr}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>ACR</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className={`p-2 ${theme.cardAlt} rounded-lg text-center`}>
+                  <p className={`text-lg font-bold font-mono ${theme.text}`}>{atl}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>Acute (7d)</p>
+                </div>
+                <div className={`p-2 ${theme.cardAlt} rounded-lg text-center`}>
+                  <p className={`text-lg font-bold font-mono ${theme.text}`}>{ctl}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>Chronic (28d avg)</p>
+                </div>
+              </div>
+              <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
             </div>
             <button onClick={() => setCurrentView('charts')} className={`w-full ${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow`}>
               <div className="flex items-center gap-3">
@@ -4471,6 +4695,36 @@ export default function App() {
                   <span className={`font-medium ${theme.text}`}>Low Readiness ({readinessScore})</span>
                 </div>
                 <p className={`text-sm ${theme.textMuted}`}>{readinessInfo?.recommendation}</p>
+              </div>
+            )}
+
+            {/* Training Load Warning */}
+            {loadStatus.zone === 'danger' && todayWorkout.type !== 'recovery' && (
+              <div className={`p-4 ${darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300'} border rounded-xl`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🚨</span>
+                  <span className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-700'}`}>Overreach Warning (ACR: {acr})</span>
+                </div>
+                <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
+                <button 
+                  onClick={() => {
+                    // Swap to recovery day
+                    setProgramState(prev => ({ ...prev, currentDay: 7 }));
+                  }}
+                  className={`mt-3 px-4 py-2 ${darkMode ? 'bg-red-900/50 hover:bg-red-900/70' : 'bg-red-100 hover:bg-red-200'} rounded-lg text-sm font-medium ${darkMode ? 'text-red-300' : 'text-red-700'}`}
+                >
+                  Switch to Recovery Day
+                </button>
+              </div>
+            )}
+            
+            {loadStatus.zone === 'caution' && todayWorkout.type !== 'recovery' && (
+              <div className={`p-4 ${darkMode ? 'bg-orange-900/30 border-orange-700' : 'bg-orange-50 border-orange-300'} border rounded-xl`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">⚠️</span>
+                  <span className={`font-medium ${darkMode ? 'text-orange-400' : 'text-orange-700'}`}>Load Caution (ACR: {acr})</span>
+                </div>
+                <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
               </div>
             )}
 
