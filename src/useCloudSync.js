@@ -98,6 +98,12 @@ export const useSyncedStorage = (key, initialValue, syncStatus, setSyncStatus) =
 export const loadFromCloud = async () => {
   const deviceId = getDeviceId();
   
+  // Check if we already loaded this session to prevent infinite reload loops
+  const loadedFlag = sessionStorage.getItem('cloudDataLoaded');
+  if (loadedFlag === 'true') {
+    return { success: true, loaded: 0, total: 0, skipped: true };
+  }
+  
   try {
     const { data, error } = await supabase
       .from('user_data')
@@ -113,20 +119,30 @@ export const loadFromCloud = async () => {
         const localItem = window.localStorage.getItem(row.data_key);
         const localData = localItem ? JSON.parse(localItem) : null;
         
-        // Compare timestamps - use cloud if newer or local doesn't exist
-        const localTimestamp = localData?.lastUpdated || localStorage.getItem(`${row.data_key}_timestamp`);
+        // Always prefer cloud data if local is empty/missing
+        // Or if cloud is newer
+        const localTimestamp = localStorage.getItem(`${row.data_key}_timestamp`);
         const cloudTimestamp = row.updated_at;
         
-        if (!localData || (cloudTimestamp && (!localTimestamp || new Date(cloudTimestamp) > new Date(localTimestamp)))) {
+        const shouldUseCloud = !localData || 
+          !localItem ||
+          (cloudTimestamp && (!localTimestamp || new Date(cloudTimestamp) > new Date(localTimestamp)));
+        
+        if (shouldUseCloud) {
           window.localStorage.setItem(row.data_key, JSON.stringify(row.data_value));
           window.localStorage.setItem(`${row.data_key}_timestamp`, cloudTimestamp);
           loadedCount++;
+          console.log(`Cloud sync: loaded ${row.data_key} from cloud`);
         }
       }
+      
+      // Mark that we've loaded cloud data this session
+      sessionStorage.setItem('cloudDataLoaded', 'true');
       
       return { success: true, loaded: loadedCount, total: data.length };
     }
     
+    sessionStorage.setItem('cloudDataLoaded', 'true');
     return { success: true, loaded: 0, total: 0 };
   } catch (error) {
     console.error('Load from cloud error:', error);
@@ -138,6 +154,9 @@ export const loadFromCloud = async () => {
 export const syncAllToCloud = async (setSyncStatus) => {
   const deviceId = getDeviceId();
   setSyncStatus?.({ syncing: true, lastSync: null, error: null });
+  
+  // Clear the loaded flag so next reload will check cloud again
+  sessionStorage.removeItem('cloudDataLoaded');
   
   try {
     const upserts = SYNC_KEYS.map(key => {

@@ -4736,9 +4736,12 @@ export default function App() {
   useEffect(() => {
     const initCloudSync = async () => {
       const result = await loadFromCloud();
-      if (result.success && result.loaded > 0) {
-        // Reload the page to pick up cloud data
+      console.log('Cloud sync result:', result);
+      if (result.success && result.loaded > 0 && !result.skipped) {
+        // Data was loaded from cloud, reload to pick it up in React state
+        console.log('Reloading to apply cloud data...');
         window.location.reload();
+        return;
       }
       setCloudLoaded(true);
     };
