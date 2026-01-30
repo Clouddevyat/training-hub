@@ -3281,6 +3281,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('all');
+  const [showSplitPicker, setShowSplitPicker] = useState(false);
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3308,6 +3309,70 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     { id: 'yoga', name: 'Yoga Cool-down (10 min)', description: 'Child\'s pose, downward dog, supine twist, savasana', duration: 10 },
   ];
 
+  // Training Split Templates
+  const SPLIT_TEMPLATES = [
+    { 
+      id: 'ppl', 
+      name: 'Push/Pull/Legs', 
+      icon: '💪',
+      description: '6 days: Push, Pull, Legs, Push, Pull, Legs, Rest',
+      days: [
+        { dayName: 'Push A', session: 'Chest, Shoulders, Triceps', type: 'strength', warmup: 'upper' },
+        { dayName: 'Pull A', session: 'Back, Biceps, Rear Delts', type: 'strength', warmup: 'upper' },
+        { dayName: 'Legs A', session: 'Quads, Hamstrings, Glutes', type: 'strength', warmup: 'lower' },
+        { dayName: 'Push B', session: 'Chest, Shoulders, Triceps', type: 'strength', warmup: 'upper' },
+        { dayName: 'Pull B', session: 'Back, Biceps, Rear Delts', type: 'strength', warmup: 'upper' },
+        { dayName: 'Legs B', session: 'Quads, Hamstrings, Glutes', type: 'strength', warmup: 'lower' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+      ]
+    },
+    { 
+      id: 'upper_lower', 
+      name: 'Upper/Lower', 
+      icon: '🔄',
+      description: '4 days: Upper, Lower, Rest, Upper, Lower, Rest, Rest',
+      days: [
+        { dayName: 'Upper A', session: 'Chest, Back, Shoulders, Arms', type: 'strength', warmup: 'upper' },
+        { dayName: 'Lower A', session: 'Quads, Hamstrings, Glutes, Calves', type: 'strength', warmup: 'lower' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+        { dayName: 'Upper B', session: 'Chest, Back, Shoulders, Arms', type: 'strength', warmup: 'upper' },
+        { dayName: 'Lower B', session: 'Quads, Hamstrings, Glutes, Calves', type: 'strength', warmup: 'lower' },
+        { dayName: 'Cardio', session: 'Zone 2 Aerobic', type: 'cardio', warmup: 'cardio' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+      ]
+    },
+    { 
+      id: 'full_body', 
+      name: 'Full Body 3x', 
+      icon: '🏋️',
+      description: '3 days: Full Body, Rest, Full Body, Rest, Full Body, Rest, Rest',
+      days: [
+        { dayName: 'Full Body A', session: 'Squat, Press, Pull', type: 'strength', warmup: 'full' },
+        { dayName: 'Cardio', session: 'Zone 2 Aerobic', type: 'cardio', warmup: 'cardio' },
+        { dayName: 'Full Body B', session: 'Hinge, Press, Pull', type: 'strength', warmup: 'full' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+        { dayName: 'Full Body C', session: 'Lunge, Press, Pull', type: 'strength', warmup: 'full' },
+        { dayName: 'Cardio', session: 'Zone 2 Aerobic', type: 'cardio', warmup: 'cardio' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+      ]
+    },
+    { 
+      id: 'tactical', 
+      name: 'Tactical/Hybrid', 
+      icon: '⚔️',
+      description: '5 days: Strength, Cardio, Strength, Cardio, Strength, Ruck, Rest',
+      days: [
+        { dayName: 'Strength A', session: 'Lower Body Focus', type: 'strength', warmup: 'lower' },
+        { dayName: 'Endurance', session: 'Zone 2 Run/Bike', type: 'cardio', warmup: 'cardio' },
+        { dayName: 'Strength B', session: 'Upper Body Focus', type: 'strength', warmup: 'upper' },
+        { dayName: 'Intervals', session: 'High Intensity Intervals', type: 'cardio', warmup: 'cardio' },
+        { dayName: 'Strength C', session: 'Full Body Power', type: 'strength', warmup: 'full' },
+        { dayName: 'Ruck', session: 'Loaded March', type: 'muscular_endurance', warmup: 'general' },
+        { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
+      ]
+    },
+  ];
+
   const currentPhase = phases[currentPhaseIdx];
   const totalWeeks = phases.reduce((sum, p) => sum + p.weeks, 0);
 
@@ -3331,6 +3396,50 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   };
 
   const removePhase = (idx) => setPhases(prev => prev.filter((_, i) => i !== idx));
+
+  // Apply a training split template to the current phase
+  const applySplitTemplate = (splitId) => {
+    const split = SPLIT_TEMPLATES.find(s => s.id === splitId);
+    if (!split || !currentPhase) return;
+    
+    const newTemplate = split.days.map((day, i) => ({
+      day: i + 1,
+      dayName: day.dayName,
+      session: day.session,
+      type: day.type,
+      exercises: [],
+      duration: 60,
+      cardioZone: 'zone2',
+      cardioActivity: 'run',
+      warmup: day.warmup || 'none',
+      cooldown: 'none',
+    }));
+    
+    setPhases(prev => prev.map((ph, i) => i === currentPhaseIdx ? { ...ph, weeklyTemplate: newTemplate } : ph));
+    setShowSplitPicker(false);
+  };
+
+  // Calculate weekly volume per muscle group for current phase
+  const getVolumeByMuscle = () => {
+    if (!currentPhase) return {};
+    
+    const volume = {};
+    currentPhase.weeklyTemplate.forEach(day => {
+      if (day.type === 'recovery' || day.type === 'cardio') return;
+      
+      (day.exercises || []).forEach(ex => {
+        const exerciseData = EXERCISE_LIBRARY[ex.exerciseId];
+        if (!exerciseData?.muscles) return;
+        
+        const sets = ex.sets || 0;
+        exerciseData.muscles.forEach(muscle => {
+          volume[muscle] = (volume[muscle] || 0) + sets;
+        });
+      });
+    });
+    
+    return volume;
+  };
 
   // Duplicate a phase
   const duplicatePhase = (idx) => {
@@ -3920,6 +4029,44 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       {step === 'template' && currentPhase && (
         <div className="space-y-4">
           <div className="flex items-center justify-between"><button onClick={() => setStep('phases')} className={theme.textMuted}><ChevronLeft size={20} className="inline" /> Back</button><h3 className={`font-bold ${theme.text}`}>{currentPhase.name}</h3><span className={`text-sm ${theme.textMuted}`}>Week 1 of {currentPhase.weeks}</span></div>
+          
+          {/* Quick Actions: Split Template + Volume Summary */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowSplitPicker(true)}
+              className={`flex-1 py-2 px-3 rounded-lg ${theme.cardAlt} text-sm flex items-center justify-center gap-2`}
+            >
+              <Library size={16} className="text-blue-500" /> Apply Split Template
+            </button>
+          </div>
+          
+          {/* Volume Tracking Summary */}
+          {(() => {
+            const volume = getVolumeByMuscle();
+            const muscleList = Object.entries(volume).sort((a, b) => b[1] - a[1]);
+            if (muscleList.length === 0) return null;
+            
+            return (
+              <div className={`${theme.cardAlt} rounded-lg p-3`}>
+                <p className={`text-xs font-medium ${theme.textMuted} mb-2`}>📊 Weekly Volume (sets per muscle)</p>
+                <div className="flex flex-wrap gap-2">
+                  {muscleList.map(([muscle, sets]) => (
+                    <span key={muscle} className={`text-xs px-2 py-1 rounded-full ${
+                      sets < 10 ? 'bg-yellow-500/20 text-yellow-500' : 
+                      sets > 20 ? 'bg-red-500/20 text-red-500' : 
+                      'bg-green-500/20 text-green-500'
+                    }`}>
+                      {muscle}: {sets}
+                    </span>
+                  ))}
+                </div>
+                <p className={`text-xs ${theme.textMuted} mt-2`}>
+                  🟢 10-20 optimal | 🟡 &lt;10 low | 🔴 &gt;20 high
+                </p>
+              </div>
+            );
+          })()}
+          
           <p className={`text-sm ${theme.textMuted}`}>Build Week 1 template. Exercises auto-propagate to all {currentPhase.weeks} weeks with {PROGRESSION_MODELS[currentPhase.progression].name} progression.</p>
           {currentPhase.weeklyTemplate.map((day, dayIdx) => (
             <div key={day.day} className={`${theme.card} rounded-xl p-4`}>
@@ -4176,6 +4323,53 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
           <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[70vh] overflow-auto`}>
             <div className="flex items-center justify-between mb-4"><div><h3 className={`font-bold ${theme.text}`}>Swap Exercise</h3><p className={`text-sm ${theme.textMuted}`}>Same pattern: {MOVEMENT_PATTERNS[EXERCISE_LIBRARY[showSwapPicker.currentExerciseId]?.pattern]?.name}</p></div><button onClick={() => setShowSwapPicker(null)}><X size={24} className={theme.text} /></button></div>
             <div className="space-y-2">{getExerciseSwaps(showSwapPicker.currentExerciseId).map(ex => (<button key={ex.id} onClick={() => selectSwap(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left`}><p className={`font-medium ${theme.text}`}>{ex.name}</p><p className={`text-xs ${theme.textMuted}`}>Equipment: {ex.equipment.join(', ')}</p></button>))}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Split Template Picker Modal */}
+      {showSplitPicker && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSplitPicker(false)}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-md w-full max-h-[80vh] overflow-auto`} onClick={e => e.stopPropagation()}>
+            <h3 className={`font-bold text-lg ${theme.text} mb-2`}>Apply Training Split</h3>
+            <p className={`text-sm ${theme.textMuted} mb-4`}>
+              Choose a split template. This will replace your current day structure.
+            </p>
+            <div className="space-y-3">
+              {SPLIT_TEMPLATES.map(split => (
+                <button
+                  key={split.id}
+                  onClick={() => applySplitTemplate(split.id)}
+                  className={`w-full p-4 ${theme.cardAlt} rounded-xl text-left hover:border-blue-500 border-2 border-transparent`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{split.icon}</span>
+                    <div>
+                      <p className={`font-bold ${theme.text}`}>{split.name}</p>
+                      <p className={`text-xs ${theme.textMuted}`}>{split.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {split.days.map((day, i) => (
+                      <span key={i} className={`text-xs px-2 py-0.5 rounded ${
+                        day.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
+                        day.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
+                        day.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {day.dayName}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowSplitPicker(false)} 
+              className={`w-full mt-4 py-2 rounded-lg ${theme.cardAlt} ${theme.text}`}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
