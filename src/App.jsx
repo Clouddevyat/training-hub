@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { 
   Calendar, Dumbbell, TrendingUp, CheckCircle2, Circle, ChevronRight, 
   ChevronLeft, Play, Clock, Flame, Menu, X, Download, Upload,
@@ -3096,6 +3096,333 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
   );
 };
 
+// ============== WORKOUT TIMER COMPONENT ==============
+const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
+  const [mode, setMode] = useState('stopped'); // 'stopped', 'running', 'paused'
+  const [timerType, setTimerType] = useState('stopwatch'); // 'stopwatch', 'countdown', 'interval'
+  const [seconds, setSeconds] = useState(0);
+  const [targetSeconds, setTargetSeconds] = useState(60); // For countdown
+  const [intervalConfig, setIntervalConfig] = useState({
+    workTime: 240, // 4 min
+    restTime: 180, // 3 min  
+    rounds: 4,
+    currentRound: 1,
+    isRest: false
+  });
+  const [showConfig, setShowConfig] = useState(false);
+  const intervalRef = useRef(null);
+  
+  // Audio beep for transitions
+  const playBeep = useCallback((type = 'single') => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beeps = type === 'double' ? 2 : type === 'triple' ? 3 : 1;
+      for (let i = 0; i < beeps; i++) {
+        setTimeout(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = type === 'triple' ? 880 : 660;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.2);
+        }, i * 250);
+      }
+    } catch (e) { console.log('Audio not available'); }
+  }, []);
+  
+  // Format time display
+  const formatTime = (secs) => {
+    const hrs = Math.floor(secs / 3600);
+    const mins = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${mins}:${s.toString().padStart(2, '0')}`;
+  };
+  
+  // Timer logic
+  useEffect(() => {
+    if (mode === 'running') {
+      intervalRef.current = setInterval(() => {
+        setSeconds(prev => {
+          if (timerType === 'stopwatch') {
+            return prev + 1;
+          } else if (timerType === 'countdown') {
+            if (prev <= 1) {
+              playBeep('triple');
+              setMode('stopped');
+              return 0;
+            }
+            if (prev === 4) playBeep('single');
+            return prev - 1;
+          } else if (timerType === 'interval') {
+            const target = intervalConfig.isRest ? intervalConfig.restTime : intervalConfig.workTime;
+            if (prev >= target - 1) {
+              // Transition
+              if (intervalConfig.isRest) {
+                // End of rest, start next work period
+                if (intervalConfig.currentRound >= intervalConfig.rounds) {
+                  playBeep('triple');
+                  setMode('stopped');
+                  return 0;
+                }
+                playBeep('double');
+                setIntervalConfig(c => ({ ...c, currentRound: c.currentRound + 1, isRest: false }));
+                return 0;
+              } else {
+                // End of work, start rest
+                playBeep('double');
+                setIntervalConfig(c => ({ ...c, isRest: true }));
+                return 0;
+              }
+            }
+            // 3-second warning
+            if (prev === target - 4) playBeep('single');
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [mode, timerType, intervalConfig.isRest, intervalConfig.currentRound, intervalConfig.rounds, intervalConfig.workTime, intervalConfig.restTime, playBeep]);
+  
+  const startTimer = () => {
+    if (timerType === 'countdown' && seconds === 0) setSeconds(targetSeconds);
+    setMode('running');
+  };
+  
+  const pauseTimer = () => setMode('paused');
+  
+  const resetTimer = () => {
+    setMode('stopped');
+    setSeconds(timerType === 'countdown' ? targetSeconds : 0);
+    setIntervalConfig(c => ({ ...c, currentRound: 1, isRest: false }));
+  };
+  
+  // Quick presets based on workout type
+  const presets = useMemo(() => {
+    if (workoutType === 'threshold') {
+      return [
+        { label: '4×4min', work: 240, rest: 180, rounds: 4 },
+        { label: '5×3min', work: 180, rest: 120, rounds: 5 },
+        { label: '3×8min', work: 480, rest: 300, rounds: 3 },
+      ];
+    } else if (workoutType === 'muscular_endurance') {
+      return [
+        { label: '20 on/20 off', work: 20, rest: 20, rounds: 10 },
+        { label: '30 on/30 off', work: 30, rest: 30, rounds: 8 },
+        { label: '45 on/15 off', work: 45, rest: 15, rounds: 10 },
+      ];
+    }
+    return [
+      { label: '30s rest', countdown: 30 },
+      { label: '60s rest', countdown: 60 },
+      { label: '90s rest', countdown: 90 },
+      { label: '2min rest', countdown: 120 },
+      { label: '3min rest', countdown: 180 },
+    ];
+  }, [workoutType]);
+  
+  const applyPreset = (preset) => {
+    resetTimer();
+    if (preset.countdown) {
+      setTimerType('countdown');
+      setTargetSeconds(preset.countdown);
+      setSeconds(preset.countdown);
+    } else {
+      setTimerType('interval');
+      setIntervalConfig(c => ({
+        ...c,
+        workTime: preset.work,
+        restTime: preset.rest,
+        rounds: preset.rounds,
+        currentRound: 1,
+        isRest: false
+      }));
+      setSeconds(0);
+    }
+  };
+  
+  // Current display value
+  const displayTime = timerType === 'interval' 
+    ? formatTime((intervalConfig.isRest ? intervalConfig.restTime : intervalConfig.workTime) - seconds)
+    : formatTime(timerType === 'countdown' ? seconds : seconds);
+  
+  const progressPercent = timerType === 'interval'
+    ? (seconds / (intervalConfig.isRest ? intervalConfig.restTime : intervalConfig.workTime)) * 100
+    : timerType === 'countdown'
+    ? ((targetSeconds - seconds) / targetSeconds) * 100
+    : 0;
+
+  return (
+    <div className={`${theme.card} rounded-xl shadow-sm overflow-hidden`}>
+      <button 
+        onClick={() => setShowConfig(!showConfig)}
+        className={`w-full p-4 flex items-center justify-between ${theme.cardAlt}`}
+      >
+        <div className="flex items-center gap-2">
+          <Timer size={20} className={theme.text} />
+          <span className={`font-medium ${theme.text}`}>Workout Timer</span>
+        </div>
+        {showConfig ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
+      </button>
+      
+      {showConfig && (
+        <div className="p-4 space-y-4">
+          {/* Timer Type Selector */}
+          <div className="flex gap-2">
+            {[
+              { id: 'stopwatch', label: 'Stopwatch' },
+              { id: 'countdown', label: 'Countdown' },
+              { id: 'interval', label: 'Intervals' }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => { setTimerType(t.id); resetTimer(); }}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                  timerType === t.id ? 'bg-blue-500 text-white' : `${theme.cardAlt} ${theme.text}`
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          
+          {/* Quick Presets */}
+          <div>
+            <p className={`text-xs ${theme.textMuted} mb-2`}>Quick Presets</p>
+            <div className="flex flex-wrap gap-2">
+              {presets.map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => applyPreset(preset)}
+                  className={`px-3 py-1.5 rounded-lg text-sm ${theme.cardAlt} ${theme.text} hover:opacity-80`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Interval Config */}
+          {timerType === 'interval' && (
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={`text-xs ${theme.textMuted}`}>Work (sec)</label>
+                <input
+                  type="number"
+                  value={intervalConfig.workTime}
+                  onChange={(e) => setIntervalConfig(c => ({ ...c, workTime: parseInt(e.target.value) || 0 }))}
+                  className={`w-full mt-1 px-2 py-1.5 rounded ${theme.input} text-center`}
+                />
+              </div>
+              <div>
+                <label className={`text-xs ${theme.textMuted}`}>Rest (sec)</label>
+                <input
+                  type="number"
+                  value={intervalConfig.restTime}
+                  onChange={(e) => setIntervalConfig(c => ({ ...c, restTime: parseInt(e.target.value) || 0 }))}
+                  className={`w-full mt-1 px-2 py-1.5 rounded ${theme.input} text-center`}
+                />
+              </div>
+              <div>
+                <label className={`text-xs ${theme.textMuted}`}>Rounds</label>
+                <input
+                  type="number"
+                  value={intervalConfig.rounds}
+                  onChange={(e) => setIntervalConfig(c => ({ ...c, rounds: parseInt(e.target.value) || 1 }))}
+                  className={`w-full mt-1 px-2 py-1.5 rounded ${theme.input} text-center`}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Countdown Config */}
+          {timerType === 'countdown' && mode === 'stopped' && (
+            <div>
+              <label className={`text-xs ${theme.textMuted}`}>Duration (seconds)</label>
+              <input
+                type="number"
+                value={targetSeconds}
+                onChange={(e) => { setTargetSeconds(parseInt(e.target.value) || 0); setSeconds(parseInt(e.target.value) || 0); }}
+                className={`w-full mt-1 px-3 py-2 rounded ${theme.input} text-center`}
+              />
+            </div>
+          )}
+          
+          {/* Timer Display */}
+          <div className={`p-6 rounded-xl text-center ${
+            timerType === 'interval' && mode === 'running'
+              ? intervalConfig.isRest 
+                ? (darkMode ? 'bg-green-900/50' : 'bg-green-100')
+                : (darkMode ? 'bg-red-900/50' : 'bg-red-100')
+              : theme.cardAlt
+          }`}>
+            {timerType === 'interval' && (
+              <div className={`text-sm font-medium mb-2 ${intervalConfig.isRest ? 'text-green-500' : 'text-red-500'}`}>
+                {intervalConfig.isRest ? '🌿 REST' : '🔥 WORK'} — Round {intervalConfig.currentRound}/{intervalConfig.rounds}
+              </div>
+            )}
+            <div className={`text-5xl font-mono font-bold ${theme.text}`}>
+              {displayTime}
+            </div>
+            {(timerType === 'interval' || timerType === 'countdown') && mode === 'running' && (
+              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+                <div 
+                  className={`h-2 rounded-full transition-all ${intervalConfig.isRest ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Controls */}
+          <div className="flex gap-3">
+            {mode === 'stopped' && (
+              <button
+                onClick={startTimer}
+                className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+              >
+                <PlayCircle size={20} /> Start
+              </button>
+            )}
+            {mode === 'running' && (
+              <button
+                onClick={pauseTimer}
+                className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+              >
+                <StopCircle size={20} /> Pause
+              </button>
+            )}
+            {mode === 'paused' && (
+              <>
+                <button
+                  onClick={startTimer}
+                  className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                >
+                  <PlayCircle size={20} /> Resume
+                </button>
+              </>
+            )}
+            {mode !== 'stopped' && (
+              <button
+                onClick={resetTimer}
+                className={`px-4 py-3 ${theme.cardAlt} rounded-xl font-medium flex items-center justify-center gap-2 ${theme.text}`}
+              >
+                <RotateCcw size={20} /> Reset
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============== CALENDAR VIEW COMPONENT ==============
 const CalendarView = ({ programState, setProgramState, workoutLogs, phase, program, theme, darkMode, setCurrentView }) => {
   const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
@@ -3828,6 +4155,9 @@ export default function App() {
                 <p className={`text-sm ${theme.textMuted}`}>{readinessInfo?.recommendation}</p>
               </div>
             )}
+
+            {/* Workout Timer */}
+            <WorkoutTimer theme={theme} darkMode={darkMode} workoutType={todayWorkout.type} />
 
             {/* HR Zone */}
             {todayWorkout.prescription.hrZone && <HRZoneDisplay hrZone={todayWorkout.prescription.hrZone} profile={athleteProfile} theme={theme} darkMode={darkMode} />}
