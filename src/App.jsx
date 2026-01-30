@@ -3354,7 +3354,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             reps: ex.reps || '8-10',
             intensity: ex.percentage || 70,
             rpe: ex.rpe || 7,
-            rest: ex.rest || '2 min',
+            rest: ex.rest || '90',
+            tempo: ex.tempo || '',
+            notes: ex.notes || '',
             prKey: ex.prKey || null,
           })),
         })),
@@ -3464,7 +3466,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
   const addExercise = (dayIdx) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', intensity: 70, rpe: 7, rest: '2 min' }] });
+    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '' }] });
   };
 
   const updateExercise = (dayIdx, exIdx, updates) => {
@@ -3504,7 +3506,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
         description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
         weeklyTemplate: phase.weeklyTemplate.map(day => ({
           day: day.day, dayName: day.dayName, session: day.session, type: day.type, duration: day.duration || 60,
-          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, prKey: ex.prKey })) },
+          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey })) },
         })),
       })),
     };
@@ -3699,11 +3701,52 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                             <button onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })} className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-blue-500'}`}>{ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}</button>
                             <div className="flex gap-1">{ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.textMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}<button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button></div>
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-xs">
+                          {/* Row 1: Sets, Reps, %1RM, RPE */}
+                          <div className="grid grid-cols-4 gap-2 text-xs mb-2">
                             <div><label className={theme.textMuted}>Sets</label><input type="number" value={ex.sets} onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
                             <div><label className={theme.textMuted}>Reps</label><input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`w-full p-1 rounded ${theme.input}`} /></div>
                             <div><label className={theme.textMuted}>%1RM</label><input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
                             <div><label className={theme.textMuted}>RPE</label><input type="number" value={ex.rpe} onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })} min={1} max={10} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                          </div>
+                          {/* Row 2: Tempo, Rest, Notes */}
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <label className={theme.textMuted}>Tempo</label>
+                              <input 
+                                type="text" 
+                                value={ex.tempo || ''} 
+                                onChange={(e) => updateExercise(dayIdx, exIdx, { tempo: e.target.value })} 
+                                placeholder="3-1-2-0"
+                                className={`w-full p-1 rounded ${theme.input}`} 
+                              />
+                            </div>
+                            <div>
+                              <label className={theme.textMuted}>Rest (sec)</label>
+                              <select 
+                                value={ex.rest || '90'} 
+                                onChange={(e) => updateExercise(dayIdx, exIdx, { rest: e.target.value })}
+                                className={`w-full p-1 rounded ${theme.input}`}
+                              >
+                                <option value="30">30s</option>
+                                <option value="45">45s</option>
+                                <option value="60">60s</option>
+                                <option value="90">90s</option>
+                                <option value="120">2 min</option>
+                                <option value="180">3 min</option>
+                                <option value="240">4 min</option>
+                                <option value="300">5 min</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={theme.textMuted}>Notes</label>
+                              <input 
+                                type="text" 
+                                value={ex.notes || ''} 
+                                onChange={(e) => updateExercise(dayIdx, exIdx, { notes: e.target.value })} 
+                                placeholder="Cues..."
+                                className={`w-full p-1 rounded ${theme.input}`} 
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -3899,8 +3942,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                           <div className="space-y-1 mt-2">
                             {day.adjustedExercises.map((ex, exIdx) => (
                               <div key={exIdx} className={`${theme.cardAlt} rounded p-2 text-sm`}>
-                                <span className={theme.text}>{ex.name}</span>
-                                <span className={theme.textMuted}> — {ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}%</span>
+                                <div className="flex justify-between">
+                                  <span className={theme.text}>{ex.name}</span>
+                                  <span className={theme.textMuted}>{ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}%</span>
+                                </div>
+                                {(ex.tempo || ex.rest || ex.notes) && (
+                                  <div className={`text-xs ${theme.textMuted} mt-1 flex gap-3`}>
+                                    {ex.tempo && <span>Tempo: {ex.tempo}</span>}
+                                    {ex.rest && <span>Rest: {ex.rest}s</span>}
+                                    {ex.notes && <span className="italic">"{ex.notes}"</span>}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
