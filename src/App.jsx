@@ -3282,6 +3282,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [importError, setImportError] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('all');
   const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const [showCalendarPreview, setShowCalendarPreview] = useState(false);
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3439,6 +3440,21 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     });
     
     return volume;
+  };
+
+  // Calculate target weight from PR and percentage
+  const getTargetWeight = (exerciseId, percentage) => {
+    if (!exerciseId || !percentage) return null;
+    
+    const exercise = EXERCISE_LIBRARY[exerciseId];
+    const prKey = exercise?.prKey;
+    if (!prKey) return null;
+    
+    const pr = athleteProfile.prs?.[prKey];
+    if (!pr?.value) return null;
+    
+    const targetWeight = Math.round((pr.value * percentage) / 100 / 5) * 5; // Round to nearest 5
+    return { weight: targetWeight, pr: pr.value, unit: pr.unit || 'lbs' };
   };
 
   // Duplicate a phase
@@ -4177,7 +4193,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                                   </button>
                                 </div>
                               </div>
-                              <div><label className={theme.textMuted}>%1RM</label><input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
+                              <div>
+                                <label className={theme.textMuted}>%1RM</label>
+                                <input type="number" value={ex.intensity} onChange={(e) => updateExercise(dayIdx, exIdx, { intensity: parseInt(e.target.value) || 70 })} className={`w-full p-1 rounded ${theme.input}`} />
+                                {(() => {
+                                  const target = getTargetWeight(ex.exerciseId, ex.intensity);
+                                  if (!target) return null;
+                                  return (
+                                    <p className="text-[10px] text-green-500 mt-0.5 font-medium">
+                                      ≈ {target.weight} {target.unit}
+                                    </p>
+                                  );
+                                })()}
+                              </div>
                               <div><label className={theme.textMuted}>RPE</label><input type="number" value={ex.rpe} onChange={(e) => updateExercise(dayIdx, exIdx, { rpe: parseInt(e.target.value) || 7 })} min={1} max={10} className={`w-full p-1 rounded ${theme.input}`} /></div>
                             </div>
                             {/* Row 2: Tempo, Rest, Notes */}
@@ -4262,13 +4290,21 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             {phases.map((phase) => (<div key={phase.id} className={`${theme.cardAlt} rounded-lg p-3 mb-2`}><div className="flex justify-between items-center"><div><p className={`font-medium ${theme.text}`}>{phase.name}</p><p className={`text-xs ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}</p></div><p className={`text-sm ${theme.textMuted}`}>{phase.weeks} wks</p></div></div>))}
           </div>
           
-          {/* Preview Button */}
-          <button 
-            onClick={() => { setPreviewWeek(1); setShowPreview(true); }} 
-            className={`w-full py-3 rounded-xl font-medium ${theme.card} ${theme.text} border ${theme.border} flex items-center justify-center gap-2`}
-          >
-            <Play size={18} /> Preview Full Program
-          </button>
+          {/* Preview Buttons */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => { setPreviewWeek(1); setShowPreview(true); }} 
+              className={`flex-1 py-3 rounded-xl font-medium ${theme.card} ${theme.text} border ${theme.border} flex items-center justify-center gap-2`}
+            >
+              <Play size={18} /> Week View
+            </button>
+            <button 
+              onClick={() => setShowCalendarPreview(true)} 
+              className={`flex-1 py-3 rounded-xl font-medium ${theme.card} ${theme.text} border ${theme.border} flex items-center justify-center gap-2`}
+            >
+              <Calendar size={18} /> Calendar View
+            </button>
+          </div>
           
           <div className="flex gap-3">
             <button onClick={() => setStep('phases')} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>Edit</button>
@@ -4545,6 +4581,93 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Preview Modal */}
+      {showCalendarPreview && phases.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+          <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-4xl md:mx-auto md:my-8 md:rounded-2xl`}>
+            {/* Header */}
+            <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{programIcon}</span>
+                <div>
+                  <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
+                  <p className={`text-xs ${theme.textMuted}`}>Calendar Preview • {totalWeeks} weeks</p>
+                </div>
+              </div>
+              <button onClick={() => setShowCalendarPreview(false)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                <X size={24} className={theme.text} />
+              </button>
+            </div>
+
+            <div className="p-4">
+              {/* Calendar Grid */}
+              <div className="space-y-4">
+                {phases.map((phase, phaseIdx) => {
+                  const phaseWeeks = phase.weeksRange[1] - phase.weeksRange[0] + 1;
+                  return (
+                    <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className={`font-bold ${theme.text}`}>{phase.name}</h3>
+                        <span className={`text-sm ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]}</span>
+                      </div>
+                      
+                      {/* Week rows */}
+                      {Array.from({ length: phaseWeeks }, (_, weekIdx) => {
+                        const weekNum = phase.weeksRange[0] + weekIdx;
+                        const weekProg = phase.weeklyProgression?.[weekIdx] || {};
+                        
+                        return (
+                          <div key={weekIdx} className={`mb-2 ${weekProg.isDeload ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-xs font-medium ${theme.textMuted} w-12`}>Wk {weekNum}</span>
+                              {weekProg.isDeload && <span className="text-xs px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded">Deload</span>}
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                              {phase.weeklyTemplate.map((day, dayIdx) => (
+                                <div 
+                                  key={dayIdx}
+                                  className={`p-1.5 rounded text-center text-xs ${
+                                    day.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
+                                    day.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
+                                    day.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
+                                    day.type === 'mobility' ? 'bg-purple-500/20 text-purple-400' :
+                                    `${theme.cardAlt} ${theme.textMuted}`
+                                  }`}
+                                  title={`${day.dayName}: ${day.session || day.type}`}
+                                >
+                                  <p className="font-medium truncate">{day.dayName.split(' ')[0]}</p>
+                                  {day.type !== 'recovery' && (
+                                    <p className="text-[10px] truncate opacity-75">
+                                      {day.exercises?.length || 0} ex
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Legend */}
+              <div className={`mt-4 ${theme.cardAlt} rounded-lg p-3`}>
+                <p className={`text-xs font-medium ${theme.textMuted} mb-2`}>Legend</p>
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500/30"></span> Strength</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/30"></span> Cardio</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-500/30"></span> Muscular End.</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500/30"></span> Mobility</span>
+                  <span className="flex items-center gap-1"><span className={`w-3 h-3 rounded ${theme.cardAlt}`}></span> Rest</span>
                 </div>
               </div>
             </div>
