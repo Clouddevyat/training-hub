@@ -4457,6 +4457,7 @@ export default function App() {
   
   // Legacy values for backward compatibility
   const acuteLoad = atl;
+  const chronicLoad = ctl;
   const loadRatio = acr;
 
   const theme = {
