@@ -3948,7 +3948,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
 // ============== WORKOUT TIMER COMPONENT ==============
 const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
   const [mode, setMode] = useState('stopped'); // 'stopped', 'running', 'paused'
-  const [timerType, setTimerType] = useState('stopwatch'); // 'stopwatch', 'countdown', 'interval'
+  const [timerType, setTimerType] = useState('stopwatch'); // 'stopwatch', 'countdown', 'interval', 'emom', 'amrap'
   const [seconds, setSeconds] = useState(0);
   const [targetSeconds, setTargetSeconds] = useState(60); // For countdown
   const [intervalConfig, setIntervalConfig] = useState({
@@ -3957,6 +3957,15 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
     rounds: 4,
     currentRound: 1,
     isRest: false
+  });
+  const [emomConfig, setEmomConfig] = useState({
+    minuteLength: 60, // seconds per round (usually 60)
+    totalMinutes: 10,
+    currentMinute: 1
+  });
+  const [amrapConfig, setAmrapConfig] = useState({
+    totalTime: 600, // 10 minutes
+    roundCount: 0
   });
   const [showConfig, setShowConfig] = useState(false);
   const intervalRef = useRef(null);
@@ -4031,6 +4040,47 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
             // 3-second warning
             if (prev === target - 4) playBeep('single');
             return prev + 1;
+          } else if (timerType === 'emom') {
+            const secondsInMinute = prev % emomConfig.minuteLength;
+            const currentMin = Math.floor(prev / emomConfig.minuteLength) + 1;
+            
+            // Check if EMOM is complete
+            if (currentMin > emomConfig.totalMinutes) {
+              playBeep('triple');
+              setMode('stopped');
+              setEmomConfig(c => ({ ...c, currentMinute: 1 }));
+              return 0;
+            }
+            
+            // Update current minute display
+            if (secondsInMinute === 0 && prev > 0) {
+              setEmomConfig(c => ({ ...c, currentMinute: currentMin }));
+            }
+            
+            // New minute starting - beep
+            if (secondsInMinute === 0 && prev > 0) {
+              playBeep('double');
+            }
+            
+            // 3-second warning before next minute
+            if (secondsInMinute === emomConfig.minuteLength - 4) {
+              playBeep('single');
+            }
+            
+            return prev + 1;
+          } else if (timerType === 'amrap') {
+            // Count down from total time
+            if (prev <= 1) {
+              playBeep('triple');
+              setMode('stopped');
+              return 0;
+            }
+            // Warnings at 1 minute, 30 seconds, 10 seconds
+            if (prev === 61) playBeep('single');
+            if (prev === 31) playBeep('single');
+            if (prev === 11) playBeep('single');
+            if (prev === 4) playBeep('double');
+            return prev - 1;
           }
           return prev;
         });
@@ -4041,6 +4091,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
   
   const startTimer = () => {
     if (timerType === 'countdown' && seconds === 0) setSeconds(targetSeconds);
+    if (timerType === 'amrap' && seconds === 0) setSeconds(amrapConfig.totalTime);
     setMode('running');
   };
   
@@ -4048,7 +4099,17 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
   
   const resetTimer = () => {
     setMode('stopped');
-    setSeconds(timerType === 'countdown' ? targetSeconds : 0);
+    if (timerType === 'countdown') {
+      setSeconds(targetSeconds);
+    } else if (timerType === 'amrap') {
+      setSeconds(amrapConfig.totalTime);
+      setAmrapConfig(c => ({ ...c, roundCount: 0 }));
+    } else if (timerType === 'emom') {
+      setSeconds(0);
+      setEmomConfig(c => ({ ...c, currentMinute: 1 }));
+    } else {
+      setSeconds(0);
+    }
     setIntervalConfig(c => ({ ...c, currentRound: 1, isRest: false }));
   };
   
@@ -4065,14 +4126,24 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
         { label: '20 on/20 off', work: 20, rest: 20, rounds: 10 },
         { label: '30 on/30 off', work: 30, rest: 30, rounds: 8 },
         { label: '45 on/15 off', work: 45, rest: 15, rounds: 10 },
+        { label: '10min EMOM', emom: { minutes: 10, length: 60 } },
+        { label: '12min AMRAP', amrap: 12 },
+      ];
+    } else if (workoutType === 'strength') {
+      return [
+        { label: '60s rest', countdown: 60 },
+        { label: '90s rest', countdown: 90 },
+        { label: '2min rest', countdown: 120 },
+        { label: '3min rest', countdown: 180 },
+        { label: '5min rest', countdown: 300 },
       ];
     }
     return [
       { label: '30s rest', countdown: 30 },
       { label: '60s rest', countdown: 60 },
       { label: '90s rest', countdown: 90 },
-      { label: '2min rest', countdown: 120 },
-      { label: '3min rest', countdown: 180 },
+      { label: '10min EMOM', emom: { minutes: 10, length: 60 } },
+      { label: '15min AMRAP', amrap: 15 },
     ];
   }, [workoutType]);
   
@@ -4082,6 +4153,14 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
       setTimerType('countdown');
       setTargetSeconds(preset.countdown);
       setSeconds(preset.countdown);
+    } else if (preset.emom) {
+      setTimerType('emom');
+      setEmomConfig(c => ({ ...c, totalMinutes: preset.emom.minutes, minuteLength: preset.emom.length, currentMinute: 1 }));
+      setSeconds(0);
+    } else if (preset.amrap) {
+      setTimerType('amrap');
+      setAmrapConfig(c => ({ ...c, totalTime: preset.amrap * 60, roundCount: 0 }));
+      setSeconds(preset.amrap * 60);
     } else {
       setTimerType('interval');
       setIntervalConfig(c => ({
@@ -4123,16 +4202,18 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
       {showConfig && (
         <div className="p-4 space-y-4">
           {/* Timer Type Selector */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {[
-              { id: 'stopwatch', label: 'Stopwatch' },
-              { id: 'countdown', label: 'Countdown' },
-              { id: 'interval', label: 'Intervals' }
+              { id: 'stopwatch', label: '⏱️ Stopwatch' },
+              { id: 'countdown', label: '⏳ Countdown' },
+              { id: 'interval', label: '🔄 Intervals' },
+              { id: 'emom', label: '⚡ EMOM' },
+              { id: 'amrap', label: '🔥 AMRAP' }
             ].map(t => (
               <button
                 key={t.id}
                 onClick={() => { setTimerType(t.id); resetTimer(); }}
-                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                   timerType === t.id ? 'bg-blue-500 text-white' : `${theme.cardAlt} ${theme.text}`
                 }`}
               >
@@ -4203,12 +4284,57 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
             </div>
           )}
           
+          {/* EMOM Config */}
+          {timerType === 'emom' && mode === 'stopped' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={`text-xs ${theme.textMuted}`}>Minutes</label>
+                <input
+                  type="number"
+                  value={emomConfig.totalMinutes}
+                  onChange={(e) => setEmomConfig(c => ({ ...c, totalMinutes: parseInt(e.target.value) || 1 }))}
+                  className={`w-full mt-1 px-2 py-1.5 rounded ${theme.input} text-center`}
+                />
+              </div>
+              <div>
+                <label className={`text-xs ${theme.textMuted}`}>Sec/Round</label>
+                <input
+                  type="number"
+                  value={emomConfig.minuteLength}
+                  onChange={(e) => setEmomConfig(c => ({ ...c, minuteLength: parseInt(e.target.value) || 60 }))}
+                  className={`w-full mt-1 px-2 py-1.5 rounded ${theme.input} text-center`}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* AMRAP Config */}
+          {timerType === 'amrap' && mode === 'stopped' && (
+            <div>
+              <label className={`text-xs ${theme.textMuted}`}>Total Time (minutes)</label>
+              <input
+                type="number"
+                value={Math.floor(amrapConfig.totalTime / 60)}
+                onChange={(e) => { 
+                  const mins = parseInt(e.target.value) || 1;
+                  setAmrapConfig(c => ({ ...c, totalTime: mins * 60 })); 
+                  setSeconds(mins * 60);
+                }}
+                className={`w-full mt-1 px-3 py-2 rounded ${theme.input} text-center`}
+              />
+            </div>
+          )}
+          
           {/* Timer Display */}
           <div className={`p-6 rounded-xl text-center ${
             timerType === 'interval' && mode === 'running'
               ? intervalConfig.isRest 
                 ? (darkMode ? 'bg-green-900/50' : 'bg-green-100')
                 : (darkMode ? 'bg-red-900/50' : 'bg-red-100')
+              : timerType === 'emom' && mode === 'running'
+              ? (darkMode ? 'bg-purple-900/50' : 'bg-purple-100')
+              : timerType === 'amrap' && mode === 'running'
+              ? (darkMode ? 'bg-orange-900/50' : 'bg-orange-100')
               : theme.cardAlt
           }`}>
             {timerType === 'interval' && (
@@ -4216,9 +4342,48 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
                 {intervalConfig.isRest ? '🌿 REST' : '🔥 WORK'} — Round {intervalConfig.currentRound}/{intervalConfig.rounds}
               </div>
             )}
+            {timerType === 'emom' && mode === 'running' && (
+              <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                ⚡ EMOM — Minute {Math.floor(seconds / emomConfig.minuteLength) + 1}/{emomConfig.totalMinutes}
+              </div>
+            )}
+            {timerType === 'amrap' && mode === 'running' && (
+              <div className="mb-2">
+                <div className={`text-sm font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                  🔥 AMRAP — Rounds: {amrapConfig.roundCount}
+                </div>
+                <button 
+                  onClick={() => { setAmrapConfig(c => ({ ...c, roundCount: c.roundCount + 1 })); playBeep('single'); }}
+                  className="mt-2 px-4 py-1 bg-orange-500 text-white rounded-lg text-sm font-medium"
+                >
+                  + Round Complete
+                </button>
+              </div>
+            )}
             <div className={`text-5xl font-mono font-bold ${theme.text}`}>
-              {displayTime}
+              {timerType === 'emom' 
+                ? formatTime(emomConfig.minuteLength - (seconds % emomConfig.minuteLength))
+                : timerType === 'amrap'
+                ? formatTime(seconds)
+                : displayTime
+              }
             </div>
+            {timerType === 'emom' && mode === 'running' && (
+              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+                <div 
+                  className="h-2 rounded-full transition-all bg-purple-500"
+                  style={{ width: `${((seconds % emomConfig.minuteLength) / emomConfig.minuteLength) * 100}%` }}
+                />
+              </div>
+            )}
+            {timerType === 'amrap' && mode === 'running' && (
+              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+                <div 
+                  className="h-2 rounded-full transition-all bg-orange-500"
+                  style={{ width: `${((amrapConfig.totalTime - seconds) / amrapConfig.totalTime) * 100}%` }}
+                />
+              </div>
+            )}
             {(timerType === 'interval' || timerType === 'countdown') && mode === 'running' && (
               <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
                 <div 
