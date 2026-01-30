@@ -2305,35 +2305,60 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
 };
 
 // ============== SMART EXERCISE COMPONENT ==============
-const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggle }) => {
+const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggle, onSwap, swappedTo }) => {
+  const displayExercise = swappedTo ? EXERCISE_LIBRARY[swappedTo] : null;
+  const displayName = displayExercise?.name || exercise.name;
+  
   const workingWeight = exercise.prKey && exercise.percentage && profile.prs?.[exercise.prKey]?.value
     ? calculateWorkingWeight(profile.prs[exercise.prKey].value, exercise.percentage) : null;
   const prValue = exercise.prKey ? profile.prs?.[exercise.prKey]?.value : null;
+  
+  // Find the pattern for this exercise
+  const originalExerciseId = Object.keys(EXERCISE_LIBRARY).find(k => 
+    EXERCISE_LIBRARY[k].name === exercise.name || k === exercise.name?.toLowerCase().replace(/\s+/g, '')
+  );
+  const exerciseData = EXERCISE_LIBRARY[originalExerciseId];
+  const pattern = exerciseData?.pattern;
+  const patternInfo = MOVEMENT_PATTERNS[pattern];
 
   return (
-    <button onClick={onToggle} className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${isComplete ? 'bg-green-500/20 border-green-500' : `${theme.cardAlt} ${darkMode ? 'border-gray-600' : 'border-slate-200'}`}`}>
-      {isComplete ? <CheckCircle2 size={24} className="text-green-500" /> : <Circle size={24} className={theme.textMuted} />}
-      <div className="flex-1">
-        <p className={`font-medium ${theme.text}`}>{exercise.name}</p>
-        <div className={`flex flex-wrap gap-x-4 gap-y-1 text-sm ${theme.textMuted} mt-1`}>
-          {exercise.sets && <span>{exercise.sets} sets</span>}
-          {exercise.reps && <span>× {exercise.reps}</span>}
-          {exercise.duration && <span>{exercise.duration}</span>}
-          {exercise.rest && <span className={theme.textSubtle}>Rest: {exercise.rest}</span>}
+    <div className={`flex items-stretch gap-2`}>
+      <button onClick={onToggle} className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${isComplete ? 'bg-green-500/20 border-green-500' : `${theme.cardAlt} ${darkMode ? 'border-gray-600' : 'border-slate-200'}`}`}>
+        {isComplete ? <CheckCircle2 size={24} className="text-green-500" /> : <Circle size={24} className={theme.textMuted} />}
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className={`font-medium ${theme.text}`}>{displayName}</p>
+            {swappedTo && <span className="text-xs px-1.5 py-0.5 bg-purple-500/20 text-purple-500 rounded">swapped</span>}
+          </div>
+          <div className={`flex flex-wrap gap-x-4 gap-y-1 text-sm ${theme.textMuted} mt-1`}>
+            {exercise.sets && <span>{exercise.sets} sets</span>}
+            {exercise.reps && <span>× {exercise.reps}</span>}
+            {exercise.duration && <span>{exercise.duration}</span>}
+            {exercise.rest && <span className={theme.textSubtle}>Rest: {exercise.rest}</span>}
+          </div>
+          {workingWeight && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className={`px-2 py-1 rounded text-sm font-mono font-bold ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{workingWeight} lbs</span>
+              <span className={`text-xs ${theme.textMuted}`}>({exercise.percentage}% of {prValue})</span>
+            </div>
+          )}
+          {exercise.prKey && !prValue && (
+            <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
+              <AlertTriangle size={12} /><span>Set {PR_DISPLAY_NAMES[exercise.prKey]} PR in Profile</span>
+            </div>
+          )}
         </div>
-        {workingWeight && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className={`px-2 py-1 rounded text-sm font-mono font-bold ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{workingWeight} lbs</span>
-            <span className={`text-xs ${theme.textMuted}`}>({exercise.percentage}% of {prValue})</span>
-          </div>
-        )}
-        {exercise.prKey && !prValue && (
-          <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
-            <AlertTriangle size={12} /><span>Set {PR_DISPLAY_NAMES[exercise.prKey]} PR in Profile</span>
-          </div>
-        )}
-      </div>
-    </button>
+      </button>
+      {pattern && onSwap && (
+        <button 
+          onClick={() => onSwap({ name: exercise.name, pattern, originalId: originalExerciseId })}
+          className={`px-3 rounded-xl border-2 ${darkMode ? 'border-gray-600' : 'border-slate-200'} ${theme.cardAlt} flex items-center justify-center`}
+          title={`Swap for another ${patternInfo?.name || pattern}`}
+        >
+          <RefreshCw size={18} className={theme.textMuted} />
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -3096,6 +3121,8 @@ export default function App() {
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   const [viewingProgramId, setViewingProgramId] = useState(null); // For program overview
   const [showDetourPicker, setShowDetourPicker] = useState(false); // For detour selection
+  const [exerciseSwaps, setExerciseSwaps] = useLocalStorage('trainingHub_exerciseSwaps', {}); // { "originalExerciseName": "swappedExerciseId" }
+  const [swappingExercise, setSwappingExercise] = useState(null); // { name, pattern } for swap picker
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -3576,7 +3603,17 @@ export default function App() {
                   <p className={`text-xs font-medium ${theme.textMuted} uppercase mb-3`}>Exercises</p>
                   <div className="space-y-2">
                     {todayWorkout.prescription.exercises.map((ex, idx) => (
-                      <SmartExercise key={idx} exercise={ex} profile={athleteProfile} theme={theme} darkMode={darkMode} isComplete={exerciseCompletion[ex.name]} onToggle={() => toggleExercise(ex.name)} />
+                      <SmartExercise 
+                        key={idx} 
+                        exercise={ex} 
+                        profile={athleteProfile} 
+                        theme={theme} 
+                        darkMode={darkMode} 
+                        isComplete={exerciseCompletion[ex.name]} 
+                        onToggle={() => toggleExercise(ex.name)} 
+                        onSwap={(exerciseInfo) => setSwappingExercise(exerciseInfo)}
+                        swappedTo={exerciseSwaps[ex.name]}
+                      />
                     ))}
                   </div>
                 </div>
@@ -3919,6 +3956,63 @@ export default function App() {
           onClose={() => setShowDetourPicker(false)}
           theme={theme}
         />
+      )}
+
+      {/* Exercise Swap Picker Modal */}
+      {swappingExercise && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+          <div className={`${theme.bg} w-full rounded-t-2xl max-h-[80vh] overflow-hidden flex flex-col`}>
+            <div className={`p-4 border-b ${theme.border} flex items-center justify-between`}>
+              <div>
+                <h3 className={`font-bold ${theme.text}`}>Swap Exercise</h3>
+                <p className={`text-sm ${theme.textMuted}`}>
+                  {MOVEMENT_PATTERNS[swappingExercise.pattern]?.icon} {MOVEMENT_PATTERNS[swappingExercise.pattern]?.name} alternatives
+                </p>
+              </div>
+              <button onClick={() => setSwappingExercise(null)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                <X size={24} className={theme.text} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 space-y-2">
+              {/* Reset to original option */}
+              {exerciseSwaps[swappingExercise.name] && (
+                <button
+                  onClick={() => {
+                    setExerciseSwaps(prev => {
+                      const updated = { ...prev };
+                      delete updated[swappingExercise.name];
+                      return updated;
+                    });
+                    setSwappingExercise(null);
+                  }}
+                  className={`w-full p-4 rounded-xl border-2 border-dashed ${theme.border} text-left`}
+                >
+                  <p className={`font-medium text-blue-500`}>↩ Reset to original</p>
+                  <p className={`text-sm ${theme.textMuted}`}>{swappingExercise.name}</p>
+                </button>
+              )}
+              {/* Alternatives */}
+              {Object.values(EXERCISE_LIBRARY)
+                .filter(ex => ex.pattern === swappingExercise.pattern && ex.id !== swappingExercise.originalId)
+                .map(ex => (
+                  <button
+                    key={ex.id}
+                    onClick={() => {
+                      setExerciseSwaps(prev => ({ ...prev, [swappingExercise.name]: ex.id }));
+                      setSwappingExercise(null);
+                    }}
+                    className={`w-full p-4 ${theme.card} rounded-xl text-left ${exerciseSwaps[swappingExercise.name] === ex.id ? 'ring-2 ring-purple-500' : ''}`}
+                  >
+                    <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                    <p className={`text-sm ${theme.textMuted}`}>
+                      {ex.equipment?.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}
+                    </p>
+                    {ex.prKey && <span className="text-xs text-blue-500 mt-1 inline-block">Has PR tracking</span>}
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bottom Nav */}
