@@ -3273,6 +3273,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   // NEW: Edit mode state
   const [editingProgramId, setEditingProgramId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  // NEW: Preview and copy day state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewWeek, setPreviewWeek] = useState(1);
+  const [showCopyDayPicker, setShowCopyDayPicker] = useState(null); // { sourceDayIdx: number }
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3383,6 +3387,73 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     setPhases([]);
     setCurrentPhaseIdx(0);
     setEditingProgramId(null);
+    setShowPreview(false);
+  };
+
+  // Copy a day's template to another day
+  const copyDayTo = (sourceDayIdx, targetDayIdx) => {
+    const sourceDay = currentPhase.weeklyTemplate[sourceDayIdx];
+    updateDay(targetDayIdx, {
+      session: sourceDay.session,
+      type: sourceDay.type,
+      duration: sourceDay.duration,
+      cardioZone: sourceDay.cardioZone,
+      cardioActivity: sourceDay.cardioActivity,
+      exercises: (sourceDay.exercises || []).map(ex => ({
+        ...ex,
+        id: `ex_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      })),
+    });
+    setShowCopyDayPicker(null);
+  };
+
+  // Generate preview data for a specific week
+  const getPreviewWeekData = (weekNum) => {
+    // Find which phase this week belongs to
+    let phaseForWeek = null;
+    let weekInPhase = 1;
+    
+    for (const phase of phases) {
+      if (weekNum >= phase.weeksRange[0] && weekNum <= phase.weeksRange[1]) {
+        phaseForWeek = phase;
+        weekInPhase = weekNum - phase.weeksRange[0] + 1;
+        break;
+      }
+    }
+    
+    if (!phaseForWeek) return null;
+    
+    // Get progression data for this week
+    const weekProgression = phaseForWeek.weeklyProgression?.[weekInPhase - 1] || {};
+    
+    // Apply progression to template
+    return {
+      phase: phaseForWeek,
+      weekNum,
+      weekInPhase,
+      progression: weekProgression,
+      days: phaseForWeek.weeklyTemplate.map(day => {
+        if (day.type === 'recovery' || day.type === 'rest') {
+          return { ...day, adjustedExercises: [] };
+        }
+        
+        // Apply intensity modifier from progression
+        const intensityMod = weekProgression.intensityMod || 1;
+        const volumeMod = weekProgression.volumeMod || 1;
+        const baseIntensity = weekProgression.intensity || 70;
+        const baseSets = weekProgression.sets || 4;
+        const baseReps = weekProgression.reps || '8-10';
+        
+        const adjustedExercises = (day.exercises || []).map(ex => ({
+          ...ex,
+          adjustedIntensity: Math.round((ex.intensity || baseIntensity) * intensityMod),
+          adjustedSets: Math.round((ex.sets || baseSets) * volumeMod),
+          adjustedReps: baseReps,
+        }));
+        
+        return { ...day, adjustedExercises };
+      }),
+    };
   };
 
   const updateDay = (dayIdx, updates) => {
@@ -3594,7 +3665,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
           {currentPhase.weeklyTemplate.map((day, dayIdx) => (
             <div key={day.day} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between mb-3">
-                <input type="text" value={day.dayName} onChange={(e) => updateDay(dayIdx, { dayName: e.target.value })} className={`font-medium ${theme.text} bg-transparent border-b ${theme.border} w-24`} />
+                <div className="flex items-center gap-2">
+                  <input type="text" value={day.dayName} onChange={(e) => updateDay(dayIdx, { dayName: e.target.value })} className={`font-medium ${theme.text} bg-transparent border-b ${theme.border} w-24`} />
+                  {/* Copy Day Button */}
+                  {(day.type !== 'recovery' && (day.exercises?.length > 0 || day.type === 'cardio')) && (
+                    <button 
+                      onClick={() => setShowCopyDayPicker({ sourceDayIdx: dayIdx })}
+                      className={`p-1 rounded ${theme.cardAlt} hover:bg-blue-500/20`}
+                      title="Copy to another day"
+                    >
+                      <Copy size={14} className="text-blue-500" />
+                    </button>
+                  )}
+                </div>
                 <select value={day.type} onChange={(e) => updateDay(dayIdx, { type: e.target.value, session: SESSION_TYPES.find(s => s.id === e.target.value)?.name || '' })} className={`p-2 rounded-lg ${theme.input} text-sm`}>{SESSION_TYPES.map(t => (<option key={t.id} value={t.id}>{t.icon} {t.name}</option>))}</select>
               </div>
               {day.type !== 'recovery' && (
@@ -3651,6 +3734,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             </div>
             {phases.map((phase) => (<div key={phase.id} className={`${theme.cardAlt} rounded-lg p-3 mb-2`}><div className="flex justify-between items-center"><div><p className={`font-medium ${theme.text}`}>{phase.name}</p><p className={`text-xs ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}</p></div><p className={`text-sm ${theme.textMuted}`}>{phase.weeks} wks</p></div></div>))}
           </div>
+          
+          {/* Preview Button */}
+          <button 
+            onClick={() => { setPreviewWeek(1); setShowPreview(true); }} 
+            className={`w-full py-3 rounded-xl font-medium ${theme.card} ${theme.text} border ${theme.border} flex items-center justify-center gap-2`}
+          >
+            <Play size={18} /> Preview Full Program
+          </button>
+          
           <div className="flex gap-3">
             <button onClick={() => setStep('phases')} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>Edit</button>
             <button onClick={saveProgram} className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white">
@@ -3676,6 +3768,175 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
           <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[70vh] overflow-auto`}>
             <div className="flex items-center justify-between mb-4"><div><h3 className={`font-bold ${theme.text}`}>Swap Exercise</h3><p className={`text-sm ${theme.textMuted}`}>Same pattern: {MOVEMENT_PATTERNS[EXERCISE_LIBRARY[showSwapPicker.currentExerciseId]?.pattern]?.name}</p></div><button onClick={() => setShowSwapPicker(null)}><X size={24} className={theme.text} /></button></div>
             <div className="space-y-2">{getExerciseSwaps(showSwapPicker.currentExerciseId).map(ex => (<button key={ex.id} onClick={() => selectSwap(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left`}><p className={`font-medium ${theme.text}`}>{ex.name}</p><p className={`text-xs ${theme.textMuted}`}>Equipment: {ex.equipment.join(', ')}</p></button>))}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Day Picker Modal */}
+      {showCopyDayPicker && currentPhase && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCopyDayPicker(null)}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-sm w-full`} onClick={e => e.stopPropagation()}>
+            <h3 className={`font-bold text-lg ${theme.text} mb-2`}>Copy Day To...</h3>
+            <p className={`text-sm ${theme.textMuted} mb-4`}>
+              Copy "{currentPhase.weeklyTemplate[showCopyDayPicker.sourceDayIdx]?.dayName}" to:
+            </p>
+            <div className="space-y-2">
+              {currentPhase.weeklyTemplate.map((day, idx) => (
+                idx !== showCopyDayPicker.sourceDayIdx && (
+                  <button
+                    key={idx}
+                    onClick={() => copyDayTo(showCopyDayPicker.sourceDayIdx, idx)}
+                    className={`w-full p-3 ${theme.cardAlt} rounded-lg text-left hover:bg-blue-500/20`}
+                  >
+                    <p className={`font-medium ${theme.text}`}>{day.dayName}</p>
+                    <p className={`text-xs ${theme.textMuted}`}>
+                      {day.type === 'recovery' ? 'Rest Day' : day.session || 'Empty'}
+                    </p>
+                  </button>
+                )
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowCopyDayPicker(null)} 
+              className={`w-full mt-4 py-2 rounded-lg ${theme.cardAlt} ${theme.text}`}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Program Preview Modal */}
+      {showPreview && phases.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+          <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-2xl md:mx-auto md:my-8 md:rounded-2xl`}>
+            {/* Header */}
+            <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{programIcon}</span>
+                <div>
+                  <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
+                  <p className={`text-xs ${theme.textMuted}`}>Preview Mode</p>
+                </div>
+              </div>
+              <button onClick={() => setShowPreview(false)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                <X size={24} className={theme.text} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Week Navigation */}
+              <div className={`${theme.card} rounded-xl p-3 flex items-center justify-between`}>
+                <button
+                  onClick={() => setPreviewWeek(Math.max(1, previewWeek - 1))}
+                  disabled={previewWeek <= 1}
+                  className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+                >
+                  <ChevronLeft size={20} className={theme.text} />
+                </button>
+                <div className="text-center">
+                  <p className={`font-bold ${theme.text}`}>Week {previewWeek}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>
+                    {getPreviewWeekData(previewWeek)?.phase?.name || 'Unknown Phase'}
+                    {getPreviewWeekData(previewWeek)?.progression?.isDeload && ' (Deload)'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPreviewWeek(Math.min(totalWeeks, previewWeek + 1))}
+                  disabled={previewWeek >= totalWeeks}
+                  className={`p-2 rounded-lg ${theme.cardAlt} disabled:opacity-30`}
+                >
+                  <ChevronRight size={20} className={theme.text} />
+                </button>
+              </div>
+
+              {/* Week Preview */}
+              {(() => {
+                const weekData = getPreviewWeekData(previewWeek);
+                if (!weekData) return <p className={theme.textMuted}>No data for this week</p>;
+                
+                return (
+                  <div className="space-y-3">
+                    {/* Progression Info */}
+                    <div className={`${theme.cardAlt} rounded-lg p-3`}>
+                      <p className={`text-xs ${theme.textMuted} mb-1`}>Week {weekData.weekInPhase} of {weekData.phase.weeks} in {weekData.phase.name}</p>
+                      <div className="flex gap-4 text-sm">
+                        {weekData.progression.intensity && (
+                          <span className={theme.text}>Intensity: {weekData.progression.intensity}%</span>
+                        )}
+                        {weekData.progression.sets && (
+                          <span className={theme.text}>Sets: {weekData.progression.sets}</span>
+                        )}
+                        {weekData.progression.reps && (
+                          <span className={theme.text}>Reps: {weekData.progression.reps}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Days */}
+                    {weekData.days.map((day, idx) => (
+                      <div key={idx} className={`${theme.card} rounded-xl p-4`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className={`font-medium ${theme.text}`}>{day.dayName}</h4>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            day.type === 'strength' ? 'bg-red-500/20 text-red-400' :
+                            day.type === 'cardio' ? 'bg-blue-500/20 text-blue-400' :
+                            day.type === 'recovery' ? 'bg-green-500/20 text-green-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {day.type}
+                          </span>
+                        </div>
+                        {day.session && <p className={`text-sm ${theme.textMuted} mb-2`}>{day.session}</p>}
+                        
+                        {day.type === 'cardio' && (
+                          <p className={`text-sm ${theme.text}`}>
+                            {CARDIO_ZONES[day.cardioZone]?.name || 'Zone 2'} • {day.duration} min
+                          </p>
+                        )}
+                        
+                        {day.adjustedExercises?.length > 0 && (
+                          <div className="space-y-1 mt-2">
+                            {day.adjustedExercises.map((ex, exIdx) => (
+                              <div key={exIdx} className={`${theme.cardAlt} rounded p-2 text-sm`}>
+                                <span className={theme.text}>{ex.name}</span>
+                                <span className={theme.textMuted}> — {ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {day.type === 'recovery' && (
+                          <p className={`text-sm ${theme.textMuted}`}>Rest / Active Recovery</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Phase Overview */}
+              <div className={`${theme.card} rounded-xl p-4`}>
+                <h4 className={`font-medium ${theme.text} mb-2`}>Program Phases</h4>
+                <div className="space-y-2">
+                  {phases.map((phase, idx) => {
+                    const isCurrentPhase = previewWeek >= phase.weeksRange[0] && previewWeek <= phase.weeksRange[1];
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setPreviewWeek(phase.weeksRange[0])}
+                        className={`w-full p-2 rounded-lg text-left ${isCurrentPhase ? 'bg-blue-500/20 border border-blue-500' : theme.cardAlt}`}
+                      >
+                        <div className="flex justify-between">
+                          <span className={theme.text}>{phase.name}</span>
+                          <span className={theme.textMuted}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
