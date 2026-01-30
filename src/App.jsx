@@ -2204,7 +2204,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
   };
 
   // SVG Line Chart Component
-  const LineChart = ({ data, xKey, yKey, color = '#10b981', height = 150, showDots = true, yLabel = '', formatY = (v) => v }) => {
+  const SVGLineChart = ({ data, xKey, yKey, color = '#10b981', height = 150, showDots = true, yLabel = '', formatY = (v) => v }) => {
     if (!data || data.length < 2) {
       return (
         <div className={`h-[${height}px] flex items-center justify-center ${theme.textMuted}`}>
@@ -2482,12 +2482,12 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
         <div className="space-y-4">
           <div className={`${theme.card} rounded-xl p-4`}>
             <h3 className={`font-semibold ${theme.text} mb-3`}>Readiness Score Trend</h3>
-            <LineChart data={readinessData} xKey="date" yKey="score" color="#10b981" height={180} yLabel="Score" />
+            <SVGLineChart data={readinessData} xKey="date" yKey="score" color="#10b981" height={180} yLabel="Score" />
           </div>
           
           <div className={`${theme.card} rounded-xl p-4`}>
             <h3 className={`font-semibold ${theme.text} mb-3`}>Sleep Hours</h3>
-            <LineChart data={readinessData} xKey="date" yKey="sleep" color="#8b5cf6" height={180} yLabel="Hours" />
+            <SVGLineChart data={readinessData} xKey="date" yKey="sleep" color="#8b5cf6" height={180} yLabel="Hours" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -3946,13 +3946,31 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
     const colors = {
       strength: darkMode ? 'bg-red-900/60 border-red-700' : 'bg-red-100 border-red-300',
       aerobic: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
-      long_aerobic: darkMode ? 'bg-sky-900/60 border-sky-700' : 'bg-sky-100 border-sky-300',
-      muscular_endurance: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
-      threshold: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
+      cardio: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
+      long_aerobic: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
+      long_effort: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
+      muscular_endurance: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
+      threshold: darkMode ? 'bg-amber-900/60 border-amber-700' : 'bg-amber-100 border-amber-300',
       recovery: darkMode ? 'bg-green-900/60 border-green-700' : 'bg-green-100 border-green-300',
       rest: darkMode ? 'bg-gray-800/60 border-gray-600' : 'bg-gray-100 border-gray-300',
     };
     return colors[type] || (darkMode ? 'bg-slate-700/60 border-slate-600' : 'bg-slate-100 border-slate-300');
+  };
+  
+  // Get short label for workout type
+  const getTypeLabel = (type) => {
+    const labels = {
+      strength: 'Str',
+      aerobic: 'Aero',
+      cardio: 'Aero',
+      long_aerobic: 'Long',
+      long_effort: 'Long',
+      muscular_endurance: 'ME',
+      threshold: 'Thresh',
+      recovery: 'Recov',
+      rest: 'Rest',
+    };
+    return labels[type] || type?.slice(0, 4) || '?';
   };
   
   // Render week view
@@ -3992,8 +4010,8 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
                 <span className={`text-xs font-medium ${theme.textMuted}`}>D{dayNum}</span>
                 {workout ? (
                   <>
-                    <span className={`text-[10px] ${theme.text} mt-1 truncate w-full`}>
-                      {workout.type?.replace('_', ' ').slice(0, 6)}
+                    <span className={`text-[10px] font-medium ${theme.text} mt-1`}>
+                      {getTypeLabel(workout.type)}
                     </span>
                     {isCompleted && (
                       <CheckCircle2 size={14} className="text-green-500 mt-1" />
