@@ -8,7 +8,7 @@ import {
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
   RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
-  Cloud, CloudOff, Loader
+  Cloud, CloudOff, Loader, GitBranch
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
 import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud } from './useCloudSync';
@@ -3283,6 +3283,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
   const [equipmentFilter, setEquipmentFilter] = useState('all');
   const [showSplitPicker, setShowSplitPicker] = useState(false);
   const [showCalendarPreview, setShowCalendarPreview] = useState(false);
+  const [showWeekOverride, setShowWeekOverride] = useState(null); // { phaseIdx, weekNum }
+  const [showConditionalEditor, setShowConditionalEditor] = useState(null); // { dayIdx, exIdx }
 
   const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
   const SESSION_TYPES = [
@@ -3391,6 +3393,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       weeksRange: [startWeek, endWeek],
       weeklyProgression,
       weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'recovery', exercises: [], duration: 60, cardioZone: 'zone2', cardioActivity: 'run', warmup: 'none', cooldown: 'none' })),
+      weekOverrides: {}, // { weekNum: { dayIdx: { ...overrides } } }
     }]);
     setNewPhaseName('');
     setNewPhaseWeeks(4);
@@ -3455,6 +3458,43 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
     
     const targetWeight = Math.round((pr.value * percentage) / 100 / 5) * 5; // Round to nearest 5
     return { weight: targetWeight, pr: pr.value, unit: pr.unit || 'lbs' };
+  };
+
+  // Set a week override for a specific day
+  const setWeekOverride = (phaseIdx, weekNum, dayIdx, overrides) => {
+    setPhases(prev => prev.map((ph, i) => {
+      if (i !== phaseIdx) return ph;
+      const newOverrides = { ...ph.weekOverrides };
+      if (!newOverrides[weekNum]) newOverrides[weekNum] = {};
+      newOverrides[weekNum][dayIdx] = { ...(newOverrides[weekNum][dayIdx] || {}), ...overrides };
+      return { ...ph, weekOverrides: newOverrides };
+    }));
+  };
+
+  // Clear a week override
+  const clearWeekOverride = (phaseIdx, weekNum, dayIdx) => {
+    setPhases(prev => prev.map((ph, i) => {
+      if (i !== phaseIdx) return ph;
+      const newOverrides = { ...ph.weekOverrides };
+      if (newOverrides[weekNum]) {
+        delete newOverrides[weekNum][dayIdx];
+        if (Object.keys(newOverrides[weekNum]).length === 0) delete newOverrides[weekNum];
+      }
+      return { ...ph, weekOverrides: newOverrides };
+    }));
+  };
+
+  // Check if a week has any overrides
+  const hasWeekOverrides = (phase, weekNum) => {
+    return phase?.weekOverrides?.[weekNum] && Object.keys(phase.weekOverrides[weekNum]).length > 0;
+  };
+
+  // Get day data with overrides applied
+  const getDayWithOverrides = (phase, weekNum, dayIdx) => {
+    const baseDay = phase.weeklyTemplate[dayIdx];
+    const override = phase?.weekOverrides?.[weekNum]?.[dayIdx];
+    if (!override) return baseDay;
+    return { ...baseDay, ...override };
   };
 
   // Duplicate a phase
@@ -3527,8 +3567,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
             prKey: ex.prKey || null,
             groupId: ex.groupId || null,
             groupType: ex.groupType || null,
+            conditional: ex.conditional || null,
           })),
         })),
+        weekOverrides: phase.weekOverrides || {},
       };
     });
     
@@ -3698,7 +3740,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
 
   const addExercise = (dayIdx, groupId = null) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', isAmrap: false, intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null }] });
+    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', isAmrap: false, intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null, conditional: null }] });
   };
 
   // Create a new superset/circuit group
@@ -3807,9 +3849,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
       phases: phases.map(phase => ({
         id: phase.id, name: phase.name, weeks: phase.weeksRange,
         description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
+        weekOverrides: phase.weekOverrides || {},
         weeklyTemplate: phase.weeklyTemplate.map(day => ({
           day: day.day, dayName: day.dayName, session: day.session, type: day.type, duration: day.duration || 60, warmup: day.warmup || 'none', cooldown: day.cooldown || 'none',
-          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, isAmrap: ex.isAmrap, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey, groupId: ex.groupId, groupType: ex.groupType })) },
+          prescription: day.type === 'cardio' ? { hrZone: day.cardioZone || 'zone2', description: CARDIO_ZONES[day.cardioZone || 'zone2']?.description } : { exercises: (day.exercises || []).map(ex => ({ name: ex.name, sets: ex.sets, reps: ex.reps, isAmrap: ex.isAmrap, percentage: ex.intensity, rpe: ex.rpe, rest: ex.rest, tempo: ex.tempo, notes: ex.notes, prKey: ex.prKey, groupId: ex.groupId, groupType: ex.groupType, conditional: ex.conditional })) },
         })),
       })),
     };
@@ -4169,10 +4212,27 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                                     <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.textMuted} hover:text-purple-500`} title="Start Circuit"><RefreshCw size={14} /></button>
                                   </>
                                 )}
+                                {ex.exerciseId && (
+                                  <button 
+                                    onClick={() => setShowConditionalEditor({ dayIdx, exIdx })} 
+                                    className={`p-1 ${ex.conditional ? 'text-yellow-500' : theme.textMuted} hover:text-yellow-500`} 
+                                    title="Conditional Logic"
+                                  >
+                                    <GitBranch size={14} />
+                                  </button>
+                                )}
                                 {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.textMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}
                                 <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button>
                               </div>
                             </div>
+                            
+                            {/* Conditional Badge */}
+                            {ex.conditional && (
+                              <div className="mb-2 text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded flex items-center gap-1">
+                                <GitBranch size={12} />
+                                <span>If {ex.conditional.condition}: {ex.conditional.action}</span>
+                              </div>
+                            )}
                             {/* Row 1: Sets, Reps, %1RM, RPE */}
                             <div className="grid grid-cols-4 gap-2 text-xs mb-2">
                               <div><label className={theme.textMuted}>Sets</label><input type="number" value={ex.sets} onChange={(e) => updateExercise(dayIdx, exIdx, { sets: parseInt(e.target.value) || 3 })} className={`w-full p-1 rounded ${theme.input}`} /></div>
@@ -4622,34 +4682,51 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                       {Array.from({ length: phaseWeeks }, (_, weekIdx) => {
                         const weekNum = phase.weeksRange[0] + weekIdx;
                         const weekProg = phase.weeklyProgression?.[weekIdx] || {};
+                        const hasOverrides = hasWeekOverrides(phase, weekNum);
                         
                         return (
                           <div key={weekIdx} className={`mb-2 ${weekProg.isDeload ? 'opacity-60' : ''}`}>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-xs font-medium ${theme.textMuted} w-12`}>Wk {weekNum}</span>
+                              <button 
+                                onClick={() => setShowWeekOverride({ phaseIdx, weekNum })}
+                                className={`text-xs font-medium ${theme.textMuted} w-12 hover:text-blue-500 text-left`}
+                              >
+                                Wk {weekNum}
+                              </button>
                               {weekProg.isDeload && <span className="text-xs px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded">Deload</span>}
+                              {hasOverrides && <span className="text-xs px-1.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded">Modified</span>}
+                              <button 
+                                onClick={() => setShowWeekOverride({ phaseIdx, weekNum })}
+                                className={`text-xs ${theme.textMuted} hover:text-blue-500 ml-auto`}
+                              >
+                                <Edit3 size={12} />
+                              </button>
                             </div>
                             <div className="grid grid-cols-7 gap-1">
-                              {phase.weeklyTemplate.map((day, dayIdx) => (
-                                <div 
-                                  key={dayIdx}
-                                  className={`p-1.5 rounded text-center text-xs ${
-                                    day.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
-                                    day.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
-                                    day.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
-                                    day.type === 'mobility' ? 'bg-purple-500/20 text-purple-400' :
-                                    `${theme.cardAlt} ${theme.textMuted}`
-                                  }`}
-                                  title={`${day.dayName}: ${day.session || day.type}`}
-                                >
-                                  <p className="font-medium truncate">{day.dayName.split(' ')[0]}</p>
-                                  {day.type !== 'recovery' && (
-                                    <p className="text-[10px] truncate opacity-75">
-                                      {day.exercises?.length || 0} ex
-                                    </p>
-                                  )}
-                                </div>
-                              ))}
+                              {phase.weeklyTemplate.map((day, dayIdx) => {
+                                const dayData = getDayWithOverrides(phase, weekNum, dayIdx);
+                                const isOverridden = phase?.weekOverrides?.[weekNum]?.[dayIdx];
+                                return (
+                                  <div 
+                                    key={dayIdx}
+                                    className={`p-1.5 rounded text-center text-xs ${
+                                      dayData.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
+                                      dayData.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
+                                      dayData.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
+                                      dayData.type === 'mobility' ? 'bg-purple-500/20 text-purple-400' :
+                                      `${theme.cardAlt} ${theme.textMuted}`
+                                    } ${isOverridden ? 'ring-2 ring-yellow-500' : ''}`}
+                                    title={`${dayData.dayName}: ${dayData.session || dayData.type}${isOverridden ? ' (Modified)' : ''}`}
+                                  >
+                                    <p className="font-medium truncate">{dayData.dayName.split(' ')[0]}</p>
+                                    {dayData.type !== 'recovery' && (
+                                      <p className="text-[10px] truncate opacity-75">
+                                        {dayData.exercises?.length || 0} ex
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );
@@ -4671,6 +4748,217 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Week Override Modal */}
+      {showWeekOverride && (
+        <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
+          <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-2xl md:mx-auto md:my-8 md:rounded-2xl`}>
+            <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
+              <div>
+                <h2 className={`font-bold ${theme.text}`}>Week {showWeekOverride.weekNum} Overrides</h2>
+                <p className={`text-xs ${theme.textMuted}`}>{phases[showWeekOverride.phaseIdx]?.name} • Modify this week only</p>
+              </div>
+              <button onClick={() => setShowWeekOverride(null)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                <X size={24} className={theme.text} />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              <p className={`text-sm ${theme.textMuted}`}>
+                Changes here only affect Week {showWeekOverride.weekNum}. The template remains unchanged.
+              </p>
+              
+              {phases[showWeekOverride.phaseIdx]?.weeklyTemplate.map((day, dayIdx) => {
+                const override = phases[showWeekOverride.phaseIdx]?.weekOverrides?.[showWeekOverride.weekNum]?.[dayIdx];
+                const currentType = override?.type || day.type;
+                
+                return (
+                  <div key={dayIdx} className={`${theme.card} rounded-xl p-4 ${override ? 'ring-2 ring-yellow-500' : ''}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`font-medium ${theme.text}`}>{day.dayName}</span>
+                      {override && (
+                        <button 
+                          onClick={() => clearWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx)}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          Reset to template
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={`text-xs ${theme.textMuted}`}>Session Type</label>
+                        <select 
+                          value={currentType}
+                          onChange={(e) => setWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx, { type: e.target.value })}
+                          className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                        >
+                          {SESSION_TYPES.map(t => (
+                            <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={`text-xs ${theme.textMuted}`}>Notes</label>
+                        <input 
+                          type="text"
+                          value={override?.notes || ''}
+                          onChange={(e) => setWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx, { notes: e.target.value })}
+                          placeholder="e.g., Travel day, skip"
+                          className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                        />
+                      </div>
+                    </div>
+                    
+                    {currentType !== 'recovery' && day.type !== 'cardio' && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className={`text-xs ${theme.textMuted}`}>Volume Modifier</label>
+                          <select 
+                            value={override?.volumeMod || '100'}
+                            onChange={(e) => setWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx, { volumeMod: e.target.value })}
+                            className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                          >
+                            <option value="50">50% (Light)</option>
+                            <option value="75">75% (Reduced)</option>
+                            <option value="100">100% (Normal)</option>
+                            <option value="110">110% (Overreach)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={`text-xs ${theme.textMuted}`}>Intensity Modifier</label>
+                          <select 
+                            value={override?.intensityMod || '100'}
+                            onChange={(e) => setWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx, { intensityMod: e.target.value })}
+                            className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
+                          >
+                            <option value="80">80% (Deload)</option>
+                            <option value="90">90% (Light)</option>
+                            <option value="100">100% (Normal)</option>
+                            <option value="105">105% (Push)</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conditional Logic Editor Modal */}
+      {showConditionalEditor && currentPhase && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowConditionalEditor(null)}>
+          <div className={`${theme.card} rounded-2xl p-5 max-w-md w-full`} onClick={e => e.stopPropagation()}>
+            {(() => {
+              const { dayIdx, exIdx } = showConditionalEditor;
+              const exercise = currentPhase.weeklyTemplate[dayIdx]?.exercises?.[exIdx];
+              if (!exercise) return null;
+              
+              const conditions = [
+                { id: 'readiness_low', label: 'Readiness Score < 60' },
+                { id: 'readiness_high', label: 'Readiness Score > 80' },
+                { id: 'soreness_high', label: 'Muscle Soreness > 3' },
+                { id: 'sleep_poor', label: 'Sleep Quality < 3' },
+                { id: 'energy_low', label: 'Energy Level < 3' },
+                { id: 'previous_missed', label: 'Previous Session Missed' },
+                { id: 'deload_week', label: 'Deload Week' },
+              ];
+              
+              const actions = [
+                { id: 'reduce_volume', label: 'Reduce volume 25%' },
+                { id: 'reduce_intensity', label: 'Reduce intensity 10%' },
+                { id: 'skip_exercise', label: 'Skip this exercise' },
+                { id: 'swap_easier', label: 'Swap for easier variant' },
+                { id: 'add_sets', label: 'Add 1 extra set' },
+                { id: 'increase_intensity', label: 'Increase intensity 5%' },
+              ];
+              
+              return (
+                <>
+                  <h3 className={`font-bold text-lg ${theme.text} mb-2`}>
+                    <GitBranch size={20} className="inline mr-2 text-yellow-500" />
+                    Conditional Logic
+                  </h3>
+                  <p className={`text-sm ${theme.textMuted} mb-4`}>
+                    {EXERCISE_LIBRARY[exercise.exerciseId]?.name || 'Exercise'}
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${theme.text} mb-2`}>IF (condition)</label>
+                      <select 
+                        value={exercise.conditional?.condition || ''}
+                        onChange={(e) => {
+                          const newConditional = e.target.value ? { 
+                            condition: e.target.value, 
+                            action: exercise.conditional?.action || 'reduce_volume' 
+                          } : null;
+                          updateExercise(dayIdx, exIdx, { conditional: newConditional });
+                        }}
+                        className={`w-full p-3 rounded-lg ${theme.input} border`}
+                      >
+                        <option value="">No condition (always execute)</option>
+                        {conditions.map(c => (
+                          <option key={c.id} value={c.id}>{c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {exercise.conditional?.condition && (
+                      <div>
+                        <label className={`block text-sm font-medium ${theme.text} mb-2`}>THEN (action)</label>
+                        <select 
+                          value={exercise.conditional?.action || 'reduce_volume'}
+                          onChange={(e) => {
+                            updateExercise(dayIdx, exIdx, { 
+                              conditional: { ...exercise.conditional, action: e.target.value } 
+                            });
+                          }}
+                          className={`w-full p-3 rounded-lg ${theme.input} border`}
+                        >
+                          {actions.map(a => (
+                            <option key={a.id} value={a.id}>{a.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    
+                    {exercise.conditional && (
+                      <div className={`${theme.cardAlt} rounded-lg p-3`}>
+                        <p className={`text-sm ${theme.text}`}>
+                          <span className="font-medium">Rule:</span> If {conditions.find(c => c.id === exercise.conditional.condition)?.label}, 
+                          then {actions.find(a => a.id === exercise.conditional.action)?.label}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 mt-4">
+                    {exercise.conditional && (
+                      <button 
+                        onClick={() => { updateExercise(dayIdx, exIdx, { conditional: null }); setShowConditionalEditor(null); }}
+                        className="flex-1 py-2 rounded-lg bg-red-500/20 text-red-500"
+                      >
+                        Remove Rule
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setShowConditionalEditor(null)}
+                      className={`flex-1 py-2 rounded-lg ${theme.cardAlt} ${theme.text}`}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
