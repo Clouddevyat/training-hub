@@ -3255,7 +3255,7 @@ const SmartLoadDisplay = ({ prescription, profile, theme, darkMode, currentWeek 
 };
 
 // ============== PROGRAM BUILDER COMPONENT ==============
-const ProgramBuilderView = ({ customPrograms, setCustomPrograms, theme }) => {
+const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile, theme }) => {
   const [step, setStep] = useState('type');
   const [programType, setProgramType] = useState(null);
   const [programName, setProgramName] = useState('');
