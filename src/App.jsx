@@ -2849,7 +2849,7 @@ export default function App() {
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⛰️</span>
-            <h1 className="text-lg font-bold">Training Hub</h1>
+            <h1 className="text-lg font-bold">Training Hub <span className="text-xs font-normal opacity-50">v2.1</span></h1>
           </div>
           <div className="flex items-center gap-2">
             {readinessScore && (
