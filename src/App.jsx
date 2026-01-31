@@ -1407,14 +1407,17 @@ const PROGRESSION_MODELS = {
       { name: 'Hypertrophy', sets: 4, reps: '8-12', intensity: 70, rpe: 7 },
       { name: 'Power', sets: 4, reps: '2-3', intensity: 75, rpe: 7, note: 'Explosive' },
     ],
-    generateWeeks: (weeks) => {
+    // Note: DUP varies intensity within each training day, but still applies week-level adjustments
+    generateWeeks: (weeks, startIntensity = 70) => {
       return Array.from({ length: weeks }, (_, i) => {
         const isDeload = (i + 1) % 4 === 0;
         return {
           week: i + 1,
           pattern: 'DUP',
-          intensityMod: isDeload ? 0.8 : 1,
-          volumeMod: isDeload ? 0.6 : 1,
+          focus: isDeload ? 'Deload' : 'Daily Undulating',
+          intensity: isDeload ? Math.round(startIntensity * 0.8) : startIntensity,
+          setsMultiplier: isDeload ? 0.6 : 1,
+          rpeAdjust: isDeload ? -2 : 0,
           isDeload,
         };
       });
@@ -4521,6 +4524,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
             adjustedIntensity: weekProgression.intensity || track.baseIntensity,
             adjustedSets: weekProgression.sets || track.baseSets,
             adjustedReps: weekProgression.reps || track.baseReps,
+            adjustedRpe: weekProgression.rpe || track.baseRpe,
           };
         });
 
@@ -5587,7 +5591,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                               <div key={exIdx} className={`${theme.cardAlt} rounded p-2 text-sm`}>
                                 <div className="flex justify-between">
                                   <span className={theme.text}>{EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name || 'Exercise'}</span>
-                                  <span className={theme.textMuted}>{ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}%</span>
+                                  <span className={theme.textMuted}>{ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}% RPE {ex.adjustedRpe}</span>
                                 </div>
                                 {(ex.tempo || ex.rest || ex.notes) && (
                                   <div className={`text-xs ${theme.textMuted} mt-1 flex gap-3`}>
