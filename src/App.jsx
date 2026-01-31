@@ -2720,9 +2720,9 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                     <StopCircle size={20} /> Pause
                   </button>
                 )}
-                <button 
+                <button
                   onClick={() => { setTimerSeconds(0); setTimerRunning(false); }}
-                  className={`flex items-center gap-2 px-6 py-3 ${theme.cardAlt} ${theme.text} font-semibold rounded-xl`}
+                  className={`flex items-center gap-2 px-6 py-3 ${theme.btnSecondary} font-semibold rounded-xl`}
                 >
                   <RotateCcw size={20} /> Reset
                 </button>
@@ -2788,7 +2788,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
               {isFiveMile && timerSeconds > 0 && (
                 <button
                   onClick={() => setTestData(prev => ({ ...prev, time: formatTime(timerSeconds) }))}
-                  className={`mt-4 px-4 py-2 ${theme.cardAlt} rounded-lg text-sm ${theme.text}`}
+                  className={`mt-4 px-4 py-2 ${theme.btnSecondary} rounded-lg text-sm font-medium`}
                 >
                   Use timer value: {formatTime(timerSeconds)}
                 </button>
@@ -2807,7 +2807,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
             <ol className="space-y-2 mt-3">
               {test.protocol.map((step, idx) => (
                 <li key={idx} className={`flex gap-3 ${theme.text} text-sm`}>
-                  <span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.cardAlt} ${theme.textMuted} text-xs flex items-center justify-center`}>{idx + 1}</span>
+                  <span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.badge} text-xs font-medium flex items-center justify-center`}>{idx + 1}</span>
                   <span>{step}</span>
                 </li>
               ))}
@@ -3942,7 +3942,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
             {onShowHistory && (
               <button
                 onClick={() => onShowHistory(exercise)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.cardAlt} text-sm ${theme.textMuted}`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.btnSecondary} text-sm font-medium`}
               >
                 <Clock size={14} /> History
               </button>
@@ -3950,7 +3950,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
             {pattern && onSwap && (
               <button
                 onClick={() => onSwap({ name: exercise.name, pattern, originalId: originalExerciseId })}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.cardAlt} text-sm ${theme.textMuted}`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.btnSecondary} text-sm font-medium`}
               >
                 <RefreshCw size={14} /> Swap
               </button>
@@ -4088,9 +4088,9 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
 
         {/* Footer */}
         <div className={`p-4 border-t ${theme.border}`}>
-          <button 
+          <button
             onClick={onClose}
-            className={`w-full py-3 ${theme.cardAlt} rounded-xl font-medium ${theme.text}`}
+            className={`w-full py-3 ${theme.btnSecondary} rounded-xl font-medium`}
           >
             Close
           </button>
@@ -4196,10 +4196,10 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
           </div>
 
           <div>
-            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Equipment</label>
+            <label className={`block text-sm font-medium ${theme.text} mb-2`}>Equipment</label>
             <div className="flex flex-wrap gap-2">
               {EQUIPMENT_OPTIONS.map(eq => (
-                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-blue-500 text-white' : `${theme.cardAlt} ${theme.text}`}`}>
+                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-blue-500 text-white' : theme.chip}`}>
                   {EQUIPMENT_DISPLAY_NAMES[eq] || eq}
                 </button>
               ))}
@@ -4207,10 +4207,10 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
           </div>
 
           <div>
-            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Target Muscles</label>
+            <label className={`block text-sm font-medium ${theme.text} mb-2`}>Target Muscles</label>
             <div className="flex flex-wrap gap-2">
               {MUSCLE_OPTIONS.map(muscle => (
-                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-green-500 text-white' : `${theme.cardAlt} ${theme.text}`}`}>
+                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-green-500 text-white' : theme.chip}`}>
                   {muscle}
                 </button>
               ))}
@@ -4219,7 +4219,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
         </div>
 
         <div className={`p-4 border-t ${theme.border} flex gap-3`}>
-          <button onClick={onClose} className={`flex-1 py-3 ${theme.cardAlt} rounded-xl font-medium ${theme.text}`}>Cancel</button>
+          <button onClick={onClose} className={`flex-1 py-3 ${theme.btnSecondary} rounded-xl font-medium`}>Cancel</button>
           <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl font-medium text-white">
             {editExercise ? 'Update' : 'Add Exercise'}
           </button>
@@ -5184,9 +5184,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className={`text-lg font-bold ${theme.text}`}>What do you want to do?</h3>
-            <button 
-              onClick={() => setShowImportModal(true)} 
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg ${theme.cardAlt} text-sm ${theme.text}`}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg ${theme.btnSecondary} text-sm font-medium`}
             >
               <Upload size={14} /> Import
             </button>
@@ -5424,8 +5424,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             </div>
 
             {/* Progression Model Selector */}
-            <div><label className={`block text-xs ${theme.textMuted} mb-2`}>Progression Model</label>
-              <div className="grid grid-cols-2 gap-2">{Object.values(PROGRESSION_MODELS).map(model => (<button key={model.id} onClick={() => setNewPhaseProgression(model.id)} className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}><span className="text-lg mr-2">{model.icon}</span><span className="text-sm font-medium">{model.name}</span></button>))}</div>
+            <div><label className={`block text-xs ${theme.text} mb-2`}>Progression Model</label>
+              <div className="grid grid-cols-2 gap-2">{Object.values(PROGRESSION_MODELS).map(model => (<button key={model.id} onClick={() => setNewPhaseProgression(model.id)} className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.chip}`}><span className="text-lg mr-2">{model.icon}</span><span className="text-sm font-medium">{model.name}</span></button>))}</div>
               <p className={`text-xs ${theme.textMuted} mt-2`}>{PROGRESSION_MODELS[newPhaseProgression].description}</p>
             </div>
             <button onClick={addPhase} disabled={!newPhaseName} className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-green-500 text-white' : theme.btnDisabled}`}><Plus size={18} className="inline mr-1" /> Add Phase</button>
@@ -5592,20 +5592,20 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                               <div className="flex gap-1">
                                 {ex.exerciseId && !isInGroup && (
                                   <>
-                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'superset')} className={`p-1 ${theme.textMuted} hover:text-orange-500`} title="Start Superset"><Zap size={14} /></button>
-                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.textMuted} hover:text-purple-500`} title="Start Circuit"><RefreshCw size={14} /></button>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'superset')} className={`p-1 ${theme.iconMuted} hover:text-orange-500`} title="Start Superset"><Zap size={14} /></button>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.iconMuted} hover:text-purple-500`} title="Start Circuit"><RefreshCw size={14} /></button>
                                   </>
                                 )}
                                 {ex.exerciseId && (
-                                  <button 
-                                    onClick={() => setShowConditionalEditor({ dayIdx, exIdx })} 
-                                    className={`p-1 ${ex.conditional ? 'text-yellow-500' : theme.textMuted} hover:text-yellow-500`} 
+                                  <button
+                                    onClick={() => setShowConditionalEditor({ dayIdx, exIdx })}
+                                    className={`p-1 ${ex.conditional ? 'text-yellow-500' : theme.iconMuted} hover:text-yellow-500`}
                                     title="Conditional Logic"
                                   >
                                     <GitBranch size={14} />
                                   </button>
                                 )}
-                                {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.textMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}
+                                {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.iconMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}
                                 <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button>
                               </div>
                             </div>
@@ -7339,7 +7339,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               }
             </div>
             {timerType === 'emom' && mode === 'running' && (
-              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
                 <div 
                   className="h-2 rounded-full transition-all bg-purple-500"
                   style={{ width: `${((seconds % emomConfig.minuteLength) / emomConfig.minuteLength) * 100}%` }}
@@ -7347,7 +7347,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               </div>
             )}
             {timerType === 'amrap' && mode === 'running' && (
-              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
                 <div 
                   className="h-2 rounded-full transition-all bg-orange-500"
                   style={{ width: `${((amrapConfig.totalTime - seconds) / amrapConfig.totalTime) * 100}%` }}
@@ -7355,7 +7355,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               </div>
             )}
             {(timerType === 'interval' || timerType === 'countdown') && mode === 'running' && (
-              <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
+              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
                 <div 
                   className={`h-2 rounded-full transition-all ${intervalConfig.isRest ? 'bg-green-500' : 'bg-blue-500'}`}
                   style={{ width: `${progressPercent}%` }}
@@ -7395,7 +7395,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
             {mode !== 'stopped' && (
               <button
                 onClick={resetTimer}
-                className={`px-4 py-3 ${theme.cardAlt} rounded-xl font-medium flex items-center justify-center gap-2 ${theme.text}`}
+                className={`px-4 py-3 ${theme.btnSecondary} rounded-xl font-medium flex items-center justify-center gap-2`}
               >
                 <RotateCcw size={20} /> Reset
               </button>
@@ -8067,7 +8067,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
                   <span className={`font-medium ${theme.text}`}>{p.name}</span>
                   <span className={`text-xs ${theme.textMuted}`}>Weeks {p.weeks[0]}-{p.weeks[1]}</span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-1.5">
+                <div className="w-full bg-gray-600/50 rounded-full h-1.5">
                   <div
                     className={`h-1.5 rounded-full ${isActive ? 'bg-blue-500' : progress === 100 ? 'bg-green-500' : 'bg-gray-500'}`}
                     style={{ width: `${progress}%` }}
@@ -8824,7 +8824,14 @@ export default function App() {
     glass: darkMode ? 'glass-dark' : 'glass-light',
     gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
     gradientText: 'gradient-text',
-    btnDisabled: darkMode ? 'bg-gray-700 text-gray-400' : theme.btnDisabled,
+    btnDisabled: darkMode ? 'bg-gray-700 text-gray-400' : 'bg-slate-200 text-slate-400',
+    // New high-contrast button styles for dark mode
+    btnSecondary: darkMode ? 'bg-gray-600/60 hover:bg-gray-500/60 text-gray-100' : 'bg-slate-100 hover:bg-slate-200 text-slate-700',
+    btnGhost: darkMode ? 'hover:bg-gray-700/50 text-gray-200' : 'hover:bg-slate-100 text-slate-600',
+    chip: darkMode ? 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+    chipActive: 'bg-blue-500 text-white',
+    badge: darkMode ? 'bg-gray-600/60 text-gray-200' : 'bg-slate-100 text-slate-600',
+    iconMuted: darkMode ? 'text-gray-400' : 'text-slate-400',
   };
 
   // Handle linking account with sync code - loads cloud data then authenticates
@@ -9312,7 +9319,7 @@ export default function App() {
                 </div>
               )}
 
-              {todayWorkout.prescription.steps && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-3`}>Protocol</p><ol className="space-y-2">{todayWorkout.prescription.steps.map((step, idx) => <li key={idx} className={`flex gap-3 ${theme.text} text-sm`}><span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.cardAlt} ${theme.textMuted} text-xs flex items-center justify-center`}>{idx + 1}</span>{step}</li>)}</ol></div>}
+              {todayWorkout.prescription.steps && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-3`}>Protocol</p><ol className="space-y-2">{todayWorkout.prescription.steps.map((step, idx) => <li key={idx} className={`flex gap-3 ${theme.text} text-sm`}><span className={`flex-shrink-0 w-6 h-6 rounded-full ${theme.badge} text-xs font-medium flex items-center justify-center`}>{idx + 1}</span>{step}</li>)}</ol></div>}
               {todayWorkout.prescription.options && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Options</p><ul className="space-y-1">{todayWorkout.prescription.options.map((opt, idx) => <li key={idx} className={`text-sm ${theme.textMuted}`}>• {opt}</li>)}</ul></div>}
               {todayWorkout.prescription.notes && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Notes</p><ul className="space-y-1">{(Array.isArray(todayWorkout.prescription.notes) ? todayWorkout.prescription.notes : [todayWorkout.prescription.notes]).map((note, idx) => <li key={idx} className={`text-sm ${theme.textMuted}`}>• {note}</li>)}</ul></div>}
               {todayWorkout.prescription.cooldown && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Cool-down</p><p className={theme.text}>{todayWorkout.prescription.cooldown}</p></div>}
@@ -9737,7 +9744,7 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => setShowSyncCodeSetup(true)}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium`}
                   >
                     <Key size={18} />
                     Change Sync Code
@@ -9795,7 +9802,7 @@ export default function App() {
                         setShowSyncCodeSetup(false);
                         setSyncCodeInput('');
                       }}
-                      className={`px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}
+                      className={`px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium`}
                     >
                       Cancel
                     </button>
@@ -9809,8 +9816,8 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-4`}>Data</h3>
               <div className="space-y-3">
-                <button onClick={exportData} className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}><Download size={18} />Export All Data</button>
-                <label className="block"><span className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text} cursor-pointer`}><Upload size={18} />Import Data</span><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
+                <button onClick={exportData} className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium`}><Download size={18} />Export All Data</button>
+                <label className="block"><span className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium cursor-pointer`}><Upload size={18} />Import Data</span><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
                 <button onClick={() => { if (confirm('Clear all logs?')) setWorkoutLogs([]); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500"><Trash2 size={18} />Clear Logs</button>
                 <button onClick={() => { if (confirm('Reset readiness data?')) setReadiness(DEFAULT_READINESS); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500"><Trash2 size={18} />Clear Readiness</button>
               </div>
