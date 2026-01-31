@@ -5440,11 +5440,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           
           {/* Quick Actions: Split Template + Volume Summary */}
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => setShowSplitPicker(true)}
-              className={`flex-1 py-2 px-3 rounded-lg ${theme.cardAlt} text-sm flex items-center justify-center gap-2`}
+              className="flex-1 py-2.5 px-4 rounded-lg bg-gray-600/50 hover:bg-gray-500/50 text-gray-200 text-sm font-medium flex items-center justify-center gap-2"
             >
-              <Library size={16} className="text-blue-500" /> Apply Split Template
+              <Library size={16} className="text-blue-400" /> Apply Split Template
             </button>
           </div>
           
