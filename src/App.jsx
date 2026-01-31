@@ -1522,12 +1522,15 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
     hrv: '',
     notes: ''
   });
+  // Track if today's check has been saved (vs just viewing defaults)
+  const [isSaved, setIsSaved] = useState(!!todayCheck);
 
   // Reset form when date changes
   useEffect(() => {
     const newTodayCheck = readiness.logs?.find(l => l.date === todayKey);
     if (newTodayCheck) {
       setFormData(newTodayCheck);
+      setIsSaved(true);
     } else {
       // Reset to defaults for new day
       setFormData({
@@ -1540,11 +1543,14 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
         hrv: '',
         notes: ''
       });
+      setIsSaved(false);
     }
   }, [todayKey, readiness.logs]);
 
   const score = calculateReadinessScore(formData);
   const readinessInfo = score ? getReadinessLabel(score) : null;
+  // Only show the big score display if today's check has been saved
+  const showSavedScore = isSaved && score;
 
   const saveCheck = () => {
     const entry = {
@@ -1557,6 +1563,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
       ...prev,
       logs: [...(prev.logs || []).filter(l => l.date !== todayKey), entry].slice(-90)
     }));
+    setIsSaved(true);
   };
 
   // Button-based rating selector
@@ -1596,8 +1603,8 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
         <span className={`text-sm ${theme.textMuted}`}>{formatDateShort(todayKey)}</span>
       </div>
 
-      {/* Score Display */}
-      {score && (
+      {/* Score Display - only show if today's check has been saved */}
+      {showSavedScore ? (
         <div className={`${theme.card} rounded-xl shadow-sm p-5 text-center`}>
           <div className={`text-5xl font-bold ${getReadinessColor(score)}`}>{score}</div>
           <div className={`flex items-center justify-center gap-2 mt-2 ${theme.text}`}>
@@ -1605,6 +1612,11 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
             <span className="font-medium">{readinessInfo?.text}</span>
           </div>
           <p className={`text-sm ${theme.textMuted} mt-2`}>{readinessInfo?.recommendation}</p>
+        </div>
+      ) : (
+        <div className={`${theme.card} rounded-xl shadow-sm p-5 text-center`}>
+          <div className={`text-2xl font-medium ${theme.textMuted}`}>No check-in yet</div>
+          <p className={`text-sm ${theme.textMuted} mt-2`}>Complete your daily check-in below</p>
         </div>
       )}
 
