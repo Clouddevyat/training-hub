@@ -3972,7 +3972,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
   const [showSwapPicker, setShowSwapPicker] = useState(null);
   const [newPhaseName, setNewPhaseName] = useState('');
   const [newPhaseWeeks, setNewPhaseWeeks] = useState(4);
-  const [newPhaseProgression, setNewPhaseProgression] = useState('custom');
+  const [newPhaseProgression, setNewPhaseProgression] = useState('linear');
+  const [newPhaseTrack, setNewPhaseTrack] = useState('strength');
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [exerciseFilter, setExerciseFilter] = useState('all');
   // NEW: Edit mode state
@@ -4016,6 +4017,70 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
     { id: 'mobility', name: 'Mobility Flow (8 min)', description: '90/90 stretch, pigeon, couch stretch, foam roll', duration: 8 },
     { id: 'yoga', name: 'Yoga Cool-down (10 min)', description: 'Child\'s pose, downward dog, supine twist, savasana', duration: 10 },
   ];
+
+  // Training Tracks - define the rep/intensity scheme for the phase
+  const TRAINING_TRACKS = {
+    hypertrophy: {
+      id: 'hypertrophy',
+      name: 'Hypertrophy',
+      icon: '💪',
+      description: 'Build muscle mass with moderate weight, higher reps',
+      baseReps: '8-12',
+      baseSets: 4,
+      baseIntensity: 67,
+      intensityRange: [65, 75],
+      baseRpe: 7,
+      color: 'purple',
+    },
+    strength: {
+      id: 'strength',
+      name: 'Strength',
+      icon: '🏋️',
+      description: 'Build maximal strength with heavy weight, lower reps',
+      baseReps: '4-6',
+      baseSets: 4,
+      baseIntensity: 82,
+      intensityRange: [80, 92],
+      baseRpe: 8,
+      color: 'red',
+    },
+    power: {
+      id: 'power',
+      name: 'Power',
+      icon: '⚡',
+      description: 'Explosive strength with moderate weight, low reps',
+      baseReps: '2-4',
+      baseSets: 5,
+      baseIntensity: 78,
+      intensityRange: [70, 85],
+      baseRpe: 8,
+      color: 'yellow',
+    },
+    endurance: {
+      id: 'endurance',
+      name: 'Muscular Endurance',
+      icon: '🔥',
+      description: 'Build work capacity with lighter weight, high reps',
+      baseReps: '15-20',
+      baseSets: 3,
+      baseIntensity: 55,
+      intensityRange: [50, 65],
+      baseRpe: 7,
+      color: 'orange',
+    },
+    peaking: {
+      id: 'peaking',
+      name: 'Peaking',
+      icon: '🎯',
+      description: 'Peak strength for competition with very heavy singles/doubles',
+      baseReps: '1-3',
+      baseSets: 5,
+      baseIntensity: 90,
+      intensityRange: [88, 100],
+      baseRpe: 9,
+      color: 'blue',
+    },
+  };
 
   // Training Split Templates
   const SPLIT_TEMPLATES = [
@@ -4089,12 +4154,25 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
     const startWeek = phases.reduce((sum, p) => sum + p.weeks, 0) + 1;
     const endWeek = startWeek + newPhaseWeeks - 1;
     const progressionModel = PROGRESSION_MODELS[newPhaseProgression];
-    const weeklyProgression = progressionModel.generateWeeks(newPhaseWeeks);
+    const track = TRAINING_TRACKS[newPhaseTrack];
+
+    // Generate weekly progression, applying track's base values
+    const weeklyProgression = progressionModel.generateWeeks(newPhaseWeeks, track.baseIntensity).map(week => ({
+      ...week,
+      // Override with track values if not a custom periodization
+      reps: week.reps || track.baseReps,
+      sets: week.sets || track.baseSets,
+      intensity: week.intensity || track.baseIntensity,
+      rpe: week.rpe || track.baseRpe,
+      track: newPhaseTrack,
+    }));
+
     setPhases(prev => [...prev, {
       id: `phase_${Date.now()}`,
       name: newPhaseName,
       weeks: newPhaseWeeks,
       progression: newPhaseProgression,
+      track: newPhaseTrack,
       weeksRange: [startWeek, endWeek],
       weeklyProgression,
       weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'recovery', exercises: [], duration: 60, cardioZone: 'zone2', cardioActivity: 'run', warmup: 'none', cooldown: 'none' })),
@@ -4404,9 +4482,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
 
     if (!phaseForWeek) return null;
 
-    // Get progression data for this week
+    // Get progression data for this week and track defaults
     const weekProgression = phaseForWeek.weeklyProgression?.[weekInPhase - 1] || {};
-    const isCustom = phaseForWeek.progression === 'custom' || weekProgression.isCustom;
+    const track = TRAINING_TRACKS[phaseForWeek.track] || TRAINING_TRACKS.strength;
 
     // Apply progression to template
     return {
@@ -4414,29 +4492,20 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
       weekNum,
       weekInPhase,
       progression: weekProgression,
+      track: track,
       days: phaseForWeek.weeklyTemplate.map(day => {
         if (day.type === 'recovery' || day.type === 'rest') {
           return { ...day, adjustedExercises: [] };
         }
 
         const adjustedExercises = (day.exercises || []).map(ex => {
-          if (isCustom) {
-            // Custom periodization: use exercise's stored values unchanged
-            return {
-              ...ex,
-              adjustedIntensity: ex.intensity || 70,
-              adjustedSets: ex.sets || 3,
-              adjustedReps: ex.reps || '8-10',
-            };
-          } else {
-            // Non-custom periodization: use the week's prescribed values from the model
-            return {
-              ...ex,
-              adjustedIntensity: weekProgression.intensity || ex.intensity || 70,
-              adjustedSets: weekProgression.sets || ex.sets || 4,
-              adjustedReps: weekProgression.reps || ex.reps || '8-10',
-            };
-          }
+          // Use week progression values, falling back to track defaults
+          return {
+            ...ex,
+            adjustedIntensity: weekProgression.intensity || track.baseIntensity,
+            adjustedSets: weekProgression.sets || track.baseSets,
+            adjustedReps: weekProgression.reps || track.baseReps,
+          };
         });
 
         return { ...day, adjustedExercises };
@@ -4452,15 +4521,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
 
   const addExercise = (dayIdx, groupId = null) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    // Get defaults from the phase's periodization model (week 1)
+    // Get defaults from the phase's track and periodization model (week 1)
+    const track = TRAINING_TRACKS[currentPhase.track] || TRAINING_TRACKS.strength;
     const weekOneProgression = currentPhase.weeklyProgression?.[0] || {};
-    const isCustom = weekOneProgression.isCustom || currentPhase.progression === 'custom';
 
-    // Use periodization defaults or fallback to generic defaults
-    const defaultSets = isCustom ? 3 : (weekOneProgression.sets || 3);
-    const defaultReps = isCustom ? '8-10' : (weekOneProgression.reps || '8-10');
-    const defaultIntensity = isCustom ? 70 : (weekOneProgression.intensity || 70);
-    const defaultRpe = isCustom ? 7 : (weekOneProgression.rpe || 7);
+    // Use track defaults, then periodization overrides if available
+    const defaultSets = weekOneProgression.sets || track.baseSets;
+    const defaultReps = weekOneProgression.reps || track.baseReps;
+    const defaultIntensity = weekOneProgression.intensity || track.baseIntensity;
+    const defaultRpe = weekOneProgression.rpe || track.baseRpe;
 
     updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: defaultSets, reps: defaultReps, isAmrap: false, intensity: defaultIntensity, rpe: defaultRpe, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null, conditional: null }] });
   };
@@ -4861,7 +4930,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
           {phases.map((phase, idx) => (
             <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between">
-                <div><p className={`font-medium ${theme.text}`}>{phase.name}</p><p className={`text-sm ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression].name}</p></div>
+                <div>
+                  <p className={`font-medium ${theme.text}`}>{phase.name}</p>
+                  <p className={`text-sm ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression]?.name || 'Custom'}</p>
+                  {phase.track && TRAINING_TRACKS[phase.track] && (
+                    <p className={`text-xs ${theme.textMuted} mt-1`}>
+                      {TRAINING_TRACKS[phase.track].icon} {TRAINING_TRACKS[phase.track].name}: {TRAINING_TRACKS[phase.track].baseReps} @ {TRAINING_TRACKS[phase.track].baseIntensity}%
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-1">
                   <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs">Edit</button>
                   <button onClick={() => duplicatePhase(idx)} className={`p-1 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`} title="Duplicate Phase"><Copy size={16} className="text-purple-500" /></button>
@@ -4876,6 +4953,33 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
               <div><label className={`block text-xs ${theme.textMuted} mb-1`}>Name</label><input type="text" value={newPhaseName} onChange={(e) => setNewPhaseName(e.target.value)} placeholder="e.g., Accumulation" className={`w-full p-2 rounded-lg ${theme.input} border text-sm`} /></div>
               <div><label className={`block text-xs ${theme.textMuted} mb-1`}>Weeks</label><input type="number" value={newPhaseWeeks} onChange={(e) => setNewPhaseWeeks(Math.max(1, parseInt(e.target.value) || 1))} min={1} max={12} className={`w-full p-2 rounded-lg ${theme.input} border text-sm`} /></div>
             </div>
+
+            {/* Training Track Selector */}
+            <div>
+              <label className={`block text-xs ${theme.textMuted} mb-2`}>Training Track</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.values(TRAINING_TRACKS).map(track => (
+                  <button
+                    key={track.id}
+                    onClick={() => setNewPhaseTrack(track.id)}
+                    className={`p-2 rounded-lg text-left border-2 ${newPhaseTrack === track.id ? `border-${track.color}-500 bg-${track.color}-500/20` : `border-transparent ${theme.cardAlt}`}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{track.icon}</span>
+                      <span className={`text-sm font-medium ${theme.text}`}>{track.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className={`mt-2 p-2 rounded-lg ${theme.cardAlt}`}>
+                <p className={`text-xs ${theme.textMuted}`}>{TRAINING_TRACKS[newPhaseTrack].description}</p>
+                <p className={`text-xs ${theme.text} mt-1`}>
+                  <span className="font-medium">Defaults:</span> {TRAINING_TRACKS[newPhaseTrack].baseSets} sets × {TRAINING_TRACKS[newPhaseTrack].baseReps} reps @ {TRAINING_TRACKS[newPhaseTrack].baseIntensity}% • RPE {TRAINING_TRACKS[newPhaseTrack].baseRpe}
+                </p>
+              </div>
+            </div>
+
+            {/* Progression Model Selector */}
             <div><label className={`block text-xs ${theme.textMuted} mb-2`}>Progression Model</label>
               <div className="grid grid-cols-2 gap-2">{Object.values(PROGRESSION_MODELS).map(model => (<button key={model.id} onClick={() => setNewPhaseProgression(model.id)} className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}><span className="text-lg mr-2">{model.icon}</span><span className="text-sm font-medium">{model.name}</span></button>))}</div>
               <p className={`text-xs ${theme.textMuted} mt-2`}>{PROGRESSION_MODELS[newPhaseProgression].description}</p>
@@ -4927,14 +5031,22 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
             );
           })()}
           
-          <p className={`text-sm ${theme.textMuted}`}>Build Week 1 template. Exercises auto-propagate to all {currentPhase.weeks} weeks with {PROGRESSION_MODELS[currentPhase.progression].name} progression.</p>
+          <p className={`text-sm ${theme.textMuted}`}>Build Week 1 template. Exercises auto-propagate to all {currentPhase.weeks} weeks with {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'} progression.</p>
 
-          {/* Periodization Info Banner */}
-          {currentPhase.progression !== 'custom' && currentPhase.weeklyProgression?.[0] && (
+          {/* Track & Periodization Info Banner */}
+          {currentPhase.weeklyProgression?.[0] && (
             <div className={`${theme.cardAlt} rounded-lg p-3 border-l-4 border-blue-500`}>
-              <p className={`text-xs font-medium ${theme.text} mb-1`}>
-                {PROGRESSION_MODELS[currentPhase.progression].icon} Week 1 Prescription ({PROGRESSION_MODELS[currentPhase.progression].name})
-              </p>
+              <div className="flex items-center gap-2 mb-2">
+                {currentPhase.track && TRAINING_TRACKS[currentPhase.track] && (
+                  <span className={`text-xs px-2 py-1 rounded-full bg-${TRAINING_TRACKS[currentPhase.track].color}-500/20 text-${TRAINING_TRACKS[currentPhase.track].color}-400 font-medium`}>
+                    {TRAINING_TRACKS[currentPhase.track].icon} {TRAINING_TRACKS[currentPhase.track].name}
+                  </span>
+                )}
+                <span className={`text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium`}>
+                  {PROGRESSION_MODELS[currentPhase.progression]?.icon} {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'}
+                </span>
+              </div>
+              <p className={`text-xs font-medium ${theme.text} mb-1`}>Week 1 Defaults</p>
               <div className="flex flex-wrap gap-3 text-xs">
                 {currentPhase.weeklyProgression[0].sets && (
                   <span className={theme.textMuted}>Sets: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].sets}</span></span>
@@ -4951,11 +5063,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                 {currentPhase.weeklyProgression[0].focus && (
                   <span className={theme.textMuted}>Focus: <span className="text-purple-500 font-medium">{currentPhase.weeklyProgression[0].focus}</span></span>
                 )}
-                {currentPhase.weeklyProgression[0].phase && (
-                  <span className={theme.textMuted}>Phase: <span className="text-purple-500 font-medium">{currentPhase.weeklyProgression[0].phase}</span></span>
-                )}
               </div>
-              <p className={`text-xs ${theme.textMuted} mt-1 italic`}>New exercises will use these defaults. Subsequent weeks auto-adjust per model.</p>
+              <p className={`text-xs ${theme.textMuted} mt-1 italic`}>New exercises use these defaults. Weeks auto-progress per model.</p>
             </div>
           )}
           {currentPhase.weeklyTemplate.map((day, dayIdx) => (
@@ -5410,31 +5519,26 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                   <div className="space-y-3">
                     {/* Progression Info */}
                     <div className={`${theme.cardAlt} rounded-lg p-3`}>
-                      <p className={`text-xs ${theme.textMuted} mb-1`}>Week {weekData.weekInPhase} of {weekData.phase.weeks} in {weekData.phase.name}</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-xs ${theme.textMuted}`}>Week {weekData.weekInPhase} of {weekData.phase.weeks} in {weekData.phase.name}</p>
+                        {weekData.track && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full bg-${weekData.track.color}-500/20 text-${weekData.track.color}-400`}>
+                            {weekData.track.icon} {weekData.track.name}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-4 text-sm">
-                        {weekData.progression.intensity && (
-                          <span className={theme.text}>Intensity: <span className="text-blue-400">{weekData.progression.intensity}%</span></span>
-                        )}
-                        {weekData.progression.sets && (
-                          <span className={theme.text}>Sets: <span className="text-blue-400">{weekData.progression.sets}</span></span>
-                        )}
-                        {weekData.progression.reps && (
-                          <span className={theme.text}>Reps: <span className="text-blue-400">{weekData.progression.reps}</span></span>
-                        )}
-                        {weekData.progression.rpe && (
-                          <span className={theme.text}>RPE: <span className="text-blue-400">{weekData.progression.rpe}</span></span>
+                        <span className={theme.text}>Intensity: <span className="text-blue-400">{weekData.progression.intensity || weekData.track?.baseIntensity}%</span></span>
+                        <span className={theme.text}>Sets: <span className="text-blue-400">{weekData.progression.sets || weekData.track?.baseSets}</span></span>
+                        <span className={theme.text}>Reps: <span className="text-blue-400">{weekData.progression.reps || weekData.track?.baseReps}</span></span>
+                        {(weekData.progression.rpe || weekData.track?.baseRpe) && (
+                          <span className={theme.text}>RPE: <span className="text-blue-400">{weekData.progression.rpe || weekData.track?.baseRpe}</span></span>
                         )}
                         {weekData.progression.focus && (
                           <span className={theme.text}>Focus: <span className="text-purple-400">{weekData.progression.focus}</span></span>
                         )}
-                        {weekData.progression.phase && (
-                          <span className={theme.text}>Block: <span className="text-purple-400">{weekData.progression.phase}</span></span>
-                        )}
                         {weekData.progression.isDeload && (
                           <span className="text-green-400 font-medium">🔄 Deload Week</span>
-                        )}
-                        {weekData.progression.isCustom && (
-                          <span className={theme.textMuted}>Custom (values set per exercise)</span>
                         )}
                       </div>
                     </div>
