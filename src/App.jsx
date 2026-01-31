@@ -3444,42 +3444,71 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
     onSetDataChange?.(exercise.name, newSetData);
   };
 
+  // Get pattern icon
+  const getPatternIcon = (p) => {
+    const icons = {
+      hinge: '🏋️', squat: '🦵', lunge: '🚶', push: '💪', pull: '🎯',
+      vertical_push: '⬆️', vertical_pull: '⬇️', carry: '🧳', rotation: '🔄', core: '🎯'
+    };
+    return icons[p] || '💪';
+  };
+
   return (
-    <div className={`rounded-xl border-2 overflow-hidden transition-all ${allSetsComplete ? 'bg-green-500/10 border-green-500' : `${theme.cardAlt} ${darkMode ? 'border-gray-600' : 'border-slate-200'}`}`}>
+    <div className={`rounded-xl overflow-hidden transition-all duration-300 ${
+      allSetsComplete
+        ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/10 ring-2 ring-emerald-500/50'
+        : `${theme.cardAlt} ring-1 ${darkMode ? 'ring-white/10' : 'ring-black/5'}`
+    }`}>
       {/* Header - Collapsible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center gap-3 p-4 text-left transition-all`}
+        className={`w-full flex items-center gap-3 p-4 text-left transition-all active:scale-[0.99]`}
       >
-        <div className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-          <ChevronRight size={20} className={theme.textMuted} />
+        {/* Pattern icon */}
+        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+          allSetsComplete
+            ? 'bg-emerald-500/20'
+            : darkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
+          {allSetsComplete ? <CheckCircle2 size={20} className="text-emerald-500" /> : getPatternIcon(pattern)}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className={`font-medium ${theme.text}`}>{displayName}</p>
-            {swappedTo && <span className="text-xs px-1.5 py-0.5 bg-purple-500/20 text-purple-500 rounded">swapped</span>}
-            {allSetsComplete && <CheckCircle2 size={16} className="text-green-500" />}
+            <p className={`font-semibold ${allSetsComplete ? 'text-emerald-500' : theme.text}`}>{displayName}</p>
+            {swappedTo && (
+              <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded-full font-medium">
+                swapped
+              </span>
+            )}
           </div>
-          <div className={`flex flex-wrap gap-x-3 gap-y-1 text-sm ${theme.textMuted} mt-1`}>
-            {exercise.sets && <span>{exercise.sets} sets</span>}
-            {exercise.reps && <span>× {exercise.reps}</span>}
-            {exercise.duration && <span>{exercise.duration}</span>}
-            {workingWeight && <span className="font-mono font-medium text-blue-500">{workingWeight} lbs</span>}
+          <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1`}>
+            {exercise.sets && <span className={`font-medium ${theme.textMuted}`}>{exercise.sets}×{exercise.reps || '—'}</span>}
+            {workingWeight && (
+              <span className="font-mono font-bold text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-md text-xs">
+                {workingWeight} lb
+              </span>
+            )}
+            {exercise.duration && <span className={theme.textMuted}>{exercise.duration}</span>}
           </div>
         </div>
 
-        {/* Progress indicator */}
-        <div className="flex-shrink-0 flex items-center gap-2">
-          <div className={`w-12 h-1.5 rounded-full ${theme.cardAlt} overflow-hidden`}>
+        {/* Set progress dots */}
+        <div className="flex-shrink-0 flex items-center gap-1.5">
+          {currentSetData.map((set, i) => (
             <div
-              className="h-full bg-green-500 transition-all"
-              style={{ width: `${completionPercent}%` }}
+              key={i}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                set.completed
+                  ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
+                  : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+              }`}
             />
-          </div>
-          <span className={`text-xs font-medium ${allSetsComplete ? 'text-green-500' : theme.textMuted}`}>
-            {completedSets}/{numSets}
-          </span>
+          ))}
+          <ChevronRight
+            size={18}
+            className={`ml-1 transition-transform duration-300 ${theme.textMuted} ${isExpanded ? 'rotate-90' : ''}`}
+          />
         </div>
       </button>
 
@@ -3515,43 +3544,48 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
               <button
                 key={setIdx}
                 onClick={() => setEditingSet({ setIdx, data: set })}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left active:scale-[0.98] ${
                   set.completed
-                    ? 'bg-green-500/10 border-2 border-green-500/50'
-                    : `${theme.cardAlt} border-2 border-transparent`
+                    ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/10 ring-1 ring-emerald-500/30'
+                    : `${darkMode ? 'bg-gray-800/50' : 'bg-white'} ring-1 ${darkMode ? 'ring-white/5' : 'ring-black/5'} hover:ring-cyan-500/30`
                 }`}
               >
                 {/* Set number */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                  set.completed ? 'bg-green-500 text-white' : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${theme.text}`
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
+                  set.completed
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${theme.text}`
                 }`}>
-                  {set.completed ? <Check size={16} /> : setIdx + 1}
+                  {set.completed ? <Check size={16} strokeWidth={3} /> : setIdx + 1}
                 </div>
 
                 {/* Set details */}
                 <div className="flex-1">
                   {set.completed || set.actualWeight ? (
-                    <div className="flex items-baseline gap-3">
-                      <span className={`text-lg font-bold ${theme.text}`}>
-                        {set.actualWeight || set.plannedWeight || workingWeight || '—'} lb
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className={`text-lg font-bold font-mono ${set.completed ? 'text-emerald-500' : theme.text}`}>
+                        {set.actualWeight || set.plannedWeight || workingWeight || '—'}
+                        <span className="text-sm font-normal ml-1">lb</span>
                       </span>
                       {set.actualReps && (
-                        <span className={`${theme.textMuted}`}>× {set.actualReps} reps</span>
+                        <span className={`text-sm ${theme.textMuted}`}>× {set.actualReps}</span>
                       )}
                       {set.rpe && (
-                        <span className={`text-sm px-2 py-0.5 rounded-full ${
-                          set.rpe >= 9 ? 'bg-red-500/20 text-red-500' :
-                          set.rpe >= 7 ? 'bg-yellow-500/20 text-yellow-500' :
-                          'bg-green-500/20 text-green-500'
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                          set.rpe >= 9 ? 'bg-red-500/20 text-red-400' :
+                          set.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
+                          'bg-cyan-500/20 text-cyan-400'
                         }`}>
                           RPE {set.rpe}
                         </span>
                       )}
                     </div>
                   ) : (
-                    <div className={`${theme.textMuted}`}>
-                      <span className="text-sm">Tap to log • </span>
-                      <span className="font-mono">{workingWeight ? `${workingWeight} lb target` : 'Set weight'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm ${theme.textMuted}`}>Tap to log</span>
+                      {workingWeight && (
+                        <span className="text-xs font-mono text-cyan-500/70">• {workingWeight} lb target</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -9512,29 +9546,108 @@ export default function App() {
             </div>
 
             {/* Log Form */}
-            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-              <h3 className={`font-semibold ${theme.text} mb-4`}>Log Workout</h3>
-              <div className="space-y-4">
-                <div><label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Duration (min)</label><input type="number" value={workoutData.duration} onChange={(e) => setWorkoutData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))} className={`w-full px-4 py-3 rounded-xl border ${theme.input}`} /></div>
-                <div><label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>RPE: {workoutData.rpe}/10</label><input type="range" min="1" max="10" value={workoutData.rpe} onChange={(e) => setWorkoutData(prev => ({ ...prev, rpe: parseInt(e.target.value) }))} className="w-full" /></div>
-                
+            <div className={`${theme.card} rounded-2xl overflow-hidden`}>
+              <div className={`p-4 ${darkMode ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/20' : 'bg-gradient-to-r from-emerald-50 to-green-50'} border-b ${theme.border}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl ${darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                    <Flag size={18} className="text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className={`font-semibold ${theme.text}`}>Log Expedition</h3>
+                    <p className={`text-xs ${theme.textMuted}`}>Record your training session</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-5 space-y-5">
+                {/* Duration & RPE in grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Duration</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={workoutData.duration}
+                        onChange={(e) => setWorkoutData(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
+                        className={`w-full px-4 py-3 rounded-xl border ${theme.input} font-mono text-lg`}
+                      />
+                      <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${theme.textMuted}`}>min</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Effort (RPE)</label>
+                    <div className={`px-4 py-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} text-center`}>
+                      <span className={`text-2xl font-bold ${
+                        workoutData.rpe >= 9 ? 'text-red-500' :
+                        workoutData.rpe >= 7 ? 'text-amber-500' :
+                        workoutData.rpe >= 5 ? 'text-cyan-500' :
+                        'text-emerald-500'
+                      }`}>{workoutData.rpe}</span>
+                      <span className={`text-sm ${theme.textMuted}`}>/10</span>
+                    </div>
+                  </div>
+                </div>
+                {/* RPE Slider */}
+                <div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={workoutData.rpe}
+                    onChange={(e) => setWorkoutData(prev => ({ ...prev, rpe: parseInt(e.target.value) }))}
+                    className="w-full accent-cyan-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                    <span>Easy</span><span>Moderate</span><span>Hard</span><span>Max</span>
+                  </div>
+                </div>
+
+                {/* PR Section */}
                 {todayWorkout.type === 'strength' && todayWorkout.prescription.exercises?.some(e => e.prKey) && (
-                  <div className={`p-4 ${darkMode ? 'bg-amber-900/20' : 'bg-amber-50'} rounded-xl`}>
-                    <p className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-amber-700'} uppercase mb-3`}>Hit a new PR?</p>
-                    <div className="space-y-2">
+                  <div className={`p-4 rounded-xl ${darkMode ? 'bg-amber-500/10 ring-1 ring-amber-500/20' : 'bg-amber-50 ring-1 ring-amber-200'}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Award size={16} className="text-amber-500" />
+                      <p className={`text-sm font-semibold ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>New Summit?</p>
+                    </div>
+                    <div className="space-y-3">
                       {todayWorkout.prescription.exercises.filter(e => e.prKey).map(ex => (
-                        <div key={ex.prKey} className="flex items-center gap-2">
+                        <div key={ex.prKey} className="flex items-center gap-3">
                           <span className={`text-sm ${theme.text} flex-1`}>{PR_DISPLAY_NAMES[ex.prKey]}</span>
-                          <input type="number" placeholder={athleteProfile.prs?.[ex.prKey]?.value || 'PR'} value={workoutData.newPRs?.[ex.prKey] || ''} onChange={(e) => setWorkoutData(prev => ({ ...prev, newPRs: { ...prev.newPRs, [ex.prKey]: e.target.value ? Number(e.target.value) : null } }))} className={`w-24 px-2 py-1 rounded ${theme.input} text-right text-sm`} />
-                          <span className={`text-xs ${theme.textMuted}`}>lbs</span>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              placeholder={athleteProfile.prs?.[ex.prKey]?.value || '—'}
+                              value={workoutData.newPRs?.[ex.prKey] || ''}
+                              onChange={(e) => setWorkoutData(prev => ({ ...prev, newPRs: { ...prev.newPRs, [ex.prKey]: e.target.value ? Number(e.target.value) : null } }))}
+                              className={`w-24 px-3 py-2 rounded-lg ${theme.input} text-right font-mono`}
+                            />
+                            <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs ${theme.textMuted}`}>lb</span>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div><label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Notes</label><textarea value={workoutData.notes} onChange={(e) => setWorkoutData(prev => ({ ...prev, notes: e.target.value }))} placeholder="How did it feel?" rows={2} className={`w-full px-4 py-3 rounded-xl border ${theme.input} resize-none`} /></div>
-                <button onClick={completeWorkout} className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-2"><CheckCircle2 size={20} />{todayLog?.completed ? 'Update & Next' : 'Complete & Next Day'}</button>
+                {/* Notes */}
+                <div>
+                  <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Field Notes</label>
+                  <textarea
+                    value={workoutData.notes}
+                    onChange={(e) => setWorkoutData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="How did it feel? Any observations..."
+                    rows={2}
+                    className={`w-full px-4 py-3 rounded-xl border ${theme.input} resize-none`}
+                  />
+                </div>
+
+                {/* Submit */}
+                <button
+                  onClick={completeWorkout}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98]"
+                >
+                  <CheckCircle2 size={20} />
+                  {todayLog?.completed ? 'Update Log' : 'Summit Reached'}
+                </button>
               </div>
             </div>
           </div>
@@ -9568,7 +9681,18 @@ export default function App() {
         {currentView === 'log' && (
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between"><h2 className={`text-xl font-bold ${theme.text}`}>Workout Log</h2><span className={`text-sm ${theme.textMuted}`}>{workoutLogs.length} total</span></div>
-            {workoutLogs.length === 0 ? <div className={`${theme.card} rounded-xl shadow-sm p-8 text-center`}><Calendar size={48} className={`mx-auto ${theme.textMuted} mb-4`} /><p className={theme.textMuted}>No workouts logged yet.</p></div> : (
+            {workoutLogs.length === 0 ? (
+              <div className={`${theme.card} rounded-2xl p-8 text-center`}>
+                <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-cyan-500/10' : 'bg-cyan-50'}`}>
+                  <Mountain size={40} className="text-cyan-500" />
+                </div>
+                <h3 className={`font-semibold ${theme.text} mb-2`}>No Expeditions Yet</h3>
+                <p className={`text-sm ${theme.textMuted} mb-4`}>Complete your first workout to start tracking your journey</p>
+                <button onClick={() => setCurrentView('workout')} className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-cyan-500/20">
+                  Start Training
+                </button>
+              </div>
+            ) : (
               <div className="space-y-3">
                 {[...workoutLogs].reverse().slice(0, 50).map(log => (
                   <div key={log.id} className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 ${getTypeBorder(log.type)}`}>
@@ -9629,7 +9753,12 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-              ) : <p className={theme.textMuted}>No data yet</p>}
+              ) : (
+                <div className={`text-center py-6 ${theme.textMuted}`}>
+                  <TrendingUp size={32} className="mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Complete workouts to see volume data</p>
+                </div>
+              )}
             </div>
 
             {/* Readiness Heatmap - High Altitude Theme */}
@@ -9645,17 +9774,45 @@ export default function App() {
               />
             )}
 
-            {/* PR History */}
+            {/* PR History - Summit Log */}
             {athleteProfile.history?.filter(h => h.category === 'prs').length > 0 && (
-              <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-                <h3 className={`font-semibold ${theme.text} mb-4`}>PR History</h3>
-                <div className="space-y-2">
-                  {[...athleteProfile.history].filter(h => h.category === 'prs').reverse().slice(0, 10).map((pr, idx) => (
-                    <div key={idx} className={`flex justify-between items-center p-2 ${theme.cardAlt} rounded`}>
-                      <div className="flex items-center gap-2"><Award size={16} className={darkMode ? 'text-amber-400' : 'text-amber-600'} /><span className={theme.text}>{PR_DISPLAY_NAMES[pr.key]}</span></div>
-                      <div className="text-right"><span className={`font-mono font-bold ${theme.text}`}>{pr.value} lbs</span><span className={`text-xs ${theme.textMuted} ml-2`}>{formatDateShort(pr.date)}</span></div>
-                    </div>
-                  ))}
+              <div className={`${theme.card} rounded-2xl p-5`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className={`p-2 rounded-lg ${darkMode ? 'bg-amber-500/20' : 'bg-amber-100'}`}>
+                    <Award size={16} className="text-amber-500" />
+                  </div>
+                  <h3 className={`font-semibold ${theme.text}`}>Summit Log</h3>
+                  <span className={`text-xs ${theme.textMuted} ml-auto`}>Personal Records</span>
+                </div>
+                <div className="relative">
+                  {/* Timeline line */}
+                  <div className={`absolute left-[11px] top-3 bottom-3 w-0.5 ${darkMode ? 'bg-amber-500/20' : 'bg-amber-200'}`} />
+                  <div className="space-y-3">
+                    {[...athleteProfile.history].filter(h => h.category === 'prs').reverse().slice(0, 10).map((pr, idx) => (
+                      <div key={idx} className={`flex items-center gap-4 p-3 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-gray-50'} relative`}>
+                        {/* Timeline dot */}
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
+                          idx === 0
+                            ? 'bg-amber-500 shadow-lg shadow-amber-500/30'
+                            : darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                        }`}>
+                          {idx === 0 ? (
+                            <Flag size={12} className="text-white" />
+                          ) : (
+                            <span className={`text-[10px] font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{idx + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium ${idx === 0 ? 'text-amber-500' : theme.text}`}>{PR_DISPLAY_NAMES[pr.key]}</p>
+                          <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date)}</p>
+                        </div>
+                        <div className={`text-right px-3 py-1.5 rounded-lg ${idx === 0 ? 'bg-amber-500/20' : theme.cardAlt}`}>
+                          <span className={`font-mono font-bold ${idx === 0 ? 'text-amber-500' : theme.text}`}>{pr.value}</span>
+                          <span className={`text-xs ${theme.textMuted} ml-1`}>lb</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -9676,33 +9833,77 @@ export default function App() {
             {/* Template Programs Section */}
             {Object.keys(programTemplates).length > 0 && (
               <div className="space-y-3">
-                <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Templates</h3>
-                {Object.entries(programTemplates).map(([id, data]) => (
-                  <div key={id} className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 border-purple-500 ${programState.currentProgram === id ? 'ring-2 ring-blue-500' : ''}`}>
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">{data.program?.icon || '📋'}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className={`font-semibold ${theme.text}`}>{data.program?.name}</p>
-                          <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">Template</span>
+                <div className="flex items-center gap-2">
+                  <Library size={14} className="text-purple-500" />
+                  <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Templates</h3>
+                </div>
+                {Object.entries(programTemplates).map(([id, data]) => {
+                  const isActive = programState.currentProgram === id;
+                  return (
+                    <div
+                      key={id}
+                      className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
+                        isActive
+                          ? 'ring-2 ring-cyan-500 shadow-lg shadow-cyan-500/20'
+                          : `${theme.card} hover:shadow-md`
+                      }`}
+                    >
+                      {/* Gradient background for active */}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
+                      )}
+                      <div className="relative p-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
+                            isActive
+                              ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
+                              : darkMode ? 'bg-gray-800' : 'bg-gray-100'
+                          }`}>
+                            {data.program?.icon || '📋'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`font-bold ${isActive ? 'text-cyan-500' : theme.text}`}>{data.program?.name}</p>
+                              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-semibold rounded-full uppercase">
+                                Template
+                              </span>
+                              {isActive && (
+                                <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-[10px] font-semibold rounded-full flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-sm ${theme.textMuted} mt-1 line-clamp-2`}>{data.program?.description}</p>
+                            {data.profileCheck && !data.profileCheck.complete && (
+                              <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                                <AlertTriangle size={10} />
+                                Profile {data.profileCheck.percentComplete}% complete
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <p className={`text-sm ${theme.textMuted} mt-1`}>{data.program?.description}</p>
-                        {data.profileCheck && !data.profileCheck.complete && (
-                          <p className="text-xs text-orange-500 mt-1">⚠️ Profile {data.profileCheck.percentComplete}% complete</p>
-                        )}
+                        <div className="flex gap-2 mt-4">
+                          <button onClick={() => setViewingProgramId(id)} className={`px-4 py-2.5 ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${theme.text} rounded-xl text-sm font-medium transition-colors`}>
+                            View
+                          </button>
+                          {isActive ? (
+                            <div className="flex-1 flex items-center justify-center text-cyan-500 font-semibold text-sm gap-2">
+                              <CheckCircle2 size={16} /> Current Route
+                            </div>
+                          ) : (
+                            <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-cyan-500/20">
+                              Start Expedition
+                            </button>
+                          )}
+                          <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <button onClick={() => setViewingProgramId(id)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">View</button>
-                      {programState.currentProgram === id ? (
-                        <span className="flex-1 text-center py-2 text-green-500 font-medium text-sm">Active</span>
-                      ) : (
-                        <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium">Activate</button>
-                      )}
-                      <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2 bg-red-500/10 text-red-500 rounded-lg"><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -9822,7 +10023,11 @@ export default function App() {
                 </button>
               </div>
               {Object.keys(customExercises).length === 0 ? (
-                <p className={`text-sm ${theme.textMuted} text-center py-4`}>No custom exercises yet. Add your own!</p>
+                <div className={`text-center py-6`}>
+                  <Dumbbell size={28} className={`mx-auto mb-2 ${theme.textMuted} opacity-40`} />
+                  <p className={`text-sm ${theme.textMuted}`}>No custom exercises yet</p>
+                  <p className={`text-xs ${theme.textMuted} mt-1`}>Add movements specific to your training</p>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {Object.values(customExercises).map(ex => (
@@ -10357,34 +10562,61 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Nav - Modern Floating Design */}
-      <nav className={`fixed bottom-4 left-4 right-4 ${theme.nav} rounded-2xl px-2 py-2 safe-area-pb z-40 shadow-xl`}>
+      {/* Bottom Nav - High Altitude Design */}
+      <nav className={`fixed bottom-4 left-4 right-4 ${theme.nav} rounded-2xl px-2 py-2 safe-area-pb z-40 shadow-xl backdrop-blur-lg border ${darkMode ? 'border-white/10' : 'border-black/5'}`}>
         <div className="max-w-md mx-auto flex justify-around items-center">
           {[
-            { id: 'dashboard', icon: Home, label: 'Home' },
-            { id: 'readiness', icon: Battery, label: 'Ready' },
-            { id: 'workout', icon: Play, label: 'Workout', primary: true },
-            { id: 'profile', icon: User, label: 'Profile' },
-            { id: 'progress', icon: BarChart3, label: 'Data' }
-          ].map(({ id, icon: Icon, label, primary }) => (
-            <button
-              key={id}
-              onClick={() => setCurrentView(id)}
-              className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all relative ${
-                primary && currentView !== id
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 -mt-4 px-4'
-                  : currentView === id
-                    ? 'text-blue-500 bg-blue-500/10'
-                    : `${theme.textMuted} hover:text-blue-400`
-              }`}
-            >
-              {currentView === id && !primary && (
-                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full animate-bounceIn" />
-              )}
-              <Icon size={primary ? 22 : 20} />
-              <span className={`text-[10px] font-medium ${primary && currentView !== id ? 'text-white/90' : ''}`}>{label}</span>
-            </button>
-          ))}
+            { id: 'dashboard', icon: Home, label: 'Base' },
+            { id: 'readiness', icon: Activity, label: 'Status' },
+            { id: 'workout', icon: Mountain, label: 'Summit', primary: true },
+            { id: 'profile', icon: User, label: 'Climber' },
+            { id: 'progress', icon: TrendingUp, label: 'Ascent' }
+          ].map(({ id, icon: Icon, label, primary }) => {
+            const isActive = currentView === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setCurrentView(id)}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 relative ${
+                  primary
+                    ? `${isActive
+                        ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600'
+                        : 'bg-gradient-to-br from-cyan-500 to-blue-600'
+                      } text-white shadow-lg shadow-cyan-500/40 -mt-5 px-5 py-3`
+                    : isActive
+                      ? ''
+                      : `${theme.textMuted} hover:text-cyan-400 active:scale-95`
+                }`}
+                style={primary ? { boxShadow: '0 4px 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2)' } : {}}
+              >
+                {/* Active glow effect */}
+                {isActive && !primary && (
+                  <span
+                    className="absolute inset-0 rounded-xl opacity-20"
+                    style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)' }}
+                  />
+                )}
+                {/* Active indicator line */}
+                {isActive && !primary && (
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full" />
+                )}
+                <Icon
+                  size={primary ? 24 : 22}
+                  className={`transition-all duration-300 ${isActive && !primary ? 'text-cyan-400 scale-110' : ''}`}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <span className={`text-[10px] font-semibold tracking-wide ${
+                  primary ? 'text-white' : isActive ? 'text-cyan-400' : ''
+                }`}>
+                  {label}
+                </span>
+                {/* Pulse on primary */}
+                {primary && (
+                  <span className="absolute inset-0 rounded-xl bg-white/20 animate-ping opacity-20" style={{ animationDuration: '2s' }} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>
