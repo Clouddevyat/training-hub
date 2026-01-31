@@ -8026,16 +8026,22 @@ export default function App() {
   }, [workoutLogs, athleteProfile, todayWorkout?.prescription?.exercises]);
 
   const theme = {
-    bg: darkMode ? 'bg-gray-900' : 'bg-slate-100',
-    card: darkMode ? 'bg-gray-800' : 'bg-white',
-    cardAlt: darkMode ? 'bg-gray-700' : 'bg-slate-50',
+    bg: darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-100 to-slate-200',
+    card: darkMode ? 'bg-gray-800/90 backdrop-blur-sm' : 'bg-white/80 backdrop-blur-sm shadow-lg shadow-slate-200/50',
+    cardAlt: darkMode ? 'bg-gray-700/80' : 'bg-slate-50/80',
+    cardHover: 'card-hover',
     text: darkMode ? 'text-gray-100' : 'text-slate-800',
     textMuted: darkMode ? 'text-gray-400' : 'text-slate-500',
     textSubtle: darkMode ? 'text-gray-500' : 'text-slate-400',
-    border: darkMode ? 'border-gray-700' : 'border-slate-200',
-    input: darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-slate-200 text-slate-800',
-    header: darkMode ? 'bg-gray-800' : 'bg-slate-800',
-    nav: darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
+    border: darkMode ? 'border-gray-700/50' : 'border-slate-200/50',
+    input: darkMode ? 'bg-gray-700/80 border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500/50' : 'bg-white/90 border-slate-200 text-slate-800 focus:ring-2 focus:ring-blue-500/50',
+    header: darkMode ? 'glass-dark' : 'bg-gradient-to-r from-slate-800 to-slate-900',
+    nav: darkMode ? 'glass-dark' : 'bg-white/90 backdrop-blur-xl border-slate-200/50 shadow-lg shadow-slate-200/20',
+    modal: darkMode ? 'bg-gray-800/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl shadow-2xl',
+    modalBackdrop: 'modal-backdrop',
+    glass: darkMode ? 'glass-dark' : 'glass-light',
+    gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
+    gradientText: 'gradient-text',
   };
 
   return (
@@ -8048,76 +8054,108 @@ export default function App() {
       )}
       
       {/* Header */}
-      <header className={`${theme.header} text-white p-4 sticky top-0 z-50`}>
+      <header className={`${theme.header} text-white p-4 sticky top-0 z-50 shadow-lg`}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
             {/* Home Button - show when not on dashboard */}
             {currentView !== 'dashboard' && (
-              <button 
-                onClick={() => setCurrentView('dashboard')} 
-                className="p-2 -ml-2 mr-1 hover:bg-slate-700 rounded-lg"
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="p-2 -ml-2 mr-1 hover:bg-white/10 rounded-xl transition-all"
                 title="Return to Dashboard"
               >
                 <Home size={20} />
               </button>
             )}
-            <button 
-              onClick={() => setCurrentView('dashboard')} 
+            <button
+              onClick={() => setCurrentView('dashboard')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <span className="text-2xl">⛰️</span>
-              <h1 className="text-lg font-bold">Training Hub <span className="text-xs font-normal opacity-50">v2.1</span></h1>
+              <h1 className="text-lg font-bold tracking-tight">Training Hub <span className="text-xs font-normal opacity-50">v2.2</span></h1>
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {/* Cloud Sync Status */}
-            <div className="flex items-center gap-1 text-xs opacity-70">
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${syncStatus.syncing ? 'bg-blue-500/20' : isOffline ? 'bg-amber-500/20' : 'bg-green-500/20'}`}>
               {syncStatus.syncing ? (
-                <Loader size={14} className="animate-spin" />
+                <Loader size={12} className="animate-spin text-blue-400" />
               ) : isOffline ? (
-                <CloudOff size={14} />
+                <CloudOff size={12} className="text-amber-400" />
               ) : (
-                <Cloud size={14} className="text-green-400" />
+                <Cloud size={12} className="text-green-400" />
               )}
             </div>
             {readinessScore && (
-              <div className={`px-2 py-1 rounded-lg ${readinessScore >= 70 ? 'bg-green-500/20' : readinessScore >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}`}>
+              <div className={`px-2.5 py-1 rounded-xl ${readinessScore >= 70 ? 'bg-green-500/20' : readinessScore >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}`}>
                 <span className={`text-sm font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore}</span>
               </div>
             )}
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-slate-700 rounded-lg">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 hover:bg-slate-700 rounded-lg">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-xl transition-all">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 hover:bg-white/10 rounded-xl transition-all">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
           </div>
         </div>
-        {menuOpen && (
-          <nav className={`absolute top-full left-0 right-0 ${theme.header} border-t border-slate-700 p-4 shadow-lg`}>
-            <div className="max-w-2xl mx-auto flex flex-col gap-2">
-              {[{ id: 'dashboard', label: 'Dashboard', icon: Home }, { id: 'readiness', label: 'Readiness Check', icon: Battery }, { id: 'workout', label: "Today's Workout", icon: Play }, { id: 'calendar', label: 'Calendar', icon: Calendar }, { id: 'charts', label: 'Charts & Trends', icon: LineChart }, { id: 'profile', label: 'Athlete Profile', icon: User }, { id: 'benchmarks', label: 'Benchmark Tests', icon: Flag }, { id: 'log', label: 'Workout Log', icon: FileText }, { id: 'progress', label: 'Progress & Data', icon: BarChart3 }, { id: 'programs', label: 'Programs', icon: FileUp }, { id: 'settings', label: 'Settings', icon: Settings }].map(({ id, label, icon: Icon }) => (
-                <button key={id} onClick={() => { setCurrentView(id); setMenuOpen(false); }} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${currentView === id ? 'bg-slate-600' : 'hover:bg-slate-700'}`}><Icon size={20} /><span>{label}</span></button>
+      </header>
+
+      {/* Floating Menu Modal */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 modal-backdrop animate-fadeIn" onClick={() => setMenuOpen(false)}>
+          <nav
+            className={`absolute top-16 left-4 right-4 max-w-md mx-auto ${theme.modal} rounded-2xl p-3 shadow-2xl animate-fadeInUp`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'blue' },
+                { id: 'readiness', label: 'Readiness', icon: Battery, color: 'green' },
+                { id: 'workout', label: 'Workout', icon: Play, color: 'purple' },
+                { id: 'calendar', label: 'Calendar', icon: Calendar, color: 'orange' },
+                { id: 'charts', label: 'Charts', icon: LineChart, color: 'cyan' },
+                { id: 'profile', label: 'Profile', icon: User, color: 'pink' },
+                { id: 'benchmarks', label: 'Benchmarks', icon: Flag, color: 'amber' },
+                { id: 'log', label: 'Workout Log', icon: FileText, color: 'emerald' },
+                { id: 'progress', label: 'Progress', icon: BarChart3, color: 'indigo' },
+                { id: 'programs', label: 'Programs', icon: FileUp, color: 'rose' },
+                { id: 'settings', label: 'Settings', icon: Settings, color: 'slate' }
+              ].map(({ id, label, icon: Icon, color }) => (
+                <button
+                  key={id}
+                  onClick={() => { setCurrentView(id); setMenuOpen(false); }}
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                    currentView === id
+                      ? `bg-${color}-500/20 ring-2 ring-${color}-500/50`
+                      : `${theme.cardAlt} hover:bg-${color}-500/10`
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg bg-${color}-500/20`}>
+                    <Icon size={18} className={`text-${color}-500`} />
+                  </div>
+                  <span className={`text-sm font-medium ${theme.text}`}>{label}</span>
+                </button>
               ))}
             </div>
           </nav>
-        )}
-      </header>
+        </div>
+      )}
 
-      <main className="max-w-2xl mx-auto pb-24">
+      <main className="max-w-2xl mx-auto pb-28">
         {/* DASHBOARD */}
         {currentView === 'dashboard' && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4 animate-fadeIn">
             {/* Active Detour Banner */}
             {activeDetour && detourBlock && (
-              <div className={`p-4 rounded-xl border-2 ${activeDetour.blockType === 'specialty' ? 'border-orange-500 bg-orange-500/10' : 'border-green-500 bg-green-500/10'}`}>
+              <div className={`p-4 rounded-2xl border-2 animate-fadeInUp ${activeDetour.blockType === 'specialty' ? 'border-orange-500 bg-gradient-to-br from-orange-500/20 to-orange-600/10' : 'border-green-500 bg-gradient-to-br from-green-500/20 to-green-600/10'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className={`text-xs uppercase font-semibold ${activeDetour.blockType === 'specialty' ? 'text-orange-500' : 'text-green-500'}`}>
+                    <p className={`text-xs uppercase font-semibold tracking-wider ${activeDetour.blockType === 'specialty' ? 'text-orange-500' : 'text-green-500'}`}>
                       {activeDetour.blockType === 'specialty' ? '⚡ Specialty Block' : '🛡️ Life Block'}
                     </p>
-                    <p className={`font-bold ${theme.text}`}>{detourBlock.name}</p>
+                    <p className={`font-bold text-lg ${theme.text}`}>{detourBlock.name}</p>
                     <p className={`text-sm ${theme.textMuted}`}>Week {activeDetour.weekInDetour} of {detourBlock.duration?.max || '?'}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={endDetour}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium ${theme.cardAlt} ${theme.text}`}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium ${theme.cardAlt} ${theme.text} hover:scale-105 transition-transform`}
                   >
                     End & Return
                   </button>
@@ -8132,42 +8170,47 @@ export default function App() {
             )}
 
             {!todayReadiness && (
-              <button onClick={() => setCurrentView('readiness')} className={`w-full p-4 ${darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'} border rounded-xl flex items-center gap-3`}>
-                <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
-                <div className="text-left flex-1"><p className={`font-medium ${theme.text}`}>Complete Readiness Check</p><p className={`text-sm ${theme.textMuted}`}>Log how you feel to optimize training</p></div>
-                <ChevronRight className={theme.textMuted} />
+              <button onClick={() => setCurrentView('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/30 border-amber-600/50' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
+                <div className={`p-3 rounded-xl ${darkMode ? 'bg-amber-500/20' : 'bg-amber-200/50'}`}>
+                  <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
+                </div>
+                <div className="text-left flex-1">
+                  <p className={`font-semibold ${theme.text}`}>Complete Readiness Check</p>
+                  <p className={`text-sm ${theme.textMuted}`}>Log how you feel to optimize training</p>
+                </div>
+                <ChevronRight className={`${theme.textMuted}`} />
               </button>
             )}
             {todayReadiness && (
-              <div className={`${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between`}>
+              <div className={`${theme.card} rounded-2xl p-5 flex items-center justify-between card-hover`}>
                 <div>
-                  <p className={`text-xs ${theme.textMuted} uppercase`}>Today's Readiness</p>
-                  <p className={`text-2xl font-bold ${getReadinessColor(adjustedReadinessScore || readinessScore)}`}>
-                    {adjustedReadinessScore || readinessScore} 
-                    <span className="text-sm font-normal ml-1">{adjustedReadinessInfo?.text || readinessInfo?.text}</span>
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Today's Readiness</p>
+                  <p className={`text-3xl font-bold ${getReadinessColor(adjustedReadinessScore || readinessScore)}`}>
+                    {adjustedReadinessScore || readinessScore}
+                    <span className="text-base font-medium ml-2 opacity-80">{adjustedReadinessInfo?.text || readinessInfo?.text}</span>
                   </p>
                   {adjustedReadinessScore && adjustedReadinessScore !== readinessScore && (
-                    <p className={`text-xs ${theme.textMuted}`}>Base: {readinessScore} (adjusted for load)</p>
+                    <p className={`text-xs ${theme.textMuted} mt-1`}>Base: {readinessScore} (adjusted for load)</p>
                   )}
                 </div>
-                <button onClick={() => setCurrentView('readiness')} className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={18} className={theme.textMuted} /></button>
+                <button onClick={() => setCurrentView('readiness')} className={`p-3 ${theme.cardAlt} rounded-xl hover:scale-105 transition-transform`}><Edit3 size={18} className={theme.textMuted} /></button>
               </div>
             )}
             
             {/* Training Load Card */}
-            <div className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 ${
+            <div className={`${theme.card} rounded-2xl p-5 border-l-4 ${
               loadStatus.color === 'red' ? 'border-red-500' :
               loadStatus.color === 'orange' ? 'border-orange-500' :
               loadStatus.color === 'yellow' ? 'border-yellow-500' :
               loadStatus.color === 'green' ? 'border-green-500' :
               'border-blue-500'
             }`}>
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className={`text-xs ${theme.textMuted} uppercase`}>Training Load</p>
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Training Load</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xl">{loadStatus.icon}</span>
-                    <span className={`font-bold ${
+                    <span className="text-2xl">{loadStatus.icon}</span>
+                    <span className={`font-bold text-lg ${
                       loadStatus.color === 'red' ? 'text-red-500' :
                       loadStatus.color === 'orange' ? 'text-orange-500' :
                       loadStatus.color === 'yellow' ? 'text-yellow-500' :
@@ -8177,91 +8220,125 @@ export default function App() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-2xl font-bold font-mono ${
+                  <p className={`text-3xl font-bold font-mono ${
                     loadStatus.color === 'red' ? 'text-red-500' :
                     loadStatus.color === 'orange' ? 'text-orange-500' :
                     loadStatus.color === 'green' ? 'text-green-500' :
                     theme.text
                   }`}>{acr}</p>
-                  <p className={`text-xs ${theme.textMuted}`}>ACR</p>
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider`}>ACR</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className={`p-2 ${theme.cardAlt} rounded-lg text-center`}>
-                  <p className={`text-lg font-bold font-mono ${theme.text}`}>{atl}</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className={`p-3 ${theme.cardAlt} rounded-xl text-center`}>
+                  <p className={`text-xl font-bold font-mono ${theme.text}`}>{atl}</p>
                   <p className={`text-xs ${theme.textMuted}`}>Acute (7d)</p>
                 </div>
-                <div className={`p-2 ${theme.cardAlt} rounded-lg text-center`}>
-                  <p className={`text-lg font-bold font-mono ${theme.text}`}>{ctl}</p>
-                  <p className={`text-xs ${theme.textMuted}`}>Chronic (28d avg)</p>
+                <div className={`p-3 ${theme.cardAlt} rounded-xl text-center`}>
+                  <p className={`text-xl font-bold font-mono ${theme.text}`}>{ctl}</p>
+                  <p className={`text-xs ${theme.textMuted}`}>Chronic (28d)</p>
                 </div>
               </div>
               <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
             </div>
-            <button onClick={() => setCurrentView('charts')} className={`w-full ${theme.card} rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow`}>
-              <div className="flex items-center gap-3">
-                <LineChart size={20} className="text-blue-500" />
+
+            {/* Charts Quick Link */}
+            <button onClick={() => setCurrentView('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 group-hover:scale-110 transition-transform">
+                  <LineChart size={22} className="text-blue-500" />
+                </div>
                 <div className="text-left">
-                  <p className={`font-medium ${theme.text}`}>Charts & Trends</p>
+                  <p className={`font-semibold ${theme.text}`}>Charts & Trends</p>
                   <p className={`text-xs ${theme.textMuted}`}>View progress visualization</p>
                 </div>
               </div>
-              <ChevronRight className={theme.textMuted} />
+              <ChevronRight className={`${theme.textMuted} group-hover:translate-x-1 transition-transform`} />
             </button>
-            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-              <div className="flex items-center justify-between mb-3">
+
+            {/* Program Status Card */}
+            <div className={`${theme.card} rounded-2xl p-5`}>
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className={`text-xs ${theme.textMuted} uppercase`}>{program?.name}</p>
-                  <h2 className={`text-lg font-bold ${theme.text}`}>{phase?.name} {activeDetour ? '' : 'Phase'}</h2>
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>{program?.name}</p>
+                  <h2 className={`text-xl font-bold ${theme.text}`}>{phase?.name} {activeDetour ? '' : 'Phase'}</h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Detour Button - only show if program has detours and not already in one */}
+                <div className="flex items-center gap-3">
                   {hasDetours && !activeDetour && (
-                    <button 
+                    <button
                       onClick={() => setShowDetourPicker(true)}
-                      className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium rounded-lg"
+                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"
                     >
                       Detour
                     </button>
                   )}
-                  <span className="text-3xl">{program?.icon}</span>
+                  <span className="text-4xl">{program?.icon}</span>
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{activeDetour ? activeDetour.weekInDetour : programState.currentWeek}</p><p className={`text-xs ${theme.textMuted}`}>Week</p></div>
-                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{programState.currentDay}</p><p className={`text-xs ${theme.textMuted}`}>Day</p></div>
-                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{completedThisWeek}/7</p><p className={`text-xs ${theme.textMuted}`}>Done</p></div>
-                <div className={`text-center p-2 ${theme.cardAlt} rounded-lg`}><p className={`text-xl font-bold ${theme.text}`}>{workoutLogs.filter(l => l.programId === programState.currentProgram).length}</p><p className={`text-xs ${theme.textMuted}`}>Total</p></div>
+                {[
+                  { value: activeDetour ? activeDetour.weekInDetour : programState.currentWeek, label: 'Week' },
+                  { value: programState.currentDay, label: 'Day' },
+                  { value: `${completedThisWeek}/7`, label: 'Done' },
+                  { value: workoutLogs.filter(l => l.programId === programState.currentProgram).length, label: 'Total' }
+                ].map((stat, i) => (
+                  <div key={i} className={`text-center p-3 ${theme.cardAlt} rounded-xl`}>
+                    <p className={`text-2xl font-bold ${theme.text}`}>{stat.value}</p>
+                    <p className={`text-xs ${theme.textMuted}`}>{stat.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
+
+            {/* Today's Workout Card */}
             {todayWorkout && (
-              <button onClick={() => setCurrentView('workout')} className={`w-full text-left rounded-xl shadow-sm p-5 border-l-4 ${getTypeBorder(todayWorkout.type)} ${theme.card} hover:shadow-md transition-shadow`}>
+              <button onClick={() => setCurrentView('workout')} className={`w-full text-left rounded-2xl p-5 border-l-4 ${getTypeBorder(todayWorkout.type)} ${theme.card} card-hover group`}>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-xs ${theme.textMuted} uppercase`}>Day {programState.currentDay}</p>
+                  <div className="flex-1">
+                    <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Day {programState.currentDay}</p>
                     <h3 className={`text-xl font-bold ${theme.text} mt-1`}>{todayWorkout.session}</h3>
-                    <div className={`flex items-center gap-3 mt-2 text-sm ${theme.textMuted}`}>
-                      <span className="flex items-center gap-1"><Clock size={14} />{todayWorkout.duration} min</span>
-                      <span className={`px-2 py-0.5 rounded text-xs text-white ${getTypeColor(todayWorkout.type, darkMode)}`}>{todayWorkout.type.replace('_', ' ')}</span>
-                      {todayLog?.completed && <span className="flex items-center gap-1 text-green-500"><CheckCircle2 size={14} />Done</span>}
+                    <div className={`flex flex-wrap items-center gap-3 mt-3 text-sm ${theme.textMuted}`}>
+                      <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-500/10"><Clock size={14} />{todayWorkout.duration} min</span>
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold text-white ${getTypeColor(todayWorkout.type, darkMode)}`}>{todayWorkout.type.replace('_', ' ')}</span>
+                      {todayLog?.completed && <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/20 text-green-500 font-medium"><CheckCircle2 size={14} />Done</span>}
                     </div>
-                    {readinessScore && readinessScore < 55 && todayWorkout.type !== 'recovery' && <p className={`text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'} mt-2`}>⚠️ {readinessInfo?.recommendation}</p>}
+                    {readinessScore && readinessScore < 55 && todayWorkout.type !== 'recovery' && (
+                      <p className={`text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'} mt-3 flex items-center gap-1`}>
+                        <AlertTriangle size={12} /> {readinessInfo?.recommendation}
+                      </p>
+                    )}
                   </div>
-                  <ChevronRight size={24} className={theme.textMuted} />
+                  <div className="ml-4">
+                    <div className={`p-3 rounded-xl ${theme.cardAlt} group-hover:bg-blue-500/20 transition-colors`}>
+                      <ChevronRight size={24} className={`${theme.textMuted} group-hover:text-blue-500 group-hover:translate-x-1 transition-all`} />
+                    </div>
+                  </div>
                 </div>
               </button>
             )}
-            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-              <h3 className={`font-semibold ${theme.text} mb-3`}>This Week</h3>
+
+            {/* This Week Card */}
+            <div className={`${theme.card} rounded-2xl p-5`}>
+              <h3 className={`font-semibold ${theme.text} mb-4`}>This Week</h3>
               <div className="space-y-2">
                 {phase?.weeklyTemplate?.map((w, idx) => {
                   const isCurrent = w.day === programState.currentDay;
                   const logged = thisWeekLogs.find(l => l.day === w.day && l.completed);
                   return (
-                    <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? (darkMode ? 'bg-blue-900/40 border border-blue-700' : 'bg-blue-50 border border-blue-200') : theme.cardAlt}`}>
-                      {logged ? <CheckCircle2 size={18} className="text-green-500" /> : <Circle size={18} className={theme.textSubtle} />}
+                    <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                      isCurrent
+                        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/10 border border-blue-500/30 shadow-sm'
+                        : theme.cardAlt
+                    }`}>
+                      {logged ? (
+                        <div className="p-1 bg-green-500/20 rounded-full">
+                          <CheckCircle2 size={16} className="text-green-500" />
+                        </div>
+                      ) : (
+                        <Circle size={18} className={theme.textSubtle} />
+                      )}
                       <span className={`flex-1 text-sm font-medium ${theme.text} truncate`}>{w.session || w.name}</span>
-                      <span className={`text-xs ${theme.textMuted}`}>D{w.day}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${theme.cardAlt} ${theme.textMuted}`}>D{w.day}</span>
                       <span className={`text-xs ${theme.textMuted}`}>{w.duration || 0}m</span>
                     </div>
                   );
@@ -8940,18 +9017,32 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Nav */}
-      <nav className={`fixed bottom-0 left-0 right-0 ${theme.nav} border-t px-4 py-2 safe-area-pb`}>
-        <div className="max-w-2xl mx-auto flex justify-around">
+      {/* Bottom Nav - Modern Floating Design */}
+      <nav className={`fixed bottom-4 left-4 right-4 ${theme.nav} rounded-2xl px-2 py-2 safe-area-pb z-40 shadow-xl`}>
+        <div className="max-w-md mx-auto flex justify-around items-center">
           {[
             { id: 'dashboard', icon: Home, label: 'Home' },
             { id: 'readiness', icon: Battery, label: 'Ready' },
-            { id: 'workout', icon: Play, label: 'Workout' },
+            { id: 'workout', icon: Play, label: 'Workout', primary: true },
             { id: 'profile', icon: User, label: 'Profile' },
             { id: 'progress', icon: BarChart3, label: 'Data' }
-          ].map(({ id, icon: Icon, label }) => (
-            <button key={id} onClick={() => setCurrentView(id)} className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${currentView === id ? 'text-blue-500' : theme.textMuted}`}>
-              <Icon size={24} /><span className="text-xs">{label}</span>
+          ].map(({ id, icon: Icon, label, primary }) => (
+            <button
+              key={id}
+              onClick={() => setCurrentView(id)}
+              className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all relative ${
+                primary && currentView !== id
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 -mt-4 px-4'
+                  : currentView === id
+                    ? 'text-blue-500 bg-blue-500/10'
+                    : `${theme.textMuted} hover:text-blue-400`
+              }`}
+            >
+              {currentView === id && !primary && (
+                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full animate-bounceIn" />
+              )}
+              <Icon size={primary ? 22 : 20} />
+              <span className={`text-[10px] font-medium ${primary && currentView !== id ? 'text-white/90' : ''}`}>{label}</span>
             </button>
           ))}
         </div>
