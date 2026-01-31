@@ -766,21 +766,27 @@ export const applyStrengthProgression = (exercises, weekInPhase, athleteProfile)
       }
     }
     
-    // Apply rep progression
+    // Apply rep progression (only for numeric rep schemes)
     if (ex.reps && typeof ex.reps === 'string') {
-      const baseReps = parseInt(ex.reps.match(/(\d+)/)?.[1]) || 5;
-      const newReps = PROGRESSION_MODELS.strength.getReps(baseReps, weekInPhase);
-      
-      // Handle rep ranges like "3-5"
-      if (ex.reps.includes('-')) {
-        const [low, high] = ex.reps.split('-').map(n => parseInt(n));
-        const diff = high - low;
-        updated.reps = `${Math.max(1, newReps - Math.floor(diff/2))}-${newReps + Math.ceil(diff/2)}`;
-      } else if (ex.reps.includes('each')) {
-        updated.reps = `${newReps} each`;
-      } else {
-        updated.reps = `${newReps}`;
+      // Skip progression for descriptive reps like "continuous circuit", "AMRAP", etc.
+      const hasNumericReps = /^\d/.test(ex.reps.trim());
+
+      if (hasNumericReps) {
+        const baseReps = parseInt(ex.reps.match(/(\d+)/)?.[1]) || 5;
+        const newReps = PROGRESSION_MODELS.strength.getReps(baseReps, weekInPhase);
+
+        // Handle rep ranges like "3-5"
+        if (ex.reps.includes('-')) {
+          const [low, high] = ex.reps.split('-').map(n => parseInt(n));
+          const diff = high - low;
+          updated.reps = `${Math.max(1, newReps - Math.floor(diff/2))}-${newReps + Math.ceil(diff/2)}`;
+        } else if (ex.reps.includes('each')) {
+          updated.reps = `${newReps} each`;
+        } else {
+          updated.reps = `${newReps}`;
+        }
       }
+      // If non-numeric (like "continuous circuit"), keep the original reps unchanged
     }
     
     // Add week indicator
