@@ -7154,11 +7154,16 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
           </div>
         </div>
         
-        {/* Day headers */}
+        {/* Day headers - dynamic based on actual start date */}
         <div className="grid grid-cols-7 gap-1 mb-1">
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-            <div key={i} className={`text-center text-xs font-medium ${theme.textMuted}`}>{d}</div>
-          ))}
+          {[1, 2, 3, 4, 5, 6, 7].map(dayNum => {
+            const dayDate = getDateForProgramDay(weekNum, dayNum);
+            const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // Sunday = 0
+            const dayLetter = dayDate ? dayNames[dayDate.getDay()] : '-';
+            return (
+              <div key={dayNum} className={`text-center text-xs font-medium ${theme.textMuted}`}>{dayLetter}</div>
+            );
+          })}
         </div>
         
         <div className="grid grid-cols-7 gap-1">
