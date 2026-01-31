@@ -3000,9 +3000,187 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
   );
 };
 
+// ============== RPE DESCRIPTIONS ==============
+const RPE_DESCRIPTIONS = {
+  6: { label: 'Light', reps: '4+', description: 'Could do 4+ more reps' },
+  7: { label: 'Moderate', reps: '3', description: 'Could do 3 more reps' },
+  8: { label: 'Hard', reps: '2', description: 'Could do 2 more reps' },
+  9: { label: 'Very Hard', reps: '1', description: 'Could do 1 more rep' },
+  10: { label: 'Max', reps: '0', description: 'Max effort / failure' }
+};
+
+// ============== SET PERFORMANCE MODAL ==============
+const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previousSet, targetWeight, theme, darkMode }) => {
+  const [weight, setWeight] = useState(setData?.actualWeight || setData?.plannedWeight || targetWeight || '');
+  const [reps, setReps] = useState(setData?.actualReps || setData?.reps || '');
+  const [rpe, setRpe] = useState(setData?.rpe || '');
+
+  useEffect(() => {
+    if (isOpen) {
+      setWeight(setData?.actualWeight || setData?.plannedWeight || targetWeight || '');
+      setReps(setData?.actualReps || setData?.reps || '');
+      setRpe(setData?.rpe || '');
+    }
+  }, [isOpen, setData, targetWeight]);
+
+  if (!isOpen) return null;
+
+  const adjustWeight = (delta) => {
+    const current = parseFloat(weight) || 0;
+    setWeight(Math.max(0, current + delta));
+  };
+
+  const adjustReps = (delta) => {
+    const current = parseInt(reps) || 0;
+    setReps(Math.max(0, current + delta));
+  };
+
+  const handleSave = () => {
+    onSave({
+      actualWeight: weight,
+      actualReps: reps,
+      rpe: rpe,
+      completed: true
+    });
+    onClose();
+  };
+
+  const handleClear = () => {
+    onSave({
+      actualWeight: '',
+      actualReps: '',
+      rpe: '',
+      completed: false
+    });
+    onClose();
+  };
+
+  const copyFromPrevious = () => {
+    if (previousSet) {
+      setWeight(previousSet.actualWeight || previousSet.plannedWeight || '');
+      setReps(previousSet.actualReps || previousSet.reps || '');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div
+        className={`${theme.bg} w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6 space-y-6`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className={`text-xl font-bold ${theme.text}`}>Performance</h3>
+          <button onClick={onClose} className={`p-2 rounded-full ${theme.cardAlt}`}>
+            <X size={20} className={theme.textMuted} />
+          </button>
+        </div>
+
+        {/* Weight */}
+        <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
+          <p className="text-red-500 text-sm font-medium text-center mb-2">Weight</p>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => adjustWeight(-5)}
+              className={`w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center ${theme.text}`}
+            >
+              <Minus size={24} />
+            </button>
+            <div className="text-center">
+              <span className={`text-5xl font-bold ${theme.text}`}>{weight || '0'}</span>
+              <span className={`text-xl ${theme.textMuted} ml-1`}>lb</span>
+            </div>
+            <button
+              onClick={() => adjustWeight(5)}
+              className={`w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center ${theme.text}`}
+            >
+              <Plus size={24} />
+            </button>
+          </div>
+          {targetWeight && (
+            <p className={`text-center text-xs ${theme.textMuted} mt-2`}>Target: {targetWeight} lb</p>
+          )}
+        </div>
+
+        {/* Reps */}
+        <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
+          <p className="text-red-500 text-sm font-medium text-center mb-2">Reps</p>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => adjustReps(-1)}
+              className={`w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center ${theme.text}`}
+            >
+              <Minus size={24} />
+            </button>
+            <span className={`text-5xl font-bold ${theme.text}`}>{reps || '0'}</span>
+            <button
+              onClick={() => adjustReps(1)}
+              className={`w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center ${theme.text}`}
+            >
+              <Plus size={24} />
+            </button>
+          </div>
+        </div>
+
+        {/* RPE */}
+        <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
+          <p className="text-red-500 text-sm font-medium text-center mb-3">Rate of Perceived Exertion</p>
+          <div className="flex justify-center gap-2 mb-2">
+            {[6, 7, 8, 9, 10].map(value => (
+              <button
+                key={value}
+                onClick={() => setRpe(value)}
+                className={`w-12 h-12 rounded-lg font-bold text-lg transition-all ${
+                  rpe === value
+                    ? 'bg-blue-500 text-white'
+                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${theme.text}`
+                }`}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          {rpe && RPE_DESCRIPTIONS[rpe] && (
+            <p className={`text-center text-sm ${theme.textMuted}`}>
+              {RPE_DESCRIPTIONS[rpe].description}
+            </p>
+          )}
+        </div>
+
+        {/* Copy from previous */}
+        {previousSet && setIdx > 0 && (
+          <button
+            onClick={copyFromPrevious}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl ${theme.cardAlt} ${theme.text} text-sm font-medium`}
+          >
+            <Copy size={16} /> Copy from Set {setIdx}
+          </button>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleClear}
+            className={`flex-1 py-4 rounded-xl font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}
+          >
+            Clear
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 py-4 rounded-xl font-semibold bg-red-500 text-white"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============== SMART EXERCISE COMPONENT ==============
 const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggle, onSwap, swappedTo, onShowHistory, setData, onSetDataChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [editingSet, setEditingSet] = useState(null); // { setIdx, data }
   const displayExercise = swappedTo ? EXERCISE_LIBRARY[swappedTo] : null;
   const displayName = displayExercise?.name || exercise.name;
 
@@ -3130,70 +3308,81 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
             </div>
           )}
 
-          {/* Set rows */}
+          {/* Set rows - Tap to edit */}
           <div className="space-y-2">
-            <div className={`grid grid-cols-12 gap-2 text-xs font-medium ${theme.textMuted} px-2`}>
-              <div className="col-span-2">Set</div>
-              <div className="col-span-3">Planned</div>
-              <div className="col-span-3">Actual</div>
-              <div className="col-span-2">RPE</div>
-              <div className="col-span-2 text-center">Done</div>
-            </div>
-
             {currentSetData.map((set, setIdx) => (
-              <div
+              <button
                 key={setIdx}
-                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-lg transition-all ${
-                  set.completed ? 'bg-green-500/10' : theme.cardAlt
+                onClick={() => setEditingSet({ setIdx, data: set })}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                  set.completed
+                    ? 'bg-green-500/10 border-2 border-green-500/50'
+                    : `${theme.cardAlt} border-2 border-transparent`
                 }`}
               >
-                <div className={`col-span-2 font-medium ${theme.text}`}>
-                  {setIdx + 1}
+                {/* Set number */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                  set.completed ? 'bg-green-500 text-white' : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${theme.text}`
+                }`}>
+                  {set.completed ? <Check size={16} /> : setIdx + 1}
                 </div>
-                <div className="col-span-3">
-                  <input
-                    type="number"
-                    placeholder={workingWeight ? String(workingWeight) : "lbs"}
-                    value={set.plannedWeight}
-                    onChange={(e) => updateSetData(setIdx, 'plannedWeight', e.target.value)}
-                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
-                  />
+
+                {/* Set details */}
+                <div className="flex-1">
+                  {set.completed || set.actualWeight ? (
+                    <div className="flex items-baseline gap-3">
+                      <span className={`text-lg font-bold ${theme.text}`}>
+                        {set.actualWeight || set.plannedWeight || workingWeight || '—'} lb
+                      </span>
+                      {set.actualReps && (
+                        <span className={`${theme.textMuted}`}>× {set.actualReps} reps</span>
+                      )}
+                      {set.rpe && (
+                        <span className={`text-sm px-2 py-0.5 rounded-full ${
+                          set.rpe >= 9 ? 'bg-red-500/20 text-red-500' :
+                          set.rpe >= 7 ? 'bg-yellow-500/20 text-yellow-500' :
+                          'bg-green-500/20 text-green-500'
+                        }`}>
+                          RPE {set.rpe}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`${theme.textMuted}`}>
+                      <span className="text-sm">Tap to log • </span>
+                      <span className="font-mono">{workingWeight ? `${workingWeight} lb target` : 'Set weight'}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="col-span-3">
-                  <input
-                    type="number"
-                    placeholder="lbs"
-                    value={set.actualWeight}
-                    onChange={(e) => updateSetData(setIdx, 'actualWeight', e.target.value)}
-                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <input
-                    type="number"
-                    placeholder="1-10"
-                    min="1"
-                    max="10"
-                    value={set.rpe}
-                    onChange={(e) => updateSetData(setIdx, 'rpe', e.target.value)}
-                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
-                  />
-                </div>
-                <div className="col-span-2 flex justify-center">
-                  <button
-                    onClick={() => toggleSet(setIdx)}
-                    className={`p-2 rounded-lg transition-all ${
-                      set.completed
-                        ? 'bg-green-500 text-white'
-                        : `${theme.cardAlt} ${theme.text}`
-                    }`}
-                  >
-                    {set.completed ? <Check size={16} /> : <Circle size={16} />}
-                  </button>
-                </div>
-              </div>
+
+                {/* Chevron */}
+                <ChevronRight size={20} className={theme.textMuted} />
+              </button>
             ))}
           </div>
+
+          {/* Performance Modal */}
+          <SetPerformanceModal
+            isOpen={editingSet !== null}
+            onClose={() => setEditingSet(null)}
+            setData={editingSet?.data}
+            setIdx={editingSet?.setIdx}
+            previousSet={editingSet?.setIdx > 0 ? currentSetData[editingSet.setIdx - 1] : null}
+            targetWeight={workingWeight}
+            theme={theme}
+            darkMode={darkMode}
+            onSave={(newData) => {
+              if (editingSet !== null) {
+                const newSetData = [...currentSetData];
+                newSetData[editingSet.setIdx] = { ...newSetData[editingSet.setIdx], ...newData };
+                onSetDataChange?.(exercise.name, newSetData);
+                // Check if all sets are now complete
+                if (newSetData.every(s => s.completed) && !isComplete) {
+                  onToggle?.();
+                }
+              }
+            }}
+          />
 
           {/* Action buttons */}
           <div className="flex gap-2 pt-2">
