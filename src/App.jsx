@@ -8109,29 +8109,29 @@ export default function App() {
           >
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'blue' },
-                { id: 'readiness', label: 'Readiness', icon: Battery, color: 'green' },
-                { id: 'workout', label: 'Workout', icon: Play, color: 'purple' },
-                { id: 'calendar', label: 'Calendar', icon: Calendar, color: 'orange' },
-                { id: 'charts', label: 'Charts', icon: LineChart, color: 'cyan' },
-                { id: 'profile', label: 'Profile', icon: User, color: 'pink' },
-                { id: 'benchmarks', label: 'Benchmarks', icon: Flag, color: 'amber' },
-                { id: 'log', label: 'Workout Log', icon: FileText, color: 'emerald' },
-                { id: 'progress', label: 'Progress', icon: BarChart3, color: 'indigo' },
-                { id: 'programs', label: 'Programs', icon: FileUp, color: 'rose' },
-                { id: 'settings', label: 'Settings', icon: Settings, color: 'slate' }
-              ].map(({ id, label, icon: Icon, color }) => (
+                { id: 'dashboard', label: 'Dashboard', icon: Home, bg: 'bg-blue-500/20', text: 'text-blue-500', ring: 'ring-blue-500/50', hover: 'hover:bg-blue-500/10' },
+                { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-green-500/20', text: 'text-green-500', ring: 'ring-green-500/50', hover: 'hover:bg-green-500/10' },
+                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-purple-500/20', text: 'text-purple-500', ring: 'ring-purple-500/50', hover: 'hover:bg-purple-500/10' },
+                { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-orange-500/20', text: 'text-orange-500', ring: 'ring-orange-500/50', hover: 'hover:bg-orange-500/10' },
+                { id: 'charts', label: 'Charts', icon: LineChart, bg: 'bg-cyan-500/20', text: 'text-cyan-500', ring: 'ring-cyan-500/50', hover: 'hover:bg-cyan-500/10' },
+                { id: 'profile', label: 'Profile', icon: User, bg: 'bg-pink-500/20', text: 'text-pink-500', ring: 'ring-pink-500/50', hover: 'hover:bg-pink-500/10' },
+                { id: 'benchmarks', label: 'Benchmarks', icon: Flag, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
+                { id: 'log', label: 'Workout Log', icon: FileText, bg: 'bg-emerald-500/20', text: 'text-emerald-500', ring: 'ring-emerald-500/50', hover: 'hover:bg-emerald-500/10' },
+                { id: 'progress', label: 'Progress', icon: BarChart3, bg: 'bg-indigo-500/20', text: 'text-indigo-500', ring: 'ring-indigo-500/50', hover: 'hover:bg-indigo-500/10' },
+                { id: 'programs', label: 'Programs', icon: Dumbbell, bg: 'bg-rose-500/20', text: 'text-rose-500', ring: 'ring-rose-500/50', hover: 'hover:bg-rose-500/10' },
+                { id: 'settings', label: 'Settings', icon: Settings, bg: 'bg-slate-500/20', text: 'text-slate-400', ring: 'ring-slate-500/50', hover: 'hover:bg-slate-500/10' }
+              ].map(({ id, label, icon: Icon, bg, text, ring, hover }) => (
                 <button
                   key={id}
                   onClick={() => { setCurrentView(id); setMenuOpen(false); }}
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                     currentView === id
-                      ? `bg-${color}-500/20 ring-2 ring-${color}-500/50`
-                      : `${theme.cardAlt} hover:bg-${color}-500/10`
+                      ? `${bg} ring-2 ${ring}`
+                      : `${theme.cardAlt} ${hover}`
                   }`}
                 >
-                  <div className={`p-2 rounded-lg bg-${color}-500/20`}>
-                    <Icon size={18} className={`text-${color}-500`} />
+                  <div className={`p-2 rounded-lg ${bg}`}>
+                    <Icon size={18} className={text} />
                   </div>
                   <span className={`text-sm font-medium ${theme.text}`}>{label}</span>
                 </button>
