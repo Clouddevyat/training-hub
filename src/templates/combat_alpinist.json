@@ -211,9 +211,9 @@
               { "name": "Box Step-Up", "sets": 1, "reps": "continuous circuit" },
               { "name": "Walking Lunge", "sets": 1, "reps": "continuous circuit" },
               { "name": "Split Squat", "sets": 1, "reps": "continuous circuit" },
-              { "name": "Heel Touch", "sets": 1, "reps": "continuous circuit" }
+              { "name": "Single Leg Calf Raise", "sets": 1, "reps": "continuous circuit" }
             ],
-            "notes": ["Box at 75% knee height", "Eccentric focus on heel touches", "1 step every 2 seconds tempo"]
+            "notes": ["Box at 75% knee height", "1 step every 2 seconds tempo"]
           }
         },
         {
@@ -329,7 +329,7 @@
               { "name": "Box Step-Up", "sets": 1, "reps": "continuous circuit" },
               { "name": "Walking Lunge", "sets": 1, "reps": "continuous circuit" },
               { "name": "Split Squat", "sets": 1, "reps": "continuous circuit" },
-              { "name": "Heel Touch", "sets": 1, "reps": "continuous circuit" }
+              { "name": "Single Leg Calf Raise", "sets": 1, "reps": "continuous circuit" }
             ],
             "notes": ["Target: 800-1000 steps at 25% BW", "1 step every 2 seconds tempo"]
           }
