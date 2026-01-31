@@ -8,10 +8,11 @@ import {
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
   RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
-  Cloud, CloudOff, Loader, GitBranch, Key
+  Cloud, CloudOff, Loader, GitBranch, Key, Fingerprint, LogOut, UserCircle, Sparkles
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
 import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud, loadWithSyncCode, getCurrentDeviceId, setSyncCode } from './useCloudSync';
+import { useAuth, isBiometricAvailable, getSavedProfile } from './useAuth';
 import { 
   generateWorkoutFromTemplate, 
   templateToProgram, 
@@ -7664,12 +7665,338 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   );
 };
 
+// ============== WELCOME / LOGIN SCREEN ==============
+const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvailable, savedProfile, isLoading }) => {
+  const [step, setStep] = useState(savedProfile ? 'welcome-back' : 'welcome'); // 'welcome', 'welcome-back', 'create', 'link'
+  const [name, setName] = useState('');
+  const [useBiometric, setUseBiometric] = useState(true);
+  const [syncCode, setSyncCode] = useState('');
+  const [error, setError] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleLinkAccount = async () => {
+    if (!syncCode.trim()) {
+      setError('Please enter your sync code');
+      return;
+    }
+    setIsAuthenticating(true);
+    setError('');
+    const result = await onLinkAccount(syncCode.trim());
+    if (!result.success) {
+      setError(result.error || 'Could not find data with this sync code');
+    }
+    setIsAuthenticating(false);
+  };
+
+  const handleCreateProfile = async () => {
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    setIsAuthenticating(true);
+    setError('');
+    const result = await onCreateProfile(name.trim(), useBiometric && biometricAvailable);
+    if (!result.success) {
+      setError(result.error || 'Failed to create profile');
+    }
+    setIsAuthenticating(false);
+  };
+
+  const handleBiometricLogin = async () => {
+    setIsAuthenticating(true);
+    setError('');
+    const result = await onLogin();
+    if (!result.success) {
+      setError(result.error || 'Authentication failed');
+      // Fall back to showing options
+      setStep('welcome');
+    }
+    setIsAuthenticating(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">⛰️</div>
+          <Loader className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+        {/* Logo & Branding */}
+        <div className="text-center mb-8 animate-fadeIn">
+          <div className="text-7xl mb-4">⛰️</div>
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Training Hub</h1>
+          <p className="text-blue-300/80 text-lg">Your Personal Training Companion</p>
+        </div>
+
+        {/* Welcome Back - Returning User */}
+        {step === 'welcome-back' && savedProfile && (
+          <div className="w-full max-w-sm space-y-6 animate-fadeInUp">
+            <div className="glass-dark rounded-3xl p-8 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                <span className="text-3xl">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-1">Welcome back!</h2>
+              <p className="text-blue-300/70 mb-6">{savedProfile.name}</p>
+
+              {savedProfile.hasBiometric && biometricAvailable ? (
+                <button
+                  onClick={handleBiometricLogin}
+                  disabled={isAuthenticating}
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {isAuthenticating ? (
+                    <Loader className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      <Fingerprint size={24} />
+                      Sign in with Face ID
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => onLogin()}
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all"
+                >
+                  Continue as {savedProfile.name}
+                </button>
+              )}
+
+              {error && (
+                <p className="text-red-400 text-sm mt-4">{error}</p>
+              )}
+            </div>
+
+            <button
+              onClick={() => setStep('welcome')}
+              className="w-full py-3 text-blue-300/70 hover:text-white transition-colors text-sm"
+            >
+              Not {savedProfile.name}? Switch profile
+            </button>
+          </div>
+        )}
+
+        {/* Welcome - New User */}
+        {step === 'welcome' && (
+          <div className="w-full max-w-sm space-y-4 animate-fadeInUp">
+            <div className="glass-dark rounded-3xl p-8">
+              <h2 className="text-2xl font-bold text-white mb-2 text-center">Get Started</h2>
+              <p className="text-blue-300/70 text-center mb-6">Create your profile to begin training</p>
+
+              <button
+                onClick={() => setStep('create')}
+                className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 mb-3"
+              >
+                <Sparkles size={20} />
+                Create Profile
+              </button>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/20"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-3 bg-transparent text-blue-300/50">or</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setStep('link')}
+                className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-3"
+              >
+                <Cloud size={20} />
+                Link Existing Account
+              </button>
+
+              {savedProfile && (
+                <button
+                  onClick={() => setStep('welcome-back')}
+                  className="w-full py-3 text-blue-300/70 hover:text-white transition-colors text-sm mt-3"
+                >
+                  Sign in as {savedProfile.name}
+                </button>
+              )}
+            </div>
+
+            {/* Features Preview */}
+            <div className="grid grid-cols-3 gap-3 mt-6">
+              {[
+                { icon: '📊', label: 'Track Progress' },
+                { icon: '💪', label: 'Custom Programs' },
+                { icon: '🔄', label: 'Cloud Sync' },
+              ].map((feature, i) => (
+                <div key={i} className="glass-dark rounded-2xl p-4 text-center">
+                  <div className="text-2xl mb-1">{feature.icon}</div>
+                  <p className="text-xs text-blue-300/70">{feature.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Create Profile */}
+        {step === 'create' && (
+          <div className="w-full max-w-sm animate-fadeInUp">
+            <div className="glass-dark rounded-3xl p-8">
+              <button
+                onClick={() => setStep('welcome')}
+                className="text-blue-300/70 hover:text-white mb-4 flex items-center gap-1"
+              >
+                <ChevronLeft size={20} /> Back
+              </button>
+
+              <h2 className="text-2xl font-bold text-white mb-6">Create Profile</h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-blue-300/70 text-sm mb-2">Your Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    autoFocus
+                  />
+                </div>
+
+                {biometricAvailable && (
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <Fingerprint className="text-blue-400" size={24} />
+                      <div>
+                        <p className="text-white font-medium">Enable Face ID</p>
+                        <p className="text-blue-300/50 text-xs">Quick & secure login</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setUseBiometric(!useBiometric)}
+                      className={`w-12 h-7 rounded-full transition-colors ${useBiometric ? 'bg-blue-500' : 'bg-white/20'}`}
+                    >
+                      <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${useBiometric ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                )}
+
+                {error && (
+                  <p className="text-red-400 text-sm">{error}</p>
+                )}
+
+                <button
+                  onClick={handleCreateProfile}
+                  disabled={isAuthenticating || !name.trim()}
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAuthenticating ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      {useBiometric && biometricAvailable ? 'Setting up Face ID...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      {useBiometric && biometricAvailable && <Fingerprint size={20} />}
+                      Create & Continue
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Link Existing Account */}
+        {step === 'link' && (
+          <div className="w-full max-w-sm animate-fadeInUp">
+            <div className="glass-dark rounded-3xl p-8">
+              <button
+                onClick={() => setStep('welcome')}
+                className="text-blue-300/70 hover:text-white mb-4 flex items-center gap-1"
+              >
+                <ChevronLeft size={20} /> Back
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Cloud size={32} className="text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Link Account</h2>
+                <p className="text-blue-300/70 text-sm">Enter your sync code to access your existing data on this device</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-blue-300/70 text-sm mb-2">Sync Code</label>
+                  <input
+                    type="text"
+                    value={syncCode}
+                    onChange={(e) => setSyncCode(e.target.value)}
+                    placeholder="e.g., john@email.com or my-sync-code"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    autoFocus
+                  />
+                </div>
+
+                <p className="text-blue-300/50 text-xs">
+                  💡 Find your sync code in Settings → Sync Code on your other device
+                </p>
+
+                {error && (
+                  <p className="text-red-400 text-sm">{error}</p>
+                )}
+
+                <button
+                  onClick={handleLinkAccount}
+                  disabled={isAuthenticating || !syncCode.trim()}
+                  className="w-full py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAuthenticating ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Linking...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={20} />
+                      Link & Sync Data
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-6 text-center relative z-10">
+        <p className="text-blue-300/40 text-xs">Training Hub v2.2 • Your data syncs securely to the cloud</p>
+      </div>
+    </div>
+  );
+};
+
 // ============== MAIN APP ==============
 export default function App() {
+  // Auth state
+  const { isAuthenticated, isLoading: authLoading, profile, biometricAvailable, loginWithBiometric, createProfile, linkAccount, logout } = useAuth();
+
   const [currentView, setCurrentView] = useState('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
   const [cloudLoaded, setCloudLoaded] = useState(false);
-  
+
   // Cloud sync status
   const [syncStatus, setSyncStatus] = useSyncStatus();
   
@@ -7699,8 +8026,12 @@ export default function App() {
   const [swappingExercise, setSwappingExercise] = useState(null); // { name, pattern } for swap picker
   const [viewingExerciseHistory, setViewingExerciseHistory] = useState(null); // For exercise history modal
   
-  // Load from cloud on app start
+  // Load from cloud on app start - only after authentication
   useEffect(() => {
+    if (!isAuthenticated) {
+      setCloudLoaded(false);
+      return;
+    }
     const initCloudSync = async () => {
       const result = await loadFromCloud();
       console.log('Cloud sync result:', result);
@@ -7713,7 +8044,7 @@ export default function App() {
       setCloudLoaded(true);
     };
     initCloudSync();
-  }, []);
+  }, [isAuthenticated]);
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -8047,6 +8378,49 @@ export default function App() {
     gradientText: 'gradient-text',
   };
 
+  // Handle linking account with sync code - loads cloud data then authenticates
+  const handleLinkAccount = async (code) => {
+    try {
+      // First try to load data with this sync code
+      const loadResult = await loadWithSyncCode(code);
+
+      if (!loadResult.success) {
+        return { success: false, error: loadResult.error || 'No data found for this sync code' };
+      }
+
+      if (loadResult.loaded === 0) {
+        return { success: false, error: 'No data found for this sync code. Check the code and try again.' };
+      }
+
+      // Data loaded successfully, now link the account
+      const linkResult = await linkAccount(code);
+
+      if (linkResult.success) {
+        // Reload the app to pick up the new cloud data
+        window.location.reload();
+      }
+
+      return linkResult;
+    } catch (error) {
+      console.error('Link account error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Show welcome/login screen if not authenticated
+  if (!isAuthenticated || authLoading) {
+    return (
+      <WelcomeScreen
+        onLogin={loginWithBiometric}
+        onCreateProfile={createProfile}
+        onLinkAccount={handleLinkAccount}
+        biometricAvailable={biometricAvailable}
+        savedProfile={getSavedProfile()}
+        isLoading={authLoading}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen ${theme.bg}`}>
       {/* Offline Banner */}
@@ -8079,6 +8453,15 @@ export default function App() {
             </button>
           </div>
           <div className="flex items-center gap-1">
+            {/* Profile indicator */}
+            {profile && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10">
+                <div className="w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  {profile.name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <span className="text-xs hidden sm:inline opacity-80">{profile.name?.split(' ')[0]}</span>
+              </div>
+            )}
             {/* Cloud Sync Status */}
             <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${syncStatus.syncing ? 'bg-blue-500/20' : isOffline ? 'bg-amber-500/20' : 'bg-green-500/20'}`}>
               {syncStatus.syncing ? (
@@ -8735,7 +9118,36 @@ export default function App() {
         {currentView === 'settings' && (
           <div className="p-4 space-y-4">
             <h2 className={`text-xl font-bold ${theme.text}`}>Settings</h2>
-            
+
+            {/* Account Section */}
+            {profile && (
+              <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+                <h3 className={`font-semibold ${theme.text} mb-4`}>Account</h3>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl font-bold text-white">{profile.name?.charAt(0)?.toUpperCase() || '?'}</span>
+                  </div>
+                  <div>
+                    <p className={`font-semibold ${theme.text}`}>{profile.name}</p>
+                    <p className={`text-sm ${theme.textMuted}`}>
+                      {profile.hasBiometric ? '🔐 Face ID enabled' : '👤 Name login'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to log out?')) {
+                      logout();
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
+                >
+                  <LogOut size={18} />
+                  Log Out
+                </button>
+              </div>
+            )}
+
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <div className="flex items-center justify-between">
                 <div><h3 className={`font-semibold ${theme.text}`}>Dark Mode</h3></div>
@@ -8819,23 +9231,36 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-2`}>Sync Code</h3>
               <p className={`text-xs ${theme.textMuted} mb-4`}>
-                Use a sync code to recover your data after app updates or to sync across devices.
+                Use this code to link your data on another device. Go to "Link Existing Account" on your other device and enter this code.
               </p>
 
               {!showSyncCodeSetup ? (
                 <div className="space-y-3">
                   <div className={`p-3 ${theme.cardAlt} rounded-lg`}>
-                    <p className={`text-xs ${theme.textMuted} mb-1`}>Current Device ID:</p>
-                    <p className={`text-sm ${theme.text} font-mono break-all`}>
-                      {getCurrentDeviceId() || 'Not set'}
-                    </p>
+                    <p className={`text-xs ${theme.textMuted} mb-1`}>Your Sync Code:</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm ${theme.text} font-mono break-all flex-1`}>
+                        {getCurrentDeviceId()?.replace('sync_', '') || 'Not set'}
+                      </p>
+                      <button
+                        onClick={() => {
+                          const code = getCurrentDeviceId()?.replace('sync_', '') || '';
+                          navigator.clipboard.writeText(code);
+                          alert('Sync code copied to clipboard!');
+                        }}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        title="Copy sync code"
+                      >
+                        <Copy size={16} className={theme.textMuted} />
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => setShowSyncCodeSetup(true)}
                     className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}
                   >
                     <Key size={18} />
-                    Set Up Sync Code
+                    Change Sync Code
                   </button>
                 </div>
               ) : (
