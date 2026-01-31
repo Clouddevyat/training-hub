@@ -16,7 +16,15 @@ export {
 } from './benchmarks';
 
 // Progression models and mesocycle templates
-export { PROGRESSION_MODELS, MESO_TEMPLATES } from './progressionModels';
+export {
+  PROGRESSION_MODELS,
+  MESO_TEMPLATES,
+  isModelCompatibleWithTrack,
+  getCompatibleTracks,
+  getCompatibleModels,
+  applyRepShift,
+  calculateWeekValues
+} from './progressionModels';
 
 // Cardio zones and session templates
 export {

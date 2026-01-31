@@ -39,6 +39,10 @@ import {
   calculateZones,
   calculateLoadTargets,
   UNIVERSAL_DETOURS,
+  isModelCompatibleWithTrack,
+  getCompatibleModels,
+  calculateWeekValues,
+  applyRepShift,
 } from './data';
 
 // ============== STORAGE HOOK ==============
@@ -3925,37 +3929,64 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
   const currentPhase = phases[currentPhaseIdx];
   const totalWeeks = phases.reduce((sum, p) => sum + p.weeks, 0);
 
+  // Check if selected model and track are compatible
+  const isCompatibleCombo = isModelCompatibleWithTrack(newPhaseProgression, newPhaseTrack);
+
+  // Get compatible models for the selected track
+  const compatibleModelsForTrack = getCompatibleModels(newPhaseTrack);
+
   const addPhase = () => {
     if (!newPhaseName) return;
+    if (!isCompatibleCombo) {
+      console.warn(`Model ${newPhaseProgression} is not compatible with track ${newPhaseTrack}`);
+      return;
+    }
+
     const startWeek = phases.reduce((sum, p) => sum + p.weeks, 0) + 1;
     const endWeek = startWeek + newPhaseWeeks - 1;
     const progressionModel = PROGRESSION_MODELS[newPhaseProgression];
     const track = TRAINING_TRACKS[newPhaseTrack];
 
-    // Generate weekly progression, merging track's base values with progression adjustments
-    const rawProgression = progressionModel.generateWeeks(newPhaseWeeks, track.baseIntensity);
+    // Generate weekly progression using the new system
+    // Models now return repShift, intensityAdjust, etc. that get merged with track values
+    const rawProgression = progressionModel.generateWeeks(newPhaseWeeks, track);
+
     const weeklyProgression = rawProgression.map(week => {
-      // Calculate sets with multiplier
-      const setsMultiplier = week.setsMultiplier || 1;
-      const adjustedSets = Math.round(track.baseSets * setsMultiplier);
-
-      // Calculate RPE with adjustment
-      const rpeAdjust = week.rpeAdjust || 0;
-      const adjustedRpe = Math.max(1, Math.min(10, track.baseRpe + rpeAdjust));
-
-      return {
-        ...week,
-        // Always use track's reps (the rep range is the track's identity)
-        reps: track.baseReps,
-        // Sets from track, modified by progression
-        sets: adjustedSets,
-        // Intensity from progression (or track default)
-        intensity: week.intensity || track.baseIntensity,
-        // RPE from track, adjusted by progression
-        rpe: adjustedRpe,
-        track: newPhaseTrack,
-      };
+      // Use the new calculateWeekValues utility for consistent merging
+      return calculateWeekValues(week, track);
     });
+
+    // Create base weekly template
+    let weeklyTemplate = Array(7).fill(null).map((_, i) => ({
+      day: i + 1,
+      dayName: `Day ${i + 1}`,
+      session: '',
+      type: 'recovery',
+      exercises: [],
+      duration: 60,
+      cardioZone: 'zone2',
+      cardioActivity: 'run',
+      warmup: 'none',
+      cooldown: 'none',
+    }));
+
+    // Apply Conjugate suggested split if that model is selected
+    if (newPhaseProgression === 'conjugate' && progressionModel.suggestedSplit) {
+      weeklyTemplate = progressionModel.suggestedSplit.days.map((day, i) => ({
+        day: i + 1,
+        dayName: day.dayName,
+        session: day.conjugateType ? PROGRESSION_MODELS.conjugate.dayTypes.find(t => t.id === day.conjugateType)?.name || '' : '',
+        type: day.type,
+        exercises: [],
+        duration: 60,
+        cardioZone: 'zone2',
+        cardioActivity: 'run',
+        warmup: day.type === 'strength' ? 'full' : 'none',
+        cooldown: 'none',
+        // Store the conjugate day type for later use
+        conjugateType: day.conjugateType ? PROGRESSION_MODELS.conjugate.dayTypes.find(t => t.id === day.conjugateType) : null,
+      }));
+    }
 
     setPhases(prev => [...prev, {
       id: `phase_${Date.now()}`,
@@ -3965,11 +3996,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       track: newPhaseTrack,
       weeksRange: [startWeek, endWeek],
       weeklyProgression,
-      weeklyTemplate: Array(7).fill(null).map((_, i) => ({ day: i + 1, dayName: `Day ${i + 1}`, session: '', type: 'recovery', exercises: [], duration: 60, cardioZone: 'zone2', cardioActivity: 'run', warmup: 'none', cooldown: 'none' })),
+      weeklyTemplate,
       weekOverrides: {}, // { weekNum: { dayIdx: { ...overrides } } }
     }]);
     setNewPhaseName('');
     setNewPhaseWeeks(4);
+  };
+
+  // Apply DUP day types when a split template is applied (for DUP phases)
+  const applyDupDayTypes = (template) => {
+    if (currentPhase?.progression !== 'undulatingDaily') return template;
+    return PROGRESSION_MODELS.undulatingDaily.assignDayTypes(template);
   };
 
   const removePhase = (idx) => setPhases(prev => prev.filter((_, i) => i !== idx));
@@ -3978,8 +4015,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
   const applySplitTemplate = (splitId) => {
     const split = SPLIT_TEMPLATES.find(s => s.id === splitId);
     if (!split || !currentPhase) return;
-    
-    const newTemplate = split.days.map((day, i) => ({
+
+    let newTemplate = split.days.map((day, i) => ({
       day: i + 1,
       dayName: day.dayName,
       session: day.session,
@@ -3991,7 +4028,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       warmup: day.warmup || 'none',
       cooldown: 'none',
     }));
-    
+
+    // If this is a DUP phase, apply day type assignments
+    if (currentPhase.progression === 'undulatingDaily') {
+      newTemplate = PROGRESSION_MODELS.undulatingDaily.assignDayTypes(newTemplate);
+    }
+
+    // If this is a Conjugate phase and not using the built-in split, apply structure
+    if (currentPhase.progression === 'conjugate') {
+      newTemplate = PROGRESSION_MODELS.conjugate.applyConjugateStructure(newTemplate);
+    }
+
     setPhases(prev => prev.map((ph, i) => i === currentPhaseIdx ? { ...ph, weeklyTemplate: newTemplate } : ph));
     setShowSplitPicker(false);
   };
@@ -4790,11 +4837,102 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             </div>
 
             {/* Progression Model Selector */}
-            <div><label className={`block text-xs ${theme.text} mb-2`}>Progression Model</label>
-              <div className="grid grid-cols-2 gap-2">{Object.values(PROGRESSION_MODELS).map(model => (<button key={model.id} onClick={() => setNewPhaseProgression(model.id)} className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.chip}`}><span className="text-lg mr-2">{model.icon}</span><span className="text-sm font-medium">{model.name}</span></button>))}</div>
+            <div>
+              <label className={`block text-xs ${theme.text} mb-2`}>Progression Model</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.values(PROGRESSION_MODELS).map(model => {
+                  const isCompatible = model.compatibleTracks?.includes(newPhaseTrack) ?? true;
+                  return (
+                    <button
+                      key={model.id}
+                      onClick={() => isCompatible && setNewPhaseProgression(model.id)}
+                      disabled={!isCompatible}
+                      className={`p-3 rounded-lg text-left relative ${
+                        !isCompatible
+                          ? 'opacity-40 cursor-not-allowed ' + theme.cardAlt
+                          : newPhaseProgression === model.id
+                            ? 'bg-blue-500 text-white'
+                            : theme.chip
+                      }`}
+                    >
+                      <span className="text-lg mr-2">{model.icon}</span>
+                      <span className="text-sm font-medium">{model.name}</span>
+                      {!isCompatible && (
+                        <span className="absolute top-1 right-1 text-xs text-red-400">✗</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
               <p className={`text-xs ${theme.textMuted} mt-2`}>{PROGRESSION_MODELS[newPhaseProgression].description}</p>
+
+              {/* Model-specific info */}
+              {newPhaseProgression === 'undulatingDaily' && (
+                <div className={`mt-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/30`}>
+                  <p className={`text-xs text-blue-400 font-medium mb-1`}>🌊 DUP Day Types</p>
+                  <div className="flex flex-wrap gap-1">
+                    {PROGRESSION_MODELS.undulatingDaily.dayTypes.map(dt => (
+                      <span key={dt.id} className={`text-xs px-2 py-0.5 rounded-full bg-${dt.color}-500/20 text-${dt.color}-400`}>
+                        {dt.shortName}: {dt.reps} @ {dt.intensity}%
+                      </span>
+                    ))}
+                  </div>
+                  <p className={`text-xs ${theme.textMuted} mt-1`}>Each strength day rotates through these focuses</p>
+                </div>
+              )}
+
+              {newPhaseProgression === 'block' && (
+                <div className={`mt-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30`}>
+                  <p className={`text-xs text-yellow-400 font-medium mb-1`}>🧱 Block Phases ({newPhaseWeeks} weeks)</p>
+                  <div className="flex flex-wrap gap-1">
+                    {PROGRESSION_MODELS.block.blocks.map(b => {
+                      const weeks = Math.max(1, Math.ceil(newPhaseWeeks * b.percentage));
+                      return (
+                        <span key={b.id} className={`text-xs px-2 py-0.5 rounded-full bg-${b.color}-500/20 text-${b.color}-400`}>
+                          {b.shortName}: {weeks}wk
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {newPhaseProgression === 'conjugate' && (
+                <div className={`mt-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/30`}>
+                  <p className={`text-xs text-purple-400 font-medium mb-1`}>🔀 Conjugate Structure</p>
+                  <div className="flex flex-wrap gap-1">
+                    {PROGRESSION_MODELS.conjugate.dayTypes.map(dt => (
+                      <span key={dt.id} className={`text-xs px-2 py-0.5 rounded-full bg-${dt.color}-500/20 text-${dt.color}-400`}>
+                        {dt.shortName}
+                      </span>
+                    ))}
+                  </div>
+                  <p className={`text-xs ${theme.textMuted} mt-1`}>4-day split will be auto-configured</p>
+                </div>
+              )}
             </div>
-            <button onClick={addPhase} disabled={!newPhaseName} className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-green-500 text-white' : theme.btnDisabled}`}><Plus size={18} className="inline mr-1" /> Add Phase</button>
+
+            {/* Compatibility warning */}
+            {!isCompatibleCombo && (
+              <div className={`p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-2`}>
+                <AlertTriangle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className={`text-sm text-red-400 font-medium`}>Incompatible Combination</p>
+                  <p className={`text-xs ${theme.textMuted}`}>
+                    {PROGRESSION_MODELS[newPhaseProgression].name} doesn't work with {TRAINING_TRACKS[newPhaseTrack].name} track.
+                    Try: {compatibleModelsForTrack.map(m => m.name).join(', ')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={addPhase}
+              disabled={!newPhaseName || !isCompatibleCombo}
+              className={`w-full py-2 rounded-lg font-medium ${newPhaseName && isCompatibleCombo ? 'bg-green-500 text-white' : theme.btnDisabled}`}
+            >
+              <Plus size={18} className="inline mr-1" /> Add Phase
+            </button>
           </div>
           {phases.length > 0 && (<button onClick={() => setStep('review')} className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white">Review & Save Program</button>)}
         </div>
@@ -4882,9 +5020,21 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <input type="text" value={day.dayName} onChange={(e) => updateDay(dayIdx, { dayName: e.target.value })} className={`font-medium ${theme.text} bg-transparent border-b ${theme.border} w-24`} />
+                  {/* DUP Day Type Badge */}
+                  {day.dupType && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full bg-${day.dupType.color}-500/20 text-${day.dupType.color}-400 font-medium`}>
+                      {day.dupType.shortName}
+                    </span>
+                  )}
+                  {/* Conjugate Day Type Badge */}
+                  {day.conjugateType && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full bg-${day.conjugateType.color}-500/20 text-${day.conjugateType.color}-400 font-medium`}>
+                      {day.conjugateType.shortName}
+                    </span>
+                  )}
                   {/* Copy Day Button */}
                   {(day.type !== 'recovery' && (day.exercises?.length > 0 || day.type === 'cardio')) && (
-                    <button 
+                    <button
                       onClick={() => setShowCopyDayPicker({ sourceDayIdx: dayIdx })}
                       className={`p-1 rounded ${theme.cardAlt} hover:bg-blue-500/20`}
                       title="Copy to another day"
@@ -4895,6 +5045,36 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                 </div>
                 <select value={day.type} onChange={(e) => updateDay(dayIdx, { type: e.target.value, session: SESSION_TYPES.find(s => s.id === e.target.value)?.name || '' })} className={`p-2 rounded-lg ${theme.input} text-sm`}>{SESSION_TYPES.map(t => (<option key={t.id} value={t.id}>{t.icon} {t.name}</option>))}</select>
               </div>
+              {/* DUP/Conjugate Day Info Banner */}
+              {(day.dupType || day.conjugateType) && day.type === 'strength' && (
+                <div className={`mb-3 p-2 rounded-lg ${day.dupType ? `bg-${day.dupType.color}-500/10` : `bg-${day.conjugateType.color}-500/10`} border border-dashed ${day.dupType ? `border-${day.dupType.color}-500/30` : `border-${day.conjugateType.color}-500/30`}`}>
+                  {day.dupType && (
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-medium text-${day.dupType.color}-400`}>
+                        {day.dupType.name} Focus
+                      </span>
+                      <span className={`text-xs ${theme.textMuted}`}>
+                        {day.dupType.sets}×{day.dupType.reps} @ {day.dupType.intensity}% RPE {day.dupType.rpe}
+                      </span>
+                    </div>
+                  )}
+                  {day.conjugateType && (
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-medium text-${day.conjugateType.color}-400`}>
+                          {day.conjugateType.name}
+                        </span>
+                        <span className={`text-xs ${theme.textMuted}`}>
+                          {day.conjugateType.prescription?.mainLift || ''}
+                        </span>
+                      </div>
+                      {day.conjugateType.prescription?.note && (
+                        <p className={`text-xs ${theme.textMuted} mt-1 italic`}>{day.conjugateType.prescription.note}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               {day.type !== 'recovery' && (
                 <>
                   <input type="text" value={day.session} onChange={(e) => updateDay(dayIdx, { session: e.target.value })} placeholder="Session name (e.g., Upper Body A)" className={`w-full p-2 rounded-lg ${theme.input} border text-sm mb-3`} />
@@ -5364,13 +5544,47 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                           <span className="text-green-400 font-medium">🔄 Deload Week</span>
                         )}
                       </div>
+                      {/* Block periodization phase info */}
+                      {weekData.progression.phase && (
+                        <div className={`mt-2 pt-2 border-t ${theme.border}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full bg-${weekData.progression.phaseColor || 'blue'}-500/20 text-${weekData.progression.phaseColor || 'blue'}-400 font-medium`}>
+                              {weekData.progression.phase}
+                            </span>
+                            <span className={`text-xs ${theme.textMuted}`}>
+                              Week {weekData.progression.weekInPhase}/{weekData.progression.totalPhaseWeeks}
+                            </span>
+                          </div>
+                          {weekData.progression.phaseDescription && (
+                            <p className={`text-xs ${theme.textMuted} mt-1`}>{weekData.progression.phaseDescription}</p>
+                          )}
+                        </div>
+                      )}
+                      {/* Conjugate wave info */}
+                      {weekData.progression.pattern === 'Conjugate' && weekData.progression.note && (
+                        <p className={`text-xs ${theme.textMuted} mt-2 italic`}>{weekData.progression.note}</p>
+                      )}
                     </div>
 
                     {/* Days */}
                     {weekData.days.map((day, idx) => (
                       <div key={idx} className={`${theme.card} rounded-xl p-4`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className={`font-medium ${theme.text}`}>{day.dayName}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className={`font-medium ${theme.text}`}>{day.dayName}</h4>
+                            {/* DUP Day Type Badge */}
+                            {day.dupType && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full bg-${day.dupType.color}-500/20 text-${day.dupType.color}-400 font-medium`}>
+                                {day.dupType.shortName}
+                              </span>
+                            )}
+                            {/* Conjugate Day Type Badge */}
+                            {day.conjugateType && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full bg-${day.conjugateType.color}-500/20 text-${day.conjugateType.color}-400 font-medium`}>
+                                {day.conjugateType.shortName}
+                              </span>
+                            )}
+                          </div>
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             day.type === 'strength' ? 'bg-red-500/20 text-red-400' :
                             day.type === 'cardio' ? 'bg-blue-500/20 text-blue-400' :
@@ -5381,6 +5595,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                           </span>
                         </div>
                         {day.session && <p className={`text-sm ${theme.textMuted} mb-2`}>{day.session}</p>}
+                        {/* DUP/Conjugate day info */}
+                        {day.dupType && day.type === 'strength' && (
+                          <p className={`text-xs ${theme.textMuted} mb-2`}>
+                            {day.dupType.sets}×{day.dupType.reps} @ {day.dupType.intensity}% RPE {day.dupType.rpe}
+                          </p>
+                        )}
+                        {day.conjugateType && day.type === 'strength' && (
+                          <p className={`text-xs ${theme.textMuted} mb-2 italic`}>
+                            {day.conjugateType.prescription?.mainLift}
+                          </p>
+                        )}
                         
                         {day.type === 'cardio' && (
                           <p className={`text-sm ${theme.text}`}>
