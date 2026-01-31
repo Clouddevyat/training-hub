@@ -71,12 +71,22 @@ const useLocalStorage = (key, initialValue) => {
 // BENCHMARK_TESTS - imported from ./data
 
 // ============== UTILITY FUNCTIONS ==============
-const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+// Parse YYYY-MM-DD string as local date (not UTC) to avoid timezone rollback issues
+// e.g., "2025-01-31" should be Jan 31 local time, not Dec 31 in PST
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed
+};
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = parseLocalDate(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 const formatDateShort = (dateStr) => {
   if (!dateStr) return '-';
-  // Parse YYYY-MM-DD as local date (not UTC) to avoid timezone rollback issues
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day); // month is 0-indexed
+  const date = parseLocalDate(dateStr);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 // Use local timezone for date key (YYYY-MM-DD format)
@@ -1609,7 +1619,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
                   className={`w-full rounded-t ${day.score >= 70 ? 'bg-green-500' : day.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
                   style={{ height: `${(day.score / 100) * 100}%`, minHeight: '4px' }}
                 />
-                <span className={`text-xs ${theme.textMuted}`}>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
+                <span className={`text-xs ${theme.textMuted}`}>{parseLocalDate(day.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
               </div>
             ))}
           </div>
@@ -3543,7 +3553,7 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
                 <div key={idx} className={`${theme.cardAlt} rounded-lg p-3`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-sm font-medium ${theme.text}`}>
-                      {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {parseLocalDate(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     <span className={`text-xs ${theme.textMuted}`}>{entry.session}</span>
                   </div>
@@ -7316,7 +7326,8 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   // Calculate real date for a program week/day
   const getDateForProgramDay = useCallback((weekNum, dayNum) => {
     if (!programState.startDate) return null;
-    const startDate = new Date(programState.startDate);
+    // Use parseLocalDate to avoid UTC timezone issues with stored date strings
+    const startDate = parseLocalDate(programState.startDate);
     const daysFromStart = ((weekNum - 1) * 7) + (dayNum - 1);
     const targetDate = new Date(startDate);
     targetDate.setDate(startDate.getDate() + daysFromStart);
@@ -7326,7 +7337,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   // Get program week/day for a real date
   const getProgramDayForDate = useCallback((date) => {
     if (!programState.startDate) return null;
-    const startDate = new Date(programState.startDate);
+    const startDate = parseLocalDate(programState.startDate);
     const diffTime = date.getTime() - startDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return null;
