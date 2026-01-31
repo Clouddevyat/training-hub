@@ -8,10 +8,10 @@ import {
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
   RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
-  Cloud, CloudOff, Loader, GitBranch
+  Cloud, CloudOff, Loader, GitBranch, Key
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
-import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud } from './useCloudSync';
+import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud, loadWithSyncCode, getCurrentDeviceId, setSyncCode } from './useCloudSync';
 import { 
   generateWorkoutFromTemplate, 
   templateToProgram, 
@@ -7712,6 +7712,11 @@ export default function App() {
   
   // Offline status
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Sync code state for recovery/multi-device
+  const [syncCodeInput, setSyncCodeInput] = useState('');
+  const [showSyncCodeSetup, setShowSyncCodeSetup] = useState(false);
+  const [syncCodeLoading, setSyncCodeLoading] = useState(false);
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -8704,7 +8709,7 @@ export default function App() {
                     {syncStatus.error}
                   </div>
                 )}
-                <button 
+                <button
                   onClick={async () => {
                     const result = await syncAllToCloud(setSyncStatus);
                     if (result.success) {
@@ -8724,6 +8729,92 @@ export default function App() {
                 </p>
               </div>
             </div>
+
+            {/* Sync Code Section */}
+            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+              <h3 className={`font-semibold ${theme.text} mb-2`}>Sync Code</h3>
+              <p className={`text-xs ${theme.textMuted} mb-4`}>
+                Use a sync code to recover your data after app updates or to sync across devices.
+              </p>
+
+              {!showSyncCodeSetup ? (
+                <div className="space-y-3">
+                  <div className={`p-3 ${theme.cardAlt} rounded-lg`}>
+                    <p className={`text-xs ${theme.textMuted} mb-1`}>Current Device ID:</p>
+                    <p className={`text-sm ${theme.text} font-mono break-all`}>
+                      {getCurrentDeviceId() || 'Not set'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowSyncCodeSetup(true)}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}
+                  >
+                    <Key size={18} />
+                    Set Up Sync Code
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-sm ${theme.textMuted} mb-2`}>
+                      Enter a memorable sync code (e.g., your email or a phrase):
+                    </label>
+                    <input
+                      type="text"
+                      value={syncCodeInput}
+                      onChange={(e) => setSyncCodeInput(e.target.value)}
+                      placeholder="mysynccode123"
+                      className={`w-full p-3 ${theme.cardAlt} rounded-lg ${theme.text} text-sm`}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!syncCodeInput.trim()) {
+                          alert('Please enter a sync code');
+                          return;
+                        }
+                        setSyncCodeLoading(true);
+                        // First, try to load existing data with this code
+                        const loadResult = await loadWithSyncCode(syncCodeInput);
+                        if (loadResult.success && loadResult.loaded > 0) {
+                          alert(`Found and loaded ${loadResult.loaded} items from this sync code! Reloading app...`);
+                          window.location.reload();
+                        } else {
+                          // No existing data, just set the code for future use
+                          await setSyncCode(syncCodeInput);
+                          // Then sync current data to cloud with new code
+                          const syncResult = await syncAllToCloud(setSyncStatus);
+                          if (syncResult.success) {
+                            alert(`Sync code set! Your data is now linked to: ${syncCodeInput}`);
+                          } else {
+                            alert('Sync code set, but cloud sync failed. Try syncing again.');
+                          }
+                        }
+                        setSyncCodeLoading(false);
+                        setShowSyncCodeSetup(false);
+                        setSyncCodeInput('');
+                      }}
+                      disabled={syncCodeLoading}
+                      className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 rounded-xl text-sm font-medium text-white"
+                    >
+                      {syncCodeLoading ? 'Loading...' : 'Set / Recover'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowSyncCodeSetup(false);
+                        setSyncCodeInput('');
+                      }}
+                      className={`px-4 py-3 ${theme.cardAlt} rounded-xl text-sm font-medium ${theme.text}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <p className={`text-xs ${theme.textMuted}`}>
+                    If data exists with this code, it will be loaded. Otherwise, your current data will be linked to this code.
+                  </p>
+                </div>
+              )}</div>
 
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-4`}>Data</h3>
