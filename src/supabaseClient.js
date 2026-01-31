@@ -139,3 +139,144 @@ export const setSyncCode = async (code) => {
 export const getCurrentDeviceId = () => {
   return localStorage.getItem('trainingHub_deviceId') || getCookie('trainingHub_deviceId');
 };
+
+// ============== ADMIN APPROVAL SYSTEM ==============
+
+// Request access (called when new user tries to register)
+export const requestAccess = async (name, email, reason = '') => {
+  try {
+    const { data, error } = await supabase
+      .from('access_requests')
+      .insert({
+        name,
+        email: email.toLowerCase().trim(),
+        reason,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // Check if it's a duplicate email error
+      if (error.code === '23505') {
+        return { success: false, error: 'An access request with this email already exists' };
+      }
+      throw error;
+    }
+
+    return { success: true, request: data };
+  } catch (e) {
+    console.error('Access request failed:', e);
+    return { success: false, error: e.message };
+  }
+};
+
+// Check if email is approved
+export const checkEmailApproval = async (email) => {
+  try {
+    const { data, error } = await supabase
+      .from('approved_users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return {
+      success: true,
+      approved: !!data,
+      user: data
+    };
+  } catch (e) {
+    console.error('Check approval failed:', e);
+    return { success: false, error: e.message };
+  }
+};
+
+// Get pending access requests (admin only)
+export const getPendingRequests = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('access_requests')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, requests: data || [] };
+  } catch (e) {
+    console.error('Get pending requests failed:', e);
+    return { success: false, error: e.message };
+  }
+};
+
+// Approve access request (admin only)
+export const approveRequest = async (requestId, email, name) => {
+  try {
+    // Add to approved users
+    const { error: approveError } = await supabase
+      .from('approved_users')
+      .insert({
+        email: email.toLowerCase().trim(),
+        name,
+        approved_at: new Date().toISOString()
+      });
+
+    if (approveError) throw approveError;
+
+    // Update request status
+    const { error: updateError } = await supabase
+      .from('access_requests')
+      .update({ status: 'approved', updated_at: new Date().toISOString() })
+      .eq('id', requestId);
+
+    if (updateError) throw updateError;
+
+    return { success: true };
+  } catch (e) {
+    console.error('Approve request failed:', e);
+    return { success: false, error: e.message };
+  }
+};
+
+// Deny access request (admin only)
+export const denyRequest = async (requestId) => {
+  try {
+    const { error } = await supabase
+      .from('access_requests')
+      .update({ status: 'denied', updated_at: new Date().toISOString() })
+      .eq('id', requestId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (e) {
+    console.error('Deny request failed:', e);
+    return { success: false, error: e.message };
+  }
+};
+
+// Check if user is an admin
+export const checkIsAdmin = async (email) => {
+  try {
+    const { data, error } = await supabase
+      .from('approved_users')
+      .select('is_admin')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return {
+      success: true,
+      isAdmin: data?.is_admin || false
+    };
+  } catch (e) {
+    console.error('Check admin failed:', e);
+    return { success: false, error: e.message };
+  }
+};

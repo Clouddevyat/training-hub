@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { 
-  Calendar, Dumbbell, TrendingUp, CheckCircle2, Circle, ChevronRight, 
+import {
+  Calendar, Dumbbell, TrendingUp, CheckCircle2, Circle, ChevronRight,
   ChevronLeft, Play, Clock, Flame, Menu, X, Download, Upload,
-  Settings, Activity, Mountain, Home, BarChart3, Trash2, Moon, Sun, 
+  Settings, Activity, Mountain, Home, BarChart3, Trash2, Moon, Sun,
   Plus, FileUp, User, Target, Zap, Award, Timer, Heart, Scale,
   ChevronDown, ChevronUp, Edit3, Save, X as XIcon, AlertTriangle,
   Battery, BatteryLow, BatteryMedium, BatteryFull, Bed, Brain,
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
   RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
-  Cloud, CloudOff, Loader, GitBranch, Key, Fingerprint, LogOut, UserCircle, Sparkles
+  Cloud, CloudOff, Loader, GitBranch, Key, Fingerprint, LogOut, UserCircle, Sparkles,
+  Check
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
 import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud, loadWithSyncCode, getCurrentDeviceId, setSyncCode } from './useCloudSync';
@@ -880,82 +881,219 @@ const EXERCISE_LIBRARY = {
   // === HIP HINGE ===
   trapBarDeadlift: { id: 'trapBarDeadlift', name: 'Trap Bar Deadlift', pattern: 'hipHinge', equipment: ['trapBar'], muscles: ['glutes', 'hamstrings', 'back', 'quads'], prKey: 'trapBarDeadlift' },
   conventionalDeadlift: { id: 'conventionalDeadlift', name: 'Conventional Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'back'] },
+  sumoDeadlift: { id: 'sumoDeadlift', name: 'Sumo Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'quads', 'adductors'] },
   romanianDeadlift: { id: 'romanianDeadlift', name: 'Romanian Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes'] },
+  stiffLegDeadlift: { id: 'stiffLegDeadlift', name: 'Stiff Leg Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes', 'back'] },
   kettlebellSwing: { id: 'kettlebellSwing', name: 'Kettlebell Swing', pattern: 'hipHinge', equipment: ['kettlebell'], muscles: ['glutes', 'hamstrings', 'core'] },
   hipThrust: { id: 'hipThrust', name: 'Hip Thrust', pattern: 'hipHinge', equipment: ['barbell', 'bench'], muscles: ['glutes'] },
+  machineHipThrust: { id: 'machineHipThrust', name: 'Machine Hip Thrust', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes'] },
   goodMorning: { id: 'goodMorning', name: 'Good Morning', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['hamstrings', 'back'] },
-  
+  cableKickback: { id: 'cableKickback', name: 'Cable Kickback', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes'] },
+  gluteHamRaise: { id: 'gluteHamRaise', name: 'Glute Ham Raise', pattern: 'hipHinge', equipment: ['machine'], muscles: ['hamstrings', 'glutes'] },
+  reverseHyper: { id: 'reverseHyper', name: 'Reverse Hyperextension', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes', 'hamstrings', 'back'] },
+  backExtension: { id: 'backExtension', name: 'Back Extension', pattern: 'hipHinge', equipment: ['machine', 'bodyweight'], muscles: ['back', 'glutes', 'hamstrings'] },
+  pullThrough: { id: 'pullThrough', name: 'Cable Pull-Through', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes', 'hamstrings'] },
+
   // === SQUAT ===
   backSquat: { id: 'backSquat', name: 'Back Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes'], prKey: 'backSquat' },
   frontSquat: { id: 'frontSquat', name: 'Front Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'core'], prKey: 'frontSquat' },
+  safetyBarSquat: { id: 'safetyBarSquat', name: 'Safety Bar Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
   gobletSquat: { id: 'gobletSquat', name: 'Goblet Squat', pattern: 'squat', equipment: ['kettlebell', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  zercher_squat: { id: 'zercher_squat', name: 'Zercher Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
   legPress: { id: 'legPress', name: 'Leg Press', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  legPressWide: { id: 'legPressWide', name: 'Leg Press (Wide Stance)', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes', 'adductors'] },
   hackSquat: { id: 'hackSquat', name: 'Hack Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads'] },
-  
+  pendulumSquat: { id: 'pendulumSquat', name: 'Pendulum Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  vSquat: { id: 'vSquat', name: 'V-Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  smithSquat: { id: 'smithSquat', name: 'Smith Machine Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  beltSquat: { id: 'beltSquat', name: 'Belt Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+
   // === LUNGE/SINGLE LEG ===
   boxStepUp: { id: 'boxStepUp', name: 'Box Step-Up', pattern: 'lunge', equipment: ['box', 'dumbbell'], muscles: ['quads', 'glutes'], prKey: 'boxStepUp' },
   walkingLunge: { id: 'walkingLunge', name: 'Walking Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
   reverseLunge: { id: 'reverseLunge', name: 'Reverse Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell', 'barbell'], muscles: ['quads', 'glutes'] },
+  lateralLunge: { id: 'lateralLunge', name: 'Lateral Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes', 'adductors'] },
+  curtsy_lunge: { id: 'curtsy_lunge', name: 'Curtsy Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['glutes', 'quads'] },
   bulgarianSplitSquat: { id: 'bulgarianSplitSquat', name: 'Bulgarian Split Squat', pattern: 'lunge', equipment: ['bench', 'dumbbell'], muscles: ['quads', 'glutes'] },
   singleLegRDL: { id: 'singleLegRDL', name: 'Single Leg RDL', pattern: 'lunge', equipment: ['dumbbell', 'kettlebell'], muscles: ['hamstrings', 'glutes'] },
-  
+  singleLegPress: { id: 'singleLegPress', name: 'Single Leg Press', pattern: 'lunge', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  singleLegLegCurl: { id: 'singleLegLegCurl', name: 'Single Leg Curl', pattern: 'lunge', equipment: ['machine'], muscles: ['hamstrings'] },
+  pistolSquat: { id: 'pistolSquat', name: 'Pistol Squat', pattern: 'lunge', equipment: ['bodyweight'], muscles: ['quads', 'glutes'] },
+  splitSquat: { id: 'splitSquat', name: 'Split Squat', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
+
   // === HORIZONTAL PUSH ===
   benchPress: { id: 'benchPress', name: 'Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps', 'shoulders'], prKey: 'benchPress' },
   inclineBenchPress: { id: 'inclineBenchPress', name: 'Incline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'shoulders'] },
+  declineBenchPress: { id: 'declineBenchPress', name: 'Decline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps'] },
+  closeGripBench: { id: 'closeGripBench', name: 'Close Grip Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['triceps', 'chest'] },
   dbBenchPress: { id: 'dbBenchPress', name: 'DB Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'triceps'] },
+  dbInclineBenchPress: { id: 'dbInclineBenchPress', name: 'DB Incline Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'shoulders'] },
   pushUp: { id: 'pushUp', name: 'Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps', 'core'] },
+  diamondPushUp: { id: 'diamondPushUp', name: 'Diamond Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['triceps', 'chest'] },
   chestDip: { id: 'chestDip', name: 'Dip', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps'], prKey: 'weightedDip' },
-  
+  machineChestPress: { id: 'machineChestPress', name: 'Machine Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  machineInclinePress: { id: 'machineInclinePress', name: 'Machine Incline Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'shoulders'] },
+  smithBenchPress: { id: 'smithBenchPress', name: 'Smith Machine Bench Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  cableChestPress: { id: 'cableChestPress', name: 'Cable Chest Press', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest', 'triceps'] },
+  chestFly: { id: 'chestFly', name: 'Dumbbell Chest Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
+  inclineChestFly: { id: 'inclineChestFly', name: 'Incline Dumbbell Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
+  cableFly: { id: 'cableFly', name: 'Cable Fly', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest'] },
+  pecDeck: { id: 'pecDeck', name: 'Pec Deck Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest'] },
+
   // === HORIZONTAL PULL ===
   barbellRow: { id: 'barbellRow', name: 'Barbell Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  pendlayRow: { id: 'pendlayRow', name: 'Pendlay Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  tBarRow: { id: 'tBarRow', name: 'T-Bar Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
   dbRow: { id: 'dbRow', name: 'DB Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back', 'biceps'] },
+  meadowsRow: { id: 'meadowsRow', name: 'Meadows Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
   cableRow: { id: 'cableRow', name: 'Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  wideGripCableRow: { id: 'wideGripCableRow', name: 'Wide Grip Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'rear delts'] },
   chestSupportedRow: { id: 'chestSupportedRow', name: 'Chest Supported Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
+  machineRow: { id: 'machineRow', name: 'Machine Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
+  hammerStrengthRow: { id: 'hammerStrengthRow', name: 'Hammer Strength Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
   invertedRow: { id: 'invertedRow', name: 'Inverted Row', pattern: 'horizontalPull', equipment: ['bodyweight', 'pullupBar'], muscles: ['back', 'biceps'] },
-  
+  sealRow: { id: 'sealRow', name: 'Seal Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
+
   // === VERTICAL PUSH ===
   overheadPress: { id: 'overheadPress', name: 'Overhead Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps'], prKey: 'overheadPress' },
+  seatedOHP: { id: 'seatedOHP', name: 'Seated Overhead Press', pattern: 'verticalPush', equipment: ['barbell', 'bench'], muscles: ['shoulders', 'triceps'] },
   dbShoulderPress: { id: 'dbShoulderPress', name: 'DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders', 'triceps'] },
+  seatedDbShoulderPress: { id: 'seatedDbShoulderPress', name: 'Seated DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell', 'bench'], muscles: ['shoulders', 'triceps'] },
   pushPress: { id: 'pushPress', name: 'Push Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps', 'legs'] },
   arnoldPress: { id: 'arnoldPress', name: 'Arnold Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
   pikePushUp: { id: 'pikePushUp', name: 'Pike Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
-  
+  handstandPushUp: { id: 'handstandPushUp', name: 'Handstand Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
+  machineShoulderPress: { id: 'machineShoulderPress', name: 'Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
+  smithShoulderPress: { id: 'smithShoulderPress', name: 'Smith Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
+  landminePress: { id: 'landminePress', name: 'Landmine Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'chest'] },
+  lateralRaise: { id: 'lateralRaise', name: 'Lateral Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+  cableLateralRaise: { id: 'cableLateralRaise', name: 'Cable Lateral Raise', pattern: 'verticalPush', equipment: ['cable'], muscles: ['shoulders'] },
+  machineLateralRaise: { id: 'machineLateralRaise', name: 'Machine Lateral Raise', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders'] },
+  frontRaise: { id: 'frontRaise', name: 'Front Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+
   // === VERTICAL PULL ===
   pullUp: { id: 'pullUp', name: 'Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'], prKey: 'weightedPullUp' },
   chinUp: { id: 'chinUp', name: 'Chin-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  neutralGripPullUp: { id: 'neutralGripPullUp', name: 'Neutral Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  wideGripPullUp: { id: 'wideGripPullUp', name: 'Wide Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
   latPulldown: { id: 'latPulldown', name: 'Lat Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  closeGripPulldown: { id: 'closeGripPulldown', name: 'Close Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  wideGripPulldown: { id: 'wideGripPulldown', name: 'Wide Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
+  straightArmPulldown: { id: 'straightArmPulldown', name: 'Straight Arm Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
   assistedPullUp: { id: 'assistedPullUp', name: 'Assisted Pull-Up', pattern: 'verticalPull', equipment: ['machine', 'bands'], muscles: ['back', 'biceps'] },
-  
+  machinePullover: { id: 'machinePullover', name: 'Machine Pullover', pattern: 'verticalPull', equipment: ['machine'], muscles: ['back', 'chest'] },
+
   // === CARRY ===
   farmerCarry: { id: 'farmerCarry', name: "Farmer's Carry", pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'core', 'traps'] },
   suitcaseCarry: { id: 'suitcaseCarry', name: 'Suitcase Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['core', 'grip'] },
+  overheadCarry: { id: 'overheadCarry', name: 'Overhead Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['shoulders', 'core'] },
+  rackCarry: { id: 'rackCarry', name: 'Rack Carry', pattern: 'carry', equipment: ['kettlebell'], muscles: ['core', 'shoulders'] },
   ruckMarch: { id: 'ruckMarch', name: 'Ruck March', pattern: 'carry', equipment: ['none'], muscles: ['legs', 'core', 'back'] },
   sandbagCarry: { id: 'sandbagCarry', name: 'Sandbag Carry', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
-  
+  trapBarCarry: { id: 'trapBarCarry', name: 'Trap Bar Carry', pattern: 'carry', equipment: ['trapBar'], muscles: ['grip', 'traps', 'core'] },
+  yoke_walk: { id: 'yoke_walk', name: 'Yoke Walk', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
+
   // === CORE ===
   plank: { id: 'plank', name: 'Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  sidePlank: { id: 'sidePlank', name: 'Side Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'obliques'] },
   deadBug: { id: 'deadBug', name: 'Dead Bug', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  pallofPress: { id: 'pallofPress', name: 'Pallof Press', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['core'] },
+  birdDog: { id: 'birdDog', name: 'Bird Dog', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'back'] },
+  pallofPress: { id: 'pallofPress', name: 'Pallof Press', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['core', 'obliques'] },
   hangingLegRaise: { id: 'hangingLegRaise', name: 'Hanging Leg Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
+  hangingKneeRaise: { id: 'hangingKneeRaise', name: 'Hanging Knee Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
   abWheel: { id: 'abWheel', name: 'Ab Wheel Rollout', pattern: 'core', equipment: ['none'], muscles: ['core'] },
-  sidePlank: { id: 'sidePlank', name: 'Side Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  facePull: { id: 'facePull', name: 'Face Pull', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['rear delts', 'rotator cuff'] },
-  
+  cableCrunch: { id: 'cableCrunch', name: 'Cable Crunch', pattern: 'core', equipment: ['cable'], muscles: ['core'] },
+  cableWoodchop: { id: 'cableWoodchop', name: 'Cable Woodchop', pattern: 'core', equipment: ['cable'], muscles: ['core', 'obliques'] },
+  russianTwist: { id: 'russianTwist', name: 'Russian Twist', pattern: 'core', equipment: ['bodyweight', 'dumbbell'], muscles: ['core', 'obliques'] },
+  legRaise: { id: 'legRaise', name: 'Leg Raise', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  sitUp: { id: 'sitUp', name: 'Sit-Up', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  crunch: { id: 'crunch', name: 'Crunch', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  machineCrunch: { id: 'machineCrunch', name: 'Machine Crunch', pattern: 'core', equipment: ['machine'], muscles: ['core'] },
+  declineSitUp: { id: 'declineSitUp', name: 'Decline Sit-Up', pattern: 'core', equipment: ['bench'], muscles: ['core'] },
+
+  // === ACCESSORIES - REAR DELTS ===
+  facePull: { id: 'facePull', name: 'Face Pull', pattern: 'accessory', equipment: ['cable', 'bands'], muscles: ['rear delts', 'rotator cuff'] },
+  rearDeltFly: { id: 'rearDeltFly', name: 'Rear Delt Fly', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['rear delts'] },
+  reversePecDeck: { id: 'reversePecDeck', name: 'Reverse Pec Deck', pattern: 'accessory', equipment: ['machine'], muscles: ['rear delts'] },
+  cableRearDeltFly: { id: 'cableRearDeltFly', name: 'Cable Rear Delt Fly', pattern: 'accessory', equipment: ['cable'], muscles: ['rear delts'] },
+
+  // === ACCESSORIES - BICEPS ===
+  barbellCurl: { id: 'barbellCurl', name: 'Barbell Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
+  ezBarCurl: { id: 'ezBarCurl', name: 'EZ Bar Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
+  dumbbellCurl: { id: 'dumbbellCurl', name: 'Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
+  hammerCurl: { id: 'hammerCurl', name: 'Hammer Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps', 'forearms'] },
+  inclineCurl: { id: 'inclineCurl', name: 'Incline Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell', 'bench'], muscles: ['biceps'] },
+  preacherCurl: { id: 'preacherCurl', name: 'Preacher Curl', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['biceps'] },
+  machinePreacherCurl: { id: 'machinePreacherCurl', name: 'Machine Preacher Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['biceps'] },
+  cableCurl: { id: 'cableCurl', name: 'Cable Curl', pattern: 'accessory', equipment: ['cable'], muscles: ['biceps'] },
+  concentrationCurl: { id: 'concentrationCurl', name: 'Concentration Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
+  spiderCurl: { id: 'spiderCurl', name: 'Spider Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['biceps'] },
+
+  // === ACCESSORIES - TRICEPS ===
+  tricepPushdown: { id: 'tricepPushdown', name: 'Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
+  ropeTriPushdown: { id: 'ropeTriPushdown', name: 'Rope Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
+  overheadTricepExtension: { id: 'overheadTricepExtension', name: 'Overhead Tricep Extension', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
+  skullCrusher: { id: 'skullCrusher', name: 'Skull Crusher', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['triceps'] },
+  tricepKickback: { id: 'tricepKickback', name: 'Tricep Kickback', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
+  machineTricepDip: { id: 'machineTricepDip', name: 'Machine Tricep Dip', pattern: 'accessory', equipment: ['machine'], muscles: ['triceps'] },
+  benchDip: { id: 'benchDip', name: 'Bench Dip', pattern: 'accessory', equipment: ['bench'], muscles: ['triceps'] },
+
+  // === ACCESSORIES - FOREARMS/GRIP ===
+  wristCurl: { id: 'wristCurl', name: 'Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
+  reverseWristCurl: { id: 'reverseWristCurl', name: 'Reverse Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
+  farmerHold: { id: 'farmerHold', name: 'Farmer Hold', pattern: 'accessory', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'forearms'] },
+  deadHang: { id: 'deadHang', name: 'Dead Hang', pattern: 'accessory', equipment: ['pullupBar'], muscles: ['grip', 'shoulders'] },
+  plateHold: { id: 'plateHold', name: 'Plate Pinch Hold', pattern: 'accessory', equipment: ['none'], muscles: ['grip'] },
+
+  // === ACCESSORIES - CALVES ===
+  standingCalfRaise: { id: 'standingCalfRaise', name: 'Standing Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  seatedCalfRaise: { id: 'seatedCalfRaise', name: 'Seated Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  legPressCalfRaise: { id: 'legPressCalfRaise', name: 'Leg Press Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  singleLegCalfRaise: { id: 'singleLegCalfRaise', name: 'Single Leg Calf Raise', pattern: 'accessory', equipment: ['bodyweight'], muscles: ['calves'] },
+
+  // === MACHINES - LEGS ===
+  legExtension: { id: 'legExtension', name: 'Leg Extension', pattern: 'accessory', equipment: ['machine'], muscles: ['quads'] },
+  legCurl: { id: 'legCurl', name: 'Lying Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
+  seatedLegCurl: { id: 'seatedLegCurl', name: 'Seated Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
+  hipAbductor: { id: 'hipAbductor', name: 'Hip Abductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['glutes', 'abductors'] },
+  hipAdductor: { id: 'hipAdductor', name: 'Hip Adductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['adductors'] },
+
+  // === MACHINES - UPPER BODY ===
+  chestPressMachine: { id: 'chestPressMachine', name: 'Chest Press Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  converging_chest_press: { id: 'converging_chest_press', name: 'Converging Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps'] },
+
   // === CARDIO ===
   run: { id: 'run', name: 'Run', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  treadmill: { id: 'treadmill', name: 'Treadmill', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
   hike: { id: 'hike', name: 'Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
   ruckHike: { id: 'ruckHike', name: 'Ruck Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
   bike: { id: 'bike', name: 'Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  assaultBike: { id: 'assaultBike', name: 'Assault Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  spinBike: { id: 'spinBike', name: 'Spin Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
   rowErg: { id: 'rowErg', name: 'Row Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  skiErg: { id: 'skiErg', name: 'Ski Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
   swim: { id: 'swim', name: 'Swim', pattern: 'cardio', equipment: ['none'], isCardio: true },
   stairClimber: { id: 'stairClimber', name: 'Stair Climber', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  
+  elliptical: { id: 'elliptical', name: 'Elliptical', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  jumpRope: { id: 'jumpRope', name: 'Jump Rope', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  battleRopes: { id: 'battleRopes', name: 'Battle Ropes', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  boxJumps: { id: 'boxJumps', name: 'Box Jumps', pattern: 'cardio', equipment: ['box'], isCardio: true },
+  burpees: { id: 'burpees', name: 'Burpees', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
+  mountainClimbers: { id: 'mountainClimbers', name: 'Mountain Climbers', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
+
   // === MOBILITY ===
   pigeonPose: { id: 'pigeonPose', name: 'Pigeon Pose', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
   worldsGreatestStretch: { id: 'worldsGreatestStretch', name: "World's Greatest Stretch", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
   catCow: { id: 'catCow', name: 'Cat-Cow', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
   thoracicRotation: { id: 'thoracicRotation', name: 'Thoracic Rotation', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
   hipFlexorStretch: { id: 'hipFlexorStretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  couch_stretch: { id: 'couch_stretch', name: 'Couch Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  downwardDog: { id: 'downwardDog', name: 'Downward Dog', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  childsPose: { id: 'childsPose', name: "Child's Pose", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  ankleCircles: { id: 'ankleCircles', name: 'Ankle Circles', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  shoulderDislocates: { id: 'shoulderDislocates', name: 'Shoulder Dislocates', pattern: 'mobility', equipment: ['bands'], isMobility: true },
+  foamRoll: { id: 'foamRoll', name: 'Foam Rolling', pattern: 'mobility', equipment: ['none'], isMobility: true },
+  lacrosseBall: { id: 'lacrosseBall', name: 'Lacrosse Ball Release', pattern: 'mobility', equipment: ['none'], isMobility: true },
 };
 
 // ============== UNIVERSAL DETOUR BLOCKS ==============
@@ -1541,13 +1679,19 @@ const MESO_TEMPLATES = {
   muscularEndurance: { id: 'muscularEndurance', name: 'Muscular Endurance', weeks: 4, icon: '🔥', progression: 'linear', defaultSets: 3, defaultReps: '15-20', defaultIntensity: 55 },
 };
 
-// Helper to get exercise swaps by movement pattern
-const getExerciseSwaps = (exerciseId) => {
-  const exercise = EXERCISE_LIBRARY[exerciseId];
+// Helper to get exercise swaps by movement pattern (uses merged library with custom exercises)
+const getExerciseSwaps = (exerciseId, customExercises = {}) => {
+  const allExercises = { ...EXERCISE_LIBRARY, ...customExercises };
+  const exercise = allExercises[exerciseId];
   if (!exercise) return [];
-  return Object.values(EXERCISE_LIBRARY)
+  return Object.values(allExercises)
     .filter(e => e.pattern === exercise.pattern && e.id !== exerciseId)
     .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+// Get merged exercise library (built-in + custom)
+const getMergedExerciseLibrary = (customExercises = {}) => {
+  return { ...EXERCISE_LIBRARY, ...customExercises };
 };
 
 // Helper to calculate working weight from 1RM and percentage
@@ -3599,14 +3743,15 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
 };
 
 // ============== SMART EXERCISE COMPONENT ==============
-const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggle, onSwap, swappedTo, onShowHistory }) => {
+const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggle, onSwap, swappedTo, onShowHistory, setData, onSetDataChange }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const displayExercise = swappedTo ? EXERCISE_LIBRARY[swappedTo] : null;
   const displayName = displayExercise?.name || exercise.name;
-  
+
   const workingWeight = exercise.prKey && exercise.percentage && profile.prs?.[exercise.prKey]?.value
     ? calculateWorkingWeight(profile.prs[exercise.prKey].value, exercise.percentage) : null;
   const prValue = exercise.prKey ? profile.prs?.[exercise.prKey]?.value : null;
-  
+
   // Find the pattern for this exercise - improved lookup with name normalization
   const normalizeExerciseName = (name) => {
     if (!name) return '';
@@ -3616,11 +3761,11 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
       .replace(/_+/g, '_')          // Collapse multiple underscores
       .replace(/^_|_$/g, '');       // Trim leading/trailing underscores
   };
-  
+
   const normalizedName = normalizeExerciseName(exercise.name);
   const originalExerciseId = Object.keys(EXERCISE_LIBRARY).find(k => {
     const libEx = EXERCISE_LIBRARY[k];
-    return k === normalizedName || 
+    return k === normalizedName ||
            normalizeExerciseName(libEx.name) === normalizedName ||
            libEx.name === exercise.name;
   });
@@ -3628,61 +3773,190 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
   const pattern = exerciseData?.pattern;
   const patternInfo = MOVEMENT_PATTERNS[pattern];
 
+  // Parse number of sets
+  const numSets = parseInt(exercise.sets) || 3;
+
+  // Get set data for this exercise (or initialize)
+  const currentSetData = setData || Array(numSets).fill(null).map((_, i) => ({
+    completed: false,
+    plannedWeight: workingWeight || '',
+    actualWeight: '',
+    rpe: ''
+  }));
+
+  // Calculate completion percentage
+  const completedSets = currentSetData.filter(s => s.completed).length;
+  const completionPercent = Math.round((completedSets / numSets) * 100);
+  const allSetsComplete = completedSets === numSets;
+
+  // Handle set completion toggle
+  const toggleSet = (setIdx) => {
+    const newSetData = [...currentSetData];
+    newSetData[setIdx] = { ...newSetData[setIdx], completed: !newSetData[setIdx].completed };
+    onSetDataChange?.(exercise.name, newSetData);
+    // Also update the overall toggle if all complete
+    if (newSetData.every(s => s.completed) && !isComplete) {
+      onToggle?.();
+    }
+  };
+
+  // Handle set data update
+  const updateSetData = (setIdx, field, value) => {
+    const newSetData = [...currentSetData];
+    newSetData[setIdx] = { ...newSetData[setIdx], [field]: value };
+    onSetDataChange?.(exercise.name, newSetData);
+  };
+
   return (
-    <div className={`flex items-stretch gap-2`}>
-      <button onClick={onToggle} className={`flex-1 flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${isComplete ? 'bg-green-500/20 border-green-500' : `${theme.cardAlt} ${darkMode ? 'border-gray-600' : 'border-slate-200'}`}`}>
-        {isComplete ? <CheckCircle2 size={24} className="text-green-500" /> : <Circle size={24} className={theme.textMuted} />}
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+    <div className={`rounded-xl border-2 overflow-hidden transition-all ${allSetsComplete ? 'bg-green-500/10 border-green-500' : `${theme.cardAlt} ${darkMode ? 'border-gray-600' : 'border-slate-200'}`}`}>
+      {/* Header - Collapsible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full flex items-center gap-3 p-4 text-left transition-all`}
+      >
+        <div className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+          <ChevronRight size={20} className={theme.textMuted} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className={`font-medium ${theme.text}`}>{displayName}</p>
             {swappedTo && <span className="text-xs px-1.5 py-0.5 bg-purple-500/20 text-purple-500 rounded">swapped</span>}
+            {allSetsComplete && <CheckCircle2 size={16} className="text-green-500" />}
           </div>
-          <div className={`flex flex-wrap gap-x-4 gap-y-1 text-sm ${theme.textMuted} mt-1`}>
+          <div className={`flex flex-wrap gap-x-3 gap-y-1 text-sm ${theme.textMuted} mt-1`}>
             {exercise.sets && <span>{exercise.sets} sets</span>}
             {exercise.reps && <span>× {exercise.reps}</span>}
             {exercise.duration && <span>{exercise.duration}</span>}
-            {exercise.rest && <span className={theme.textSubtle}>Rest: {exercise.rest}</span>}
+            {workingWeight && <span className="font-mono font-medium text-blue-500">{workingWeight} lbs</span>}
           </div>
-          {workingWeight && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className={`px-2 py-1 rounded text-sm font-mono font-bold ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>{workingWeight} lbs</span>
-              <span className={`text-xs ${theme.textMuted}`}>({exercise.percentage}% of {prValue})</span>
-            </div>
-          )}
+        </div>
+
+        {/* Progress indicator */}
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <div className={`w-12 h-1.5 rounded-full ${theme.cardAlt} overflow-hidden`}>
+            <div
+              className="h-full bg-green-500 transition-all"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+          <span className={`text-xs font-medium ${allSetsComplete ? 'text-green-500' : theme.textMuted}`}>
+            {completedSets}/{numSets}
+          </span>
+        </div>
+      </button>
+
+      {/* Expanded Content - Sets */}
+      {isExpanded && (
+        <div className={`border-t ${theme.border} p-4 space-y-3`}>
+          {/* Info row */}
+          <div className={`flex flex-wrap gap-2 text-xs ${theme.textMuted} mb-2`}>
+            {workingWeight && (
+              <span className={`px-2 py-1 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
+                Target: {workingWeight} lbs ({exercise.percentage}% of {prValue})
+              </span>
+            )}
+            {exercise.rest && <span className={`px-2 py-1 rounded ${theme.cardAlt}`}>Rest: {exercise.rest}</span>}
+            {exercise.tempo && <span className={`px-2 py-1 rounded ${theme.cardAlt}`}>Tempo: {exercise.tempo}</span>}
+          </div>
+
           {exercise.progressionNote && (
-            <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-purple-400' : 'text-purple-600'} mb-2`}>
               <TrendingUp size={12} /><span>{exercise.progressionNote}</span>
-              {exercise.originalPercentage && exercise.percentage !== exercise.originalPercentage && (
-                <span className={theme.textMuted}>(base: {exercise.originalPercentage}%)</span>
-              )}
             </div>
           )}
+
           {exercise.prKey && !prValue && (
-            <div className={`mt-2 flex items-center gap-1 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
+            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'} mb-2`}>
               <AlertTriangle size={12} /><span>Set {PR_DISPLAY_NAMES[exercise.prKey]} PR in Profile</span>
             </div>
           )}
+
+          {/* Set rows */}
+          <div className="space-y-2">
+            <div className={`grid grid-cols-12 gap-2 text-xs font-medium ${theme.textMuted} px-2`}>
+              <div className="col-span-2">Set</div>
+              <div className="col-span-3">Planned</div>
+              <div className="col-span-3">Actual</div>
+              <div className="col-span-2">RPE</div>
+              <div className="col-span-2 text-center">Done</div>
+            </div>
+
+            {currentSetData.map((set, setIdx) => (
+              <div
+                key={setIdx}
+                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-lg transition-all ${
+                  set.completed ? 'bg-green-500/10' : theme.cardAlt
+                }`}
+              >
+                <div className={`col-span-2 font-medium ${theme.text}`}>
+                  {setIdx + 1}
+                </div>
+                <div className="col-span-3">
+                  <input
+                    type="number"
+                    placeholder={workingWeight ? String(workingWeight) : "lbs"}
+                    value={set.plannedWeight}
+                    onChange={(e) => updateSetData(setIdx, 'plannedWeight', e.target.value)}
+                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
+                  />
+                </div>
+                <div className="col-span-3">
+                  <input
+                    type="number"
+                    placeholder="lbs"
+                    value={set.actualWeight}
+                    onChange={(e) => updateSetData(setIdx, 'actualWeight', e.target.value)}
+                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <input
+                    type="number"
+                    placeholder="1-10"
+                    min="1"
+                    max="10"
+                    value={set.rpe}
+                    onChange={(e) => updateSetData(setIdx, 'rpe', e.target.value)}
+                    className={`w-full px-2 py-1.5 rounded border text-sm ${theme.input}`}
+                  />
+                </div>
+                <div className="col-span-2 flex justify-center">
+                  <button
+                    onClick={() => toggleSet(setIdx)}
+                    className={`p-2 rounded-lg transition-all ${
+                      set.completed
+                        ? 'bg-green-500 text-white'
+                        : `${theme.cardAlt} ${theme.text}`
+                    }`}
+                  >
+                    {set.completed ? <Check size={16} /> : <Circle size={16} />}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2 pt-2">
+            {onShowHistory && (
+              <button
+                onClick={() => onShowHistory(exercise)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.cardAlt} text-sm ${theme.textMuted}`}
+              >
+                <Clock size={14} /> History
+              </button>
+            )}
+            {pattern && onSwap && (
+              <button
+                onClick={() => onSwap({ name: exercise.name, pattern, originalId: originalExerciseId })}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg ${theme.cardAlt} text-sm ${theme.textMuted}`}
+              >
+                <RefreshCw size={14} /> Swap
+              </button>
+            )}
+          </div>
         </div>
-      </button>
-      {/* History Button */}
-      {onShowHistory && (
-        <button 
-          onClick={() => onShowHistory(exercise)}
-          className={`px-3 rounded-xl border-2 ${darkMode ? 'border-gray-600' : 'border-slate-200'} ${theme.cardAlt} flex items-center justify-center`}
-          title="View exercise history"
-        >
-          <Clock size={18} className={theme.textMuted} />
-        </button>
-      )}
-      {/* Swap Button */}
-      {pattern && onSwap && (
-        <button 
-          onClick={() => onSwap({ name: exercise.name, pattern, originalId: originalExerciseId })}
-          className={`px-3 rounded-xl border-2 ${darkMode ? 'border-gray-600' : 'border-slate-200'} ${theme.cardAlt} flex items-center justify-center`}
-          title={`Swap for another ${patternInfo?.name || pattern}`}
-        >
-          <RefreshCw size={18} className={theme.textMuted} />
-        </button>
       )}
     </div>
   );
@@ -3819,6 +4093,119 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
             className={`w-full py-3 ${theme.cardAlt} rounded-xl font-medium ${theme.text}`}
           >
             Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============== ADD CUSTOM EXERCISE MODAL ==============
+const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode }) => {
+  const [name, setName] = useState(editExercise?.name || '');
+  const [pattern, setPattern] = useState(editExercise?.pattern || 'accessory');
+  const [equipment, setEquipment] = useState(editExercise?.equipment || []);
+  const [muscles, setMuscles] = useState(editExercise?.muscles || []);
+  const [isCardio, setIsCardio] = useState(editExercise?.isCardio || false);
+  const [isMobility, setIsMobility] = useState(editExercise?.isMobility || false);
+
+  const MUSCLE_OPTIONS = [
+    'chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms',
+    'quads', 'hamstrings', 'glutes', 'calves', 'adductors', 'abductors',
+    'core', 'obliques', 'traps', 'rear delts', 'rotator cuff', 'grip', 'full body'
+  ];
+
+  const EQUIPMENT_OPTIONS = [
+    'barbell', 'dumbbell', 'kettlebell', 'machine', 'cable', 'bodyweight',
+    'pullupBar', 'bench', 'box', 'bands', 'trapBar', 'cardioMachine', 'none'
+  ];
+
+  const toggleEquipment = (eq) => {
+    setEquipment(prev => prev.includes(eq) ? prev.filter(e => e !== eq) : [...prev, eq]);
+  };
+
+  const toggleMuscle = (muscle) => {
+    setMuscles(prev => prev.includes(muscle) ? prev.filter(m => m !== muscle) : [...prev, muscle]);
+  };
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    const id = editExercise?.id || `custom_${name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+    const exercise = {
+      id,
+      name: name.trim(),
+      pattern,
+      equipment: equipment.length > 0 ? equipment : ['none'],
+      muscles: muscles.length > 0 ? muscles : ['full body'],
+      isCardio,
+      isMobility,
+      isCustom: true
+    };
+    onSave(id, exercise);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+      <div className={`${theme.card} rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col`}>
+        <div className={`p-4 border-b ${theme.border} flex items-center justify-between`}>
+          <h2 className={`text-lg font-bold ${theme.text}`}>{editExercise ? 'Edit Exercise' : 'Add Custom Exercise'}</h2>
+          <button onClick={onClose} className={`p-2 ${theme.cardAlt} rounded-lg`}><X size={20} className={theme.text} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div>
+            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Exercise Name *</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Landmine Row" className={`w-full px-4 py-3 rounded-xl border ${theme.input}`} />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Movement Pattern</label>
+            <select value={pattern} onChange={(e) => setPattern(e.target.value)} className={`w-full px-4 py-3 rounded-xl border ${theme.input}`}>
+              {Object.entries(MOVEMENT_PATTERNS).map(([key, val]) => (
+                <option key={key} value={key}>{val.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={isCardio} onChange={(e) => setIsCardio(e.target.checked)} className="rounded" />
+              <span className={`text-sm ${theme.text}`}>Cardio</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={isMobility} onChange={(e) => setIsMobility(e.target.checked)} className="rounded" />
+              <span className={`text-sm ${theme.text}`}>Mobility</span>
+            </label>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Equipment</label>
+            <div className="flex flex-wrap gap-2">
+              {EQUIPMENT_OPTIONS.map(eq => (
+                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-blue-500 text-white' : `${theme.cardAlt} ${theme.text}`}`}>
+                  {EQUIPMENT_DISPLAY_NAMES[eq] || eq}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${theme.textMuted} mb-2`}>Target Muscles</label>
+            <div className="flex flex-wrap gap-2">
+              {MUSCLE_OPTIONS.map(muscle => (
+                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-green-500 text-white' : `${theme.cardAlt} ${theme.text}`}`}>
+                  {muscle}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={`p-4 border-t ${theme.border} flex gap-3`}>
+          <button onClick={onClose} className={`flex-1 py-3 ${theme.cardAlt} rounded-xl font-medium ${theme.text}`}>Cancel</button>
+          <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl font-medium text-white">
+            {editExercise ? 'Update' : 'Add Exercise'}
           </button>
         </div>
       </div>
@@ -3993,6 +4380,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('all');
+  const [muscleFilter, setMuscleFilter] = useState('all');
   const [showSplitPicker, setShowSplitPicker] = useState(false);
   const [showCalendarPreview, setShowCalendarPreview] = useState(false);
   const [showWeekOverride, setShowWeekOverride] = useState(null); // { phaseIdx, weekNum }
@@ -4675,78 +5063,95 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
   // Get unique equipment from all exercises
   const EQUIPMENT_OPTIONS = [...new Set(Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).flatMap(e => e.equipment))].sort();
   
-  // Get suggested patterns based on session name/type
-  const getSuggestedPatterns = () => {
-    if (!showExercisePicker) return null;
+  // Get suggested patterns and muscles based on session name/type
+  const getSuggestedPatternsAndMuscles = () => {
+    if (!showExercisePicker) return { patterns: null, muscles: null };
     const day = currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx];
-    if (!day) return null;
+    if (!day) return { patterns: null, muscles: null };
 
     const sessionLower = (day.session || '').toLowerCase();
     const dayNameLower = (day.dayName || '').toLowerCase();
     const combined = `${sessionLower} ${dayNameLower}`;
 
-    // Map session keywords to movement patterns - more comprehensive matching
+    // Map session keywords to movement patterns and muscles
     // Push movements (chest, shoulders, triceps)
     if (combined.includes('push') || combined.includes('chest') || combined.includes('tricep') || combined.includes('press')) {
-      return ['horizontalPush', 'verticalPush', 'accessory'];
+      return { patterns: ['horizontalPush', 'verticalPush', 'accessory'], muscles: ['chest', 'shoulders', 'triceps'] };
     }
     // Pull movements (back, biceps, rear delts)
     if (combined.includes('pull') || combined.includes('back') || combined.includes('bicep') || combined.includes('row')) {
-      return ['horizontalPull', 'verticalPull', 'accessory'];
+      return { patterns: ['horizontalPull', 'verticalPull', 'accessory'], muscles: ['back', 'biceps', 'rear delts'] };
     }
     // Lower body
     if (combined.includes('leg') || combined.includes('lower') || combined.includes('quad') || combined.includes('ham') || combined.includes('glute')) {
-      return ['squat', 'hipHinge', 'lunge', 'accessory'];
+      return { patterns: ['squat', 'hipHinge', 'lunge', 'accessory'], muscles: ['quads', 'hamstrings', 'glutes', 'calves'] };
     }
     // Upper body (both push and pull)
     if (combined.includes('upper')) {
-      return ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull', 'accessory'];
+      return { patterns: ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull', 'accessory'], muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'] };
     }
     // Full body
     if (combined.includes('full body') || combined.includes('total') || combined.includes('full-body')) {
-      return null; // Show all
+      return { patterns: null, muscles: null }; // Show all
     }
     // Power/explosive
     if (combined.includes('power') || combined.includes('explosive') || combined.includes('plyometric')) {
-      return ['squat', 'hipHinge', 'carry', 'accessory'];
+      return { patterns: ['squat', 'hipHinge', 'carry', 'accessory'], muscles: ['glutes', 'quads', 'hamstrings', 'core'] };
     }
     // Shoulder focus
     if (combined.includes('shoulder') || combined.includes('delt')) {
-      return ['verticalPush', 'horizontalPull', 'accessory'];
+      return { patterns: ['verticalPush', 'horizontalPull', 'accessory'], muscles: ['shoulders', 'rear delts', 'traps'] };
     }
     // Core/Abs
     if (combined.includes('core') || combined.includes('ab')) {
-      return ['accessory', 'carry'];
+      return { patterns: ['core', 'accessory', 'carry'], muscles: ['core', 'obliques'] };
     }
     // Arms focus
     if (combined.includes('arm')) {
-      return ['accessory', 'horizontalPush', 'horizontalPull'];
+      return { patterns: ['accessory', 'horizontalPush', 'horizontalPull'], muscles: ['biceps', 'triceps', 'forearms'] };
     }
     // Strength (default compound movements)
     if (combined.includes('strength')) {
-      return ['squat', 'hipHinge', 'horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'];
+      return { patterns: ['squat', 'hipHinge', 'horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'], muscles: null };
     }
     // ME/Circuits
     if (combined.includes('circuit') || combined.includes('me ') || combined.includes('muscular endurance')) {
-      return ['squat', 'hipHinge', 'lunge', 'horizontalPush', 'horizontalPull', 'carry'];
+      return { patterns: ['squat', 'hipHinge', 'lunge', 'horizontalPush', 'horizontalPull', 'carry'], muscles: null };
     }
-    return null;
+    return { patterns: null, muscles: null };
   };
-  
-  const suggestedPatterns = getSuggestedPatterns();
-  
-  const filteredExercises = Object.values(EXERCISE_LIBRARY)
+
+  const { patterns: suggestedPatterns, muscles: suggestedMuscles } = getSuggestedPatternsAndMuscles();
+
+  // Merge built-in and custom exercises
+  const allExercisesForPicker = { ...EXERCISE_LIBRARY, ...customPrograms };
+
+  // Get unique muscle options from all exercises
+  const MUSCLE_FILTER_OPTIONS = [...new Set(Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).flatMap(e => e.muscles || []))].sort();
+
+  const filteredExercises = Object.values({ ...EXERCISE_LIBRARY, ...customExercises })
     .filter(e => !e.isCardio && !e.isMobility)
     .filter(e => exerciseFilter === 'all' || e.pattern === exerciseFilter)
     .filter(e => equipmentFilter === 'all' || e.equipment.includes(equipmentFilter))
+    .filter(e => muscleFilter === 'all' || e.muscles?.includes(muscleFilter))
     .filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()))
     .sort((a, b) => {
-      // If we have suggested patterns and filter is 'all', sort suggested first
-      if (suggestedPatterns && exerciseFilter === 'all') {
-        const aMatch = suggestedPatterns.includes(a.pattern);
-        const bMatch = suggestedPatterns.includes(b.pattern);
-        if (aMatch && !bMatch) return -1;
-        if (!aMatch && bMatch) return 1;
+      // If we have suggested patterns/muscles and filters are 'all', sort suggested first
+      if (exerciseFilter === 'all') {
+        let aScore = 0, bScore = 0;
+        // Pattern match
+        if (suggestedPatterns) {
+          if (suggestedPatterns.includes(a.pattern)) aScore += 2;
+          if (suggestedPatterns.includes(b.pattern)) bScore += 2;
+        }
+        // Muscle match
+        if (suggestedMuscles && muscleFilter === 'all') {
+          const aMuscleMatch = a.muscles?.some(m => suggestedMuscles.includes(m));
+          const bMuscleMatch = b.muscles?.some(m => suggestedMuscles.includes(m));
+          if (aMuscleMatch) aScore += 1;
+          if (bMuscleMatch) bScore += 1;
+        }
+        if (aScore !== bScore) return bScore - aScore;
       }
       return a.name.localeCompare(b.name);
     });
@@ -4907,7 +5312,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
               <button 
                 onClick={importProgram}
                 disabled={!importText.trim()}
-                className={`flex-1 py-2 rounded-lg font-medium ${importText.trim() ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+                className={`flex-1 py-2 rounded-lg font-medium ${importText.trim() ? 'bg-blue-500 text-white' : theme.btnDisabled}`}
               >
                 Import
               </button>
@@ -4935,7 +5340,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Program Name</label><input type="text" value={programName} onChange={(e) => setProgramName(e.target.value)} placeholder="e.g., Pre-Season Strength" className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Description</label><textarea value={programDescription} onChange={(e) => setProgramDescription(e.target.value)} placeholder="Brief description..." rows={2} className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{ICONS.map(icon => (<button key={icon} onClick={() => setProgramIcon(icon)} className={`text-2xl p-2 rounded-lg ${programIcon === icon ? 'bg-blue-500' : theme.cardAlt}`}>{icon}</button>))}</div></div>
-          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
+          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : theme.btnDisabled}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
         </div>
       )}
 
@@ -4960,10 +5365,12 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                     </p>
                   )}
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs">Edit</button>
-                  <button onClick={() => duplicatePhase(idx)} className={`p-1 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`} title="Duplicate Phase"><Copy size={16} className="text-purple-500" /></button>
-                  <button onClick={() => removePhase(idx)} className={`p-1 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`} title="Delete Phase"><Trash2 size={16} className="text-red-500" /></button>
+                <div className="flex gap-2">
+                  <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium shadow-md">
+                    <Edit3 size={14} /> Edit Days
+                  </button>
+                  <button onClick={() => duplicatePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`} title="Duplicate Phase"><Copy size={16} className="text-purple-500" /></button>
+                  <button onClick={() => removePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`} title="Delete Phase"><Trash2 size={16} className="text-red-500" /></button>
                 </div>
               </div>
             </div>
@@ -5005,7 +5412,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
               <div className="grid grid-cols-2 gap-2">{Object.values(PROGRESSION_MODELS).map(model => (<button key={model.id} onClick={() => setNewPhaseProgression(model.id)} className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}><span className="text-lg mr-2">{model.icon}</span><span className="text-sm font-medium">{model.name}</span></button>))}</div>
               <p className={`text-xs ${theme.textMuted} mt-2`}>{PROGRESSION_MODELS[newPhaseProgression].description}</p>
             </div>
-            <button onClick={addPhase} disabled={!newPhaseName} className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'}`}><Plus size={18} className="inline mr-1" /> Add Phase</button>
+            <button onClick={addPhase} disabled={!newPhaseName} className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-green-500 text-white' : theme.btnDisabled}`}><Plus size={18} className="inline mr-1" /> Add Phase</button>
           </div>
           {phases.length > 0 && (<button onClick={() => setStep('review')} className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white">Review & Save Program</button>)}
         </div>
@@ -5354,10 +5761,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                   </p>
                 )}
               </div>
-              <button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); setEquipmentFilter('all'); }}><X size={24} className={theme.text} /></button>
+              <button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); setEquipmentFilter('all'); setMuscleFilter('all'); }}><X size={24} className={theme.text} /></button>
             </div>
             <input type="text" placeholder="Search exercises..." value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} className={`w-full p-3 rounded-lg ${theme.input} border mb-3`} />
-            
+
             {/* Movement Pattern Filter */}
             <div className="flex flex-wrap gap-2 mb-2">
               <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}>All</button>
@@ -5365,7 +5772,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                 <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}>{pattern.icon} {pattern.name}</button>
               ))}
             </div>
-            
+
+            {/* Muscle Group Filter */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className={`text-xs ${theme.textMuted} self-center`}>Muscles:</span>
+              <button onClick={() => setMuscleFilter('all')} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === 'all' ? 'bg-purple-500 text-white' : theme.cardAlt}`}>All</button>
+              {suggestedMuscles && suggestedMuscles.map(muscle => (
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-purple-500/20 text-purple-400'}`}>★ {muscle}</button>
+              ))}
+              {MUSCLE_FILTER_OPTIONS.filter(m => !suggestedMuscles?.includes(m)).slice(0, 12).map(muscle => (
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : theme.cardAlt}`}>{muscle}</button>
+              ))}
+            </div>
+
             {/* Equipment Filter */}
             <div className="flex flex-wrap gap-2 mb-4">
               <span className={`text-xs ${theme.textMuted} self-center`}>Equipment:</span>
@@ -5374,20 +5793,21 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                 <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2 py-0.5 rounded-full text-xs ${equipmentFilter === eq ? 'bg-green-500 text-white' : theme.cardAlt}`}>{eq}</button>
               ))}
             </div>
-            
+
             <div className="space-y-2 max-h-[40vh] overflow-auto">
               {filteredExercises.length === 0 ? (
                 <p className={`text-center py-4 ${theme.textMuted}`}>No exercises match your filters</p>
               ) : (
                 filteredExercises.map(ex => {
-                  const isSuggested = suggestedPatterns?.includes(ex.pattern);
+                  const isSuggested = suggestedPatterns?.includes(ex.pattern) || (suggestedMuscles && ex.muscles?.some(m => suggestedMuscles.includes(m)));
                   return (
-                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left ${isSuggested ? 'border-l-4 border-blue-500' : ''}`}>
+                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
                       <p className={`font-medium ${theme.text}`}>
                         {isSuggested && <span className="text-blue-500 mr-1">★</span>}
                         {ex.name}
+                        {ex.isCustom && <span className="ml-2 text-xs text-green-500">(Custom)</span>}
                       </p>
-                      <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}</p>
+                      <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
                     </button>
                   );
                 })
@@ -8017,13 +8437,16 @@ export default function App() {
   }, syncStatus, setSyncStatus);
   const [workoutLogs, setWorkoutLogs] = useSyncedStorage('trainingHub_workoutLogs', [], syncStatus, setSyncStatus);
   const [exerciseCompletion, setExerciseCompletion] = useState({});
+  const [setTrackingData, setSetTrackingData] = useState({}); // { exerciseName: [{ completed, plannedWeight, actualWeight, rpe }, ...] }
   const [workoutData, setWorkoutData] = useState({ duration: 0, rpe: 5, notes: '', newPRs: {} });
   const [showProgramUpload, setShowProgramUpload] = useState(false);
   const [showTemplateUpload, setShowTemplateUpload] = useState(false);
   const [viewingProgramId, setViewingProgramId] = useState(null); // For program overview
   const [showDetourPicker, setShowDetourPicker] = useState(false); // For detour selection
   const [exerciseSwaps, setExerciseSwaps] = useSyncedStorage('trainingHub_exerciseSwaps', {}, syncStatus, setSyncStatus); // { "originalExerciseName": "swappedExerciseId" }
+  const [customExercises, setCustomExercises] = useSyncedStorage('trainingHub_customExercises', {}, syncStatus, setSyncStatus); // User-created exercises
   const [swappingExercise, setSwappingExercise] = useState(null); // { name, pattern } for swap picker
+  const [showAddExercise, setShowAddExercise] = useState(false); // Show add custom exercise modal
   const [viewingExerciseHistory, setViewingExerciseHistory] = useState(null); // For exercise history modal
   
   // Load from cloud on app start - only after authentication
@@ -8234,6 +8657,14 @@ export default function App() {
   const completedThisWeek = thisWeekLogs.filter(log => log.completed).length;
   const toggleExercise = (name) => setExerciseCompletion(prev => ({ ...prev, [name]: !prev[name] }));
 
+  // Handle set tracking data updates
+  const handleSetDataChange = (exerciseName, setsData) => {
+    setSetTrackingData(prev => ({ ...prev, [exerciseName]: setsData }));
+    // Update exercise completion based on all sets being complete
+    const allComplete = setsData.every(s => s.completed);
+    setExerciseCompletion(prev => ({ ...prev, [exerciseName]: allComplete }));
+  };
+
   const completeWorkout = () => {
     if (Object.keys(workoutData.newPRs || {}).length > 0) {
       setAthleteProfile(prev => {
@@ -8365,10 +8796,11 @@ export default function App() {
     cardAlt: darkMode ? 'bg-gray-700/80' : 'bg-slate-50/80',
     cardHover: 'card-hover',
     text: darkMode ? 'text-gray-100' : 'text-slate-800',
-    textMuted: darkMode ? 'text-gray-400' : 'text-slate-500',
-    textSubtle: darkMode ? 'text-gray-500' : 'text-slate-400',
+    textMuted: darkMode ? 'text-gray-300' : 'text-slate-500',
+    textSubtle: darkMode ? 'text-gray-400' : 'text-slate-400',
+    textDisabled: darkMode ? 'text-gray-500' : 'text-slate-400',
     border: darkMode ? 'border-gray-700/50' : 'border-slate-200/50',
-    input: darkMode ? 'bg-gray-700/80 border-gray-600 text-gray-100 focus:ring-2 focus:ring-blue-500/50' : 'bg-white/90 border-slate-200 text-slate-800 focus:ring-2 focus:ring-blue-500/50',
+    input: darkMode ? 'bg-gray-700/80 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50' : 'bg-white/90 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50',
     header: darkMode ? 'glass-dark' : 'bg-gradient-to-r from-slate-800 to-slate-900',
     nav: darkMode ? 'glass-dark' : 'bg-white/90 backdrop-blur-xl border-slate-200/50 shadow-lg shadow-slate-200/20',
     modal: darkMode ? 'bg-gray-800/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl shadow-2xl',
@@ -8376,6 +8808,7 @@ export default function App() {
     glass: darkMode ? 'glass-dark' : 'glass-light',
     gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
     gradientText: 'gradient-text',
+    btnDisabled: darkMode ? 'bg-gray-700 text-gray-400' : theme.btnDisabled,
   };
 
   // Handle linking account with sync code - loads cloud data then authenticates
@@ -8828,19 +9261,21 @@ export default function App() {
               {todayWorkout.prescription.exercises && (
                 <div className={`p-4 border-b ${theme.border}`}>
                   <p className={`text-xs font-medium ${theme.textMuted} uppercase mb-3`}>Exercises</p>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {todayWorkout.prescription.exercises.map((ex, idx) => (
-                      <SmartExercise 
-                        key={idx} 
-                        exercise={ex} 
-                        profile={athleteProfile} 
-                        theme={theme} 
-                        darkMode={darkMode} 
-                        isComplete={exerciseCompletion[ex.name]} 
-                        onToggle={() => toggleExercise(ex.name)} 
+                      <SmartExercise
+                        key={idx}
+                        exercise={ex}
+                        profile={athleteProfile}
+                        theme={theme}
+                        darkMode={darkMode}
+                        isComplete={exerciseCompletion[ex.name]}
+                        onToggle={() => toggleExercise(ex.name)}
                         onSwap={(exerciseInfo) => setSwappingExercise(exerciseInfo)}
                         swappedTo={exerciseSwaps[ex.name]}
                         onShowHistory={(exercise) => setViewingExerciseHistory(exercise)}
+                        setData={setTrackingData[ex.name]}
+                        onSetDataChange={handleSetDataChange}
                       />
                     ))}
                   </div>
@@ -9157,6 +9592,34 @@ export default function App() {
               </div>
             </div>
 
+            {/* Custom Exercises Section */}
+            <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`font-semibold ${theme.text}`}>Custom Exercises</h3>
+                <button onClick={() => setShowAddExercise(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium text-white">
+                  <Plus size={16} />Add
+                </button>
+              </div>
+              {Object.keys(customExercises).length === 0 ? (
+                <p className={`text-sm ${theme.textMuted} text-center py-4`}>No custom exercises yet. Add your own!</p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {Object.values(customExercises).map(ex => (
+                    <div key={ex.id} className={`flex items-center justify-between p-3 ${theme.cardAlt} rounded-lg`}>
+                      <div className="flex-1">
+                        <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                        <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setShowAddExercise(ex)} className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={14} className={theme.textMuted} /></button>
+                        <button onClick={() => { if (confirm(`Delete "${ex.name}"?`)) setCustomExercises(prev => { const u = {...prev}; delete u[ex.id]; return u; }); }} className="p-2 bg-red-500/10 rounded-lg"><Trash2 size={14} className="text-red-500" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-4`}>Program Position</h3>
               <div className="space-y-4">
@@ -9388,6 +9851,17 @@ export default function App() {
         />
       )}
 
+      {/* Add Custom Exercise Modal */}
+      {showAddExercise && (
+        <AddCustomExerciseModal
+          onClose={() => setShowAddExercise(false)}
+          onSave={(id, exercise) => setCustomExercises(prev => ({ ...prev, [id]: exercise }))}
+          editExercise={typeof showAddExercise === 'object' ? showAddExercise : null}
+          theme={theme}
+          darkMode={darkMode}
+        />
+      )}
+
       {/* Exercise Swap Picker Modal */}
       {swappingExercise && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
@@ -9421,8 +9895,8 @@ export default function App() {
                   <p className={`text-sm ${theme.textMuted}`}>{swappingExercise.name}</p>
                 </button>
               )}
-              {/* Alternatives */}
-              {Object.values(EXERCISE_LIBRARY)
+              {/* Alternatives (including custom exercises) */}
+              {Object.values({ ...EXERCISE_LIBRARY, ...customExercises })
                 .filter(ex => ex.pattern === swappingExercise.pattern && ex.id !== swappingExercise.originalId)
                 .map(ex => (
                   <button
