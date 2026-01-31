@@ -9553,8 +9553,8 @@ export default function App() {
                     <Flag size={18} className="text-emerald-500" />
                   </div>
                   <div>
-                    <h3 className={`font-semibold ${theme.text}`}>Log Expedition</h3>
-                    <p className={`text-xs ${theme.textMuted}`}>Record your training session</p>
+                    <h3 className={`font-semibold ${theme.text}`}>Log Session</h3>
+                    <p className={`text-xs ${theme.textMuted}`}>Record your training data</p>
                   </div>
                 </div>
               </div>
@@ -9630,7 +9630,7 @@ export default function App() {
 
                 {/* Notes */}
                 <div>
-                  <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Field Notes</label>
+                  <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Notes</label>
                   <textarea
                     value={workoutData.notes}
                     onChange={(e) => setWorkoutData(prev => ({ ...prev, notes: e.target.value }))}
@@ -9646,7 +9646,7 @@ export default function App() {
                   className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98]"
                 >
                   <CheckCircle2 size={20} />
-                  {todayLog?.completed ? 'Update Log' : 'Summit Reached'}
+                  {todayLog?.completed ? 'Update Log' : 'Complete Session'}
                 </button>
               </div>
             </div>
@@ -9686,35 +9686,88 @@ export default function App() {
                 <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-cyan-500/10' : 'bg-cyan-50'}`}>
                   <Mountain size={40} className="text-cyan-500" />
                 </div>
-                <h3 className={`font-semibold ${theme.text} mb-2`}>No Expeditions Yet</h3>
-                <p className={`text-sm ${theme.textMuted} mb-4`}>Complete your first workout to start tracking your journey</p>
+                <h3 className={`font-semibold ${theme.text} mb-2`}>No Sessions Logged</h3>
+                <p className={`text-sm ${theme.textMuted} mb-4`}>Complete your first workout to start tracking progress</p>
                 <button onClick={() => setCurrentView('workout')} className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-cyan-500/20">
                   Start Training
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                {[...workoutLogs].reverse().slice(0, 50).map(log => (
-                  <div key={log.id} className={`${theme.card} rounded-xl shadow-sm p-4 border-l-4 ${getTypeBorder(log.type)}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className={`font-semibold ${theme.text}`}>{log.session}</p>
-                        <p className={`text-sm ${theme.textMuted}`}>{formatDate(log.date)} • W{log.week}D{log.day}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {log.readinessScore && <span className={`text-xs px-2 py-1 rounded ${log.readinessScore >= 70 ? 'bg-green-500/20 text-green-500' : log.readinessScore >= 50 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'}`}>{log.readinessScore}</span>}
-                        <CheckCircle2 size={20} className="text-green-500" />
+                {[...workoutLogs].reverse().slice(0, 50).map((log) => {
+                  const typeConfig = {
+                    strength: { gradient: 'from-red-500/10', border: 'border-red-500', icon: Dumbbell, iconColor: 'text-red-500' },
+                    cardio: { gradient: 'from-blue-500/10', border: 'border-blue-500', icon: Activity, iconColor: 'text-blue-500' },
+                    muscular_endurance: { gradient: 'from-orange-500/10', border: 'border-orange-500', icon: Flame, iconColor: 'text-orange-500' },
+                    recovery: { gradient: 'from-green-500/10', border: 'border-green-500', icon: Heart, iconColor: 'text-green-500' },
+                    long_effort: { gradient: 'from-purple-500/10', border: 'border-purple-500', icon: Mountain, iconColor: 'text-purple-500' },
+                  };
+                  const config = typeConfig[log.type] || typeConfig.cardio;
+                  const TypeIcon = config.icon;
+                  const hasPR = log.prsHit && Object.keys(log.prsHit).filter(k => log.prsHit[k]).length > 0;
+
+                  return (
+                    <div
+                      key={log.id}
+                      className={`${theme.card} rounded-xl overflow-hidden border-l-4 ${config.border} ${hasPR ? 'ring-1 ring-amber-500/30' : ''}`}
+                    >
+                      <div className={`p-4 bg-gradient-to-r ${config.gradient} to-transparent`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-white/80'}`}>
+                            <TypeIcon size={20} className={config.iconColor} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className={`font-semibold ${theme.text}`}>{log.session}</p>
+                                <p className={`text-sm ${theme.textMuted}`}>{formatDate(log.date)}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {log.readinessScore && (
+                                  <span className={`text-xs font-mono font-bold px-2 py-1 rounded-lg ${
+                                    log.readinessScore >= 70 ? 'bg-emerald-500/20 text-emerald-500' :
+                                    log.readinessScore >= 50 ? 'bg-amber-500/20 text-amber-500' :
+                                    'bg-red-500/20 text-red-500'
+                                  }`}>
+                                    {log.readinessScore}
+                                  </span>
+                                )}
+                                <CheckCircle2 size={18} className="text-emerald-500" />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 mt-2">
+                              <span className={`text-sm ${theme.textMuted} flex items-center gap-1`}>
+                                <Clock size={12} />{log.actual}m
+                              </span>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                                log.rpe >= 9 ? 'bg-red-500/20 text-red-400' :
+                                log.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
+                                'bg-cyan-500/20 text-cyan-400'
+                              }`}>
+                                RPE {log.rpe}
+                              </span>
+                              <span className={`text-xs ${theme.textMuted}`}>W{log.week}D{log.day}</span>
+                            </div>
+
+                            {hasPR && (
+                              <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ${darkMode ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+                                <Award size={14} className="text-amber-500" />
+                                <span className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                                  {Object.entries(log.prsHit).filter(([,v]) => v).map(([k, v]) => `${PR_DISPLAY_NAMES[k]}: ${v}lb`).join(' • ')}
+                                </span>
+                              </div>
+                            )}
+
+                            {log.notes && (
+                              <p className={`mt-2 text-sm ${theme.textMuted} italic`}>"{log.notes}"</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className={`flex gap-4 mt-2 text-sm ${theme.textMuted}`}><span>{log.actual}m</span><span>RPE {log.rpe}</span></div>
-                    {log.prsHit && Object.keys(log.prsHit).filter(k => log.prsHit[k]).length > 0 && (
-                      <div className={`mt-2 flex items-center gap-2 text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
-                        <Award size={14} /><span>PR: {Object.entries(log.prsHit).filter(([,v]) => v).map(([k, v]) => `${PR_DISPLAY_NAMES[k]} ${v}`).join(', ')}</span>
-                      </div>
-                    )}
-                    {log.notes && <p className={`mt-2 text-sm ${theme.textMuted} ${theme.cardAlt} rounded p-2`}>{log.notes}</p>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -9889,11 +9942,11 @@ export default function App() {
                           </button>
                           {isActive ? (
                             <div className="flex-1 flex items-center justify-center text-cyan-500 font-semibold text-sm gap-2">
-                              <CheckCircle2 size={16} /> Current Route
+                              <CheckCircle2 size={16} /> Active
                             </div>
                           ) : (
                             <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-cyan-500/20">
-                              Start Expedition
+                              Start Program
                             </button>
                           )}
                           <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-colors">
@@ -10419,38 +10472,51 @@ export default function App() {
       {/* Floating Pane System - Dashboard Quick Views */}
       {floatingPane && (
         <div
-          className="fixed inset-0 z-50 modal-backdrop animate-fadeIn"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fadeIn"
           onClick={() => setFloatingPane(null)}
         >
           <div
-            className={`absolute bottom-0 left-0 right-0 ${theme.modal} rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col animate-slideInUp shadow-2xl`}
+            className={`absolute bottom-0 left-0 right-0 ${theme.modal} rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col animate-slideInUp shadow-2xl border-t ${darkMode ? 'border-white/10' : 'border-black/5'}`}
             onClick={e => e.stopPropagation()}
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-2">
-              <div className={`w-10 h-1 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-slate-300'}`} />
+              <div className={`w-12 h-1.5 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-slate-300'}`} />
             </div>
 
             {/* Pane Header */}
-            <div className={`px-5 pb-3 flex items-center justify-between border-b ${theme.border}`}>
-              <h2 className={`text-lg font-bold ${theme.text}`}>
-                {floatingPane === 'workout' && "Today's Workout"}
-                {floatingPane === 'readiness' && 'Readiness Check'}
-                {floatingPane === 'charts' && 'Charts & Trends'}
-                {floatingPane === 'calendar' && 'Calendar'}
-              </h2>
+            <div className={`px-5 pb-4 flex items-center justify-between border-b ${theme.border}`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${
+                  floatingPane === 'workout' ? 'bg-cyan-500/20' :
+                  floatingPane === 'readiness' ? 'bg-emerald-500/20' :
+                  floatingPane === 'charts' ? 'bg-purple-500/20' :
+                  'bg-blue-500/20'
+                }`}>
+                  {floatingPane === 'workout' && <Mountain size={18} className="text-cyan-500" />}
+                  {floatingPane === 'readiness' && <Activity size={18} className="text-emerald-500" />}
+                  {floatingPane === 'charts' && <TrendingUp size={18} className="text-purple-500" />}
+                  {floatingPane === 'calendar' && <Calendar size={18} className="text-blue-500" />}
+                </div>
+                <h2 className={`text-lg font-bold ${theme.text}`}>
+                  {floatingPane === 'workout' && "Today's Session"}
+                  {floatingPane === 'readiness' && 'Readiness Check'}
+                  {floatingPane === 'charts' && 'Progress & Trends'}
+                  {floatingPane === 'calendar' && 'Schedule'}
+                </h2>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setCurrentView(floatingPane); setFloatingPane(null); }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg ${theme.cardAlt} ${theme.text}`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${theme.text} transition-colors`}
                 >
-                  Full View
+                  Expand
                 </button>
                 <button
                   onClick={() => setFloatingPane(null)}
-                  className={`p-2 rounded-xl ${theme.cardAlt}`}
+                  className={`p-2 rounded-xl ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
                 >
-                  <X size={20} className={theme.text} />
+                  <X size={18} className={theme.text} />
                 </button>
               </div>
             </div>
@@ -10566,7 +10632,7 @@ export default function App() {
       <nav className={`fixed bottom-4 left-4 right-4 ${theme.nav} rounded-2xl px-2 py-2 safe-area-pb z-40 shadow-xl backdrop-blur-lg border ${darkMode ? 'border-white/10' : 'border-black/5'}`}>
         <div className="max-w-md mx-auto flex justify-around items-center">
           {[
-            { id: 'dashboard', icon: Home, label: 'Base' },
+            { id: 'dashboard', icon: Home, label: 'Basecamp' },
             { id: 'readiness', icon: Activity, label: 'Status' },
             { id: 'workout', icon: Mountain, label: 'Summit', primary: true },
             { id: 'profile', icon: User, label: 'Climber' },
