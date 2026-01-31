@@ -1486,7 +1486,36 @@ const DEFAULT_PROGRAMS = {
 
 // ============== READINESS CHECK COMPONENT ==============
 const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, darkMode }) => {
-  const todayKey = getTodayKey();
+  // Track current date and update it when it changes (e.g., app left open overnight)
+  const [currentDate, setCurrentDate] = useState(getTodayKey());
+
+  useEffect(() => {
+    // Check for date change every minute
+    const interval = setInterval(() => {
+      const newDate = getTodayKey();
+      if (newDate !== currentDate) {
+        setCurrentDate(newDate);
+      }
+    }, 60000); // Check every minute
+
+    // Also check on visibility change (when user returns to tab)
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        const newDate = getTodayKey();
+        if (newDate !== currentDate) {
+          setCurrentDate(newDate);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentDate]);
+
+  const todayKey = currentDate;
   const todayCheck = readiness.logs?.find(l => l.date === todayKey);
   const [formData, setFormData] = useState(todayCheck || {
     sleepQuality: 3,
@@ -1499,9 +1528,25 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
     notes: ''
   });
 
+  // Reset form when date changes
   useEffect(() => {
-    if (todayCheck) setFormData(todayCheck);
-  }, [todayCheck]);
+    const newTodayCheck = readiness.logs?.find(l => l.date === todayKey);
+    if (newTodayCheck) {
+      setFormData(newTodayCheck);
+    } else {
+      // Reset to defaults for new day
+      setFormData({
+        sleepQuality: 3,
+        sleepHours: 7,
+        energyLevel: 3,
+        soreness: 3,
+        motivation: 3,
+        restingHR: '',
+        hrv: '',
+        notes: ''
+      });
+    }
+  }, [todayKey, readiness.logs]);
 
   const score = calculateReadinessScore(formData);
   const readinessInfo = score ? getReadinessLabel(score) : null;
@@ -3011,28 +3056,36 @@ const RPE_DESCRIPTIONS = {
 
 // ============== SET PERFORMANCE MODAL ==============
 const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previousSet, targetWeight, theme, darkMode }) => {
-  const [weight, setWeight] = useState(setData?.actualWeight || setData?.plannedWeight || targetWeight || '');
-  const [reps, setReps] = useState(setData?.actualReps || setData?.reps || '');
-  const [rpe, setRpe] = useState(setData?.rpe || '');
+  const [weight, setWeightState] = useState('');
+  const [reps, setRepsState] = useState('');
+  const [rpe, setRpe] = useState('');
 
+  // Initialize state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setWeight(setData?.actualWeight || setData?.plannedWeight || targetWeight || '');
-      setReps(setData?.actualReps || setData?.reps || '');
-      setRpe(setData?.rpe || '');
+      const initialWeight = setData?.actualWeight || setData?.plannedWeight || targetWeight || '';
+      const initialReps = setData?.actualReps || setData?.reps || '';
+      const initialRpe = setData?.rpe || '';
+      setWeightState(initialWeight !== '' ? Number(initialWeight) : '');
+      setRepsState(initialReps !== '' ? Number(initialReps) : '');
+      setRpe(initialRpe !== '' ? Number(initialRpe) : '');
     }
   }, [isOpen, setData, targetWeight]);
 
   if (!isOpen) return null;
 
   const adjustWeight = (delta) => {
-    const current = parseFloat(weight) || 0;
-    setWeight(Math.max(0, current + delta));
+    setWeightState(prev => {
+      const current = typeof prev === 'number' ? prev : (parseFloat(prev) || 0);
+      return Math.max(0, current + delta);
+    });
   };
 
   const adjustReps = (delta) => {
-    const current = parseInt(reps) || 0;
-    setReps(Math.max(0, current + delta));
+    setRepsState(prev => {
+      const current = typeof prev === 'number' ? prev : (parseInt(prev) || 0);
+      return Math.max(0, current + delta);
+    });
   };
 
   const handleSave = () => {
@@ -3057,8 +3110,10 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
 
   const copyFromPrevious = () => {
     if (previousSet) {
-      setWeight(previousSet.actualWeight || previousSet.plannedWeight || '');
-      setReps(previousSet.actualReps || previousSet.reps || '');
+      const prevWeight = previousSet.actualWeight || previousSet.plannedWeight || '';
+      const prevReps = previousSet.actualReps || previousSet.reps || '';
+      setWeightState(prevWeight !== '' ? Number(prevWeight) : '');
+      setRepsState(prevReps !== '' ? Number(prevReps) : '');
     }
   };
 
