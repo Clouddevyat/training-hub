@@ -4120,6 +4120,22 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
     'pullupBar', 'bench', 'box', 'bands', 'trapBar', 'cardioMachine', 'none'
   ];
 
+  const EQUIPMENT_DISPLAY_NAMES = {
+    barbell: 'Barbell',
+    dumbbell: 'Dumbbell',
+    kettlebell: 'Kettlebell',
+    machine: 'Machine',
+    cable: 'Cable',
+    bodyweight: 'Bodyweight',
+    pullupBar: 'Pull-up Bar',
+    bench: 'Bench',
+    box: 'Box',
+    bands: 'Bands',
+    trapBar: 'Trap Bar',
+    cardioMachine: 'Cardio Machine',
+    none: 'None'
+  };
+
   const toggleEquipment = (eq) => {
     setEquipment(prev => prev.includes(eq) ? prev.filter(e => e !== eq) : [...prev, eq]);
   };
