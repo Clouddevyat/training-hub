@@ -1379,16 +1379,19 @@ const PROGRESSION_MODELS = {
     name: 'Linear Periodization',
     description: 'Gradually increase intensity while maintaining volume',
     icon: '📈',
+    // Note: reps/sets come from the track, this model only adjusts intensity
     generateWeeks: (weeks, startIntensity = 70) => {
-      const increment = (90 - startIntensity) / (weeks - 1);
+      const endIntensity = Math.min(startIntensity + 20, 95); // Cap at 95%
+      const increment = (endIntensity - startIntensity) / Math.max(weeks - 1, 1);
       return Array.from({ length: weeks }, (_, i) => {
         const isDeload = (i + 1) % 4 === 0;
         return {
           week: i + 1,
-          intensity: isDeload ? startIntensity : Math.round(startIntensity + (increment * i)),
-          sets: isDeload ? 2 : 4,
-          reps: isDeload ? '8-10' : '4-6',
-          rpe: isDeload ? 6 : 8,
+          intensity: isDeload ? Math.round(startIntensity * 0.85) : Math.round(startIntensity + (increment * i)),
+          // Don't set reps/sets - let track provide them
+          // Only reduce sets on deload
+          setsMultiplier: isDeload ? 0.5 : 1,
+          rpeAdjust: isDeload ? -2 : 0,
           isDeload,
         };
       });
@@ -1420,39 +1423,47 @@ const PROGRESSION_MODELS = {
   undulatingWeekly: {
     id: 'undulatingWeekly',
     name: 'Weekly Undulating',
-    description: 'Vary intensity and volume each week',
+    description: 'Vary intensity each week (Volume → Intensity → Peak → Deload)',
     icon: '📊',
-    generateWeeks: (weeks) => {
+    // Note: Uses track's reps, adjusts intensity by focus
+    generateWeeks: (weeks, startIntensity = 70) => {
       const pattern = [
-        { focus: 'Volume', sets: 4, reps: '10-12', intensity: 65, rpe: 7, intensityMod: 0.85, volumeMod: 1.2 },
-        { focus: 'Strength', sets: 4, reps: '5-6', intensity: 80, rpe: 8, intensityMod: 1.0, volumeMod: 1.0 },
-        { focus: 'Peak', sets: 5, reps: '2-4', intensity: 88, rpe: 9, intensityMod: 1.1, volumeMod: 0.9 },
-        { focus: 'Deload', sets: 2, reps: '8-10', intensity: 60, rpe: 5, isDeload: true, intensityMod: 0.75, volumeMod: 0.5 },
+        { focus: 'Volume', intensityAdjust: -5, setsMultiplier: 1, rpeAdjust: -1 },
+        { focus: 'Intensity', intensityAdjust: 5, setsMultiplier: 1, rpeAdjust: 0 },
+        { focus: 'Peak', intensityAdjust: 10, setsMultiplier: 1.25, rpeAdjust: 1 },
+        { focus: 'Deload', intensityAdjust: -15, setsMultiplier: 0.5, rpeAdjust: -2, isDeload: true },
       ];
-      return Array.from({ length: weeks }, (_, i) => ({
-        week: i + 1,
-        ...pattern[i % pattern.length],
-      }));
+      return Array.from({ length: weeks }, (_, i) => {
+        const p = pattern[i % pattern.length];
+        return {
+          week: i + 1,
+          focus: p.focus,
+          intensity: Math.round(startIntensity + p.intensityAdjust),
+          setsMultiplier: p.setsMultiplier,
+          rpeAdjust: p.rpeAdjust,
+          isDeload: p.isDeload || false,
+        };
+      });
     },
   },
   block: {
     id: 'block',
     name: 'Block Periodization',
-    description: 'Accumulation → Transmutation → Realization',
+    description: 'Accumulation → Transmutation → Realization phases',
     icon: '🧱',
-    generateWeeks: (weeks) => {
+    // Note: Uses track's reps, adjusts intensity by block phase
+    generateWeeks: (weeks, startIntensity = 70) => {
       const accumWeeks = Math.ceil(weeks * 0.4);
       const transWeeks = Math.ceil(weeks * 0.35);
-      const realWeeks = weeks - accumWeeks - transWeeks;
 
       return Array.from({ length: weeks }, (_, i) => {
         if (i < accumWeeks) {
-          return { week: i + 1, phase: 'Accumulation', sets: 4, reps: '8-12', intensity: 65 + (i * 2), rpe: 7, focus: 'Volume', intensityMod: 0.85 + (i * 0.02), volumeMod: 1.2 };
+          return { week: i + 1, phase: 'Accumulation', focus: 'Volume', intensity: startIntensity + (i * 2), setsMultiplier: 1.2, rpeAdjust: -1 };
         } else if (i < accumWeeks + transWeeks) {
-          return { week: i + 1, phase: 'Transmutation', sets: 4, reps: '4-6', intensity: 78 + ((i - accumWeeks) * 3), rpe: 8, focus: 'Intensity', intensityMod: 1.0 + ((i - accumWeeks) * 0.03), volumeMod: 1.0 };
+          return { week: i + 1, phase: 'Transmutation', focus: 'Intensity', intensity: startIntensity + 10 + ((i - accumWeeks) * 3), setsMultiplier: 1, rpeAdjust: 0 };
         } else {
           const realIdx = i - accumWeeks - transWeeks;
-          return { week: i + 1, phase: 'Realization', sets: 3, reps: '1-3', intensity: 90 + (realIdx * 2), rpe: 9, focus: 'Peak', intensityMod: 1.1 + (realIdx * 0.02), volumeMod: 0.7 };
+          return { week: i + 1, phase: 'Realization', focus: 'Peak', intensity: startIntensity + 20 + (realIdx * 2), setsMultiplier: 0.75, rpeAdjust: 1 };
         }
       });
     },
@@ -1460,46 +1471,37 @@ const PROGRESSION_MODELS = {
   maintenance: {
     id: 'maintenance',
     name: 'Maintenance',
-    description: 'Preserve strength with minimal volume',
+    description: 'Preserve fitness with reduced volume',
     icon: '⚖️',
-    generateWeeks: (weeks) => {
+    // Note: Uses track's reps but at reduced volume
+    generateWeeks: (weeks, startIntensity = 70) => {
       return Array.from({ length: weeks }, (_, i) => ({
         week: i + 1,
-        sets: 2,
-        reps: '3-5',
-        intensity: 80,
-        rpe: 7,
-        note: 'Maintenance only',
-        intensityMod: 1.0,
-        volumeMod: 0.6,
+        intensity: startIntensity,
+        setsMultiplier: 0.5, // Half the sets
+        rpeAdjust: -1,
+        note: 'Maintenance',
       }));
     },
   },
   conjugate: {
     id: 'conjugate',
     name: 'Conjugate/Westside',
-    description: 'Max Effort & Dynamic Effort rotation with weekly exercise variation',
+    description: 'Max Effort & Dynamic Effort waves with weekly variation',
     icon: '🔀',
-    dayPatterns: [
-      { name: 'Max Effort Upper', sets: 5, reps: '1-3', intensity: 90, rpe: 9, note: 'Work to daily max' },
-      { name: 'Max Effort Lower', sets: 5, reps: '1-3', intensity: 90, rpe: 9, note: 'Work to daily max' },
-      { name: 'Dynamic Effort Upper', sets: 8, reps: '3', intensity: 60, rpe: 7, note: 'Speed work + bands/chains' },
-      { name: 'Dynamic Effort Lower', sets: 10, reps: '2', intensity: 55, rpe: 6, note: 'Speed work + bands/chains' },
-    ],
-    generateWeeks: (weeks) => {
+    // Note: Conjugate uses track's base, with intensity waves
+    generateWeeks: (weeks, startIntensity = 70) => {
       return Array.from({ length: weeks }, (_, i) => {
         const isDeload = (i + 1) % 4 === 0;
-        // Conjugate waves intensity slightly each week for max effort days
-        const meIntensityWave = [90, 92, 95, 85]; // Week 4 is deload
+        const waveIntensity = [0, 5, 10, -10]; // Wave pattern relative to start
         return {
           week: i + 1,
           pattern: 'Conjugate',
-          meIntensity: meIntensityWave[i % 4],
-          deIntensity: isDeload ? 50 : 55 + ((i % 3) * 5), // 55, 60, 65 wave
-          intensityMod: isDeload ? 0.75 : 1.0 + ((i % 3) * 0.05),
-          volumeMod: isDeload ? 0.5 : 1.0,
+          focus: isDeload ? 'Deload' : `Wave ${(i % 3) + 1}`,
+          intensity: startIntensity + waveIntensity[i % 4],
+          setsMultiplier: isDeload ? 0.5 : 1,
+          rpeAdjust: isDeload ? -2 : (i % 3), // RPE increases through wave
           isDeload,
-          note: isDeload ? 'Deload week' : `Wave ${(i % 3) + 1}`,
         };
       });
     },
@@ -4156,16 +4158,30 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
     const progressionModel = PROGRESSION_MODELS[newPhaseProgression];
     const track = TRAINING_TRACKS[newPhaseTrack];
 
-    // Generate weekly progression, applying track's base values
-    const weeklyProgression = progressionModel.generateWeeks(newPhaseWeeks, track.baseIntensity).map(week => ({
-      ...week,
-      // Override with track values if not a custom periodization
-      reps: week.reps || track.baseReps,
-      sets: week.sets || track.baseSets,
-      intensity: week.intensity || track.baseIntensity,
-      rpe: week.rpe || track.baseRpe,
-      track: newPhaseTrack,
-    }));
+    // Generate weekly progression, merging track's base values with progression adjustments
+    const rawProgression = progressionModel.generateWeeks(newPhaseWeeks, track.baseIntensity);
+    const weeklyProgression = rawProgression.map(week => {
+      // Calculate sets with multiplier
+      const setsMultiplier = week.setsMultiplier || 1;
+      const adjustedSets = Math.round(track.baseSets * setsMultiplier);
+
+      // Calculate RPE with adjustment
+      const rpeAdjust = week.rpeAdjust || 0;
+      const adjustedRpe = Math.max(1, Math.min(10, track.baseRpe + rpeAdjust));
+
+      return {
+        ...week,
+        // Always use track's reps (the rep range is the track's identity)
+        reps: track.baseReps,
+        // Sets from track, modified by progression
+        sets: adjustedSets,
+        // Intensity from progression (or track default)
+        intensity: week.intensity || track.baseIntensity,
+        // RPE from track, adjusted by progression
+        rpe: adjustedRpe,
+        track: newPhaseTrack,
+      };
+    });
 
     setPhases(prev => [...prev, {
       id: `phase_${Date.now()}`,
