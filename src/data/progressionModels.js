@@ -59,7 +59,7 @@ export const PROGRESSION_MODELS = {
     name: 'Linear Periodization',
     description: 'Gradually increase intensity while decreasing reps. Classic progressive overload.',
     icon: '📈',
-    compatibleTracks: ['strength', 'hypertrophy', 'endurance', 'peaking'],
+    compatibleTracks: ['strength', 'hypertrophy', 'power', 'endurance', 'peaking'],
     requiresSpecialTemplate: false,
     dayTypes: null,
 
@@ -75,6 +75,12 @@ export const PROGRESSION_MODELS = {
         { repShift: 2, intensityAdd: 0 },     // Week 1: Higher reps
         { repShift: 0, intensityAdd: 3 },     // Week 2: Moderate
         { repShift: -2, intensityAdd: 6 },    // Week 3: Lower reps, higher intensity
+        { repShift: 0, intensityAdd: -10, isDeload: true }, // Week 4: Deload
+      ],
+      power: [
+        { repShift: 0, intensityAdd: 0 },     // Week 1: Base velocity work
+        { repShift: 0, intensityAdd: 3 },     // Week 2: Slight intensity increase
+        { repShift: -1, intensityAdd: 5 },    // Week 3: Peak power output
         { repShift: 0, intensityAdd: -10, isDeload: true }, // Week 4: Deload
       ],
       endurance: [
@@ -277,13 +283,15 @@ export const PROGRESSION_MODELS = {
 
   // ============== BLOCK PERIODIZATION ==============
   // Distinct phases: Accumulation (volume) → Transmutation (intensity) → Realization (peak)
+  // When selected, auto-generates 3 separate phases
   block: {
     id: 'block',
     name: 'Block Periodization',
-    description: 'Three distinct phases: Accumulation → Transmutation → Realization',
+    description: 'Auto-creates 3 phases: Accumulation → Transmutation → Realization',
     icon: '🧱',
     compatibleTracks: ['strength', 'peaking'],
-    requiresSpecialTemplate: true, // Can have different templates per block
+    requiresSpecialTemplate: true,
+    generatesMultiplePhases: true, // Flag indicating this model creates multiple phases
     dayTypes: null,
 
     blocks: [
@@ -293,7 +301,7 @@ export const PROGRESSION_MODELS = {
         shortName: 'ACC',
         color: 'blue',
         percentage: 0.4, // 40% of total weeks
-        description: 'Build work capacity with higher volume, moderate intensity',
+        description: 'Build work capacity with higher volume, moderate intensity. Include accessories.',
         characteristics: {
           intensityAdjust: -8,
           setsMultiplier: 1.3,
@@ -308,7 +316,7 @@ export const PROGRESSION_MODELS = {
         shortName: 'TRN',
         color: 'yellow',
         percentage: 0.35, // 35% of total weeks
-        description: 'Increase specificity with moderate volume, higher intensity',
+        description: 'Increase specificity with moderate volume, higher intensity.',
         characteristics: {
           intensityAdjust: 0,
           setsMultiplier: 1,
@@ -323,7 +331,7 @@ export const PROGRESSION_MODELS = {
         shortName: 'REA',
         color: 'red',
         percentage: 0.25, // 25% of total weeks
-        description: 'Peak performance with low volume, high intensity',
+        description: 'Peak for competition. Low volume, high intensity, competition lifts only.',
         characteristics: {
           intensityAdjust: 8,
           setsMultiplier: 0.7,
@@ -334,24 +342,22 @@ export const PROGRESSION_MODELS = {
       },
     ],
 
-    generateWeeks: (weeks, track = null) => {
+    // Calculate week distribution for given total weeks
+    getBlockWeeks: (totalWeeks) => {
       const blocks = PROGRESSION_MODELS.block.blocks;
-      const accumWeeks = Math.max(1, Math.ceil(weeks * blocks[0].percentage));
-      const transWeeks = Math.max(1, Math.ceil(weeks * blocks[1].percentage));
-      const realWeeks = Math.max(1, weeks - accumWeeks - transWeeks);
+      const accumWeeks = Math.max(1, Math.round(totalWeeks * blocks[0].percentage));
+      const transWeeks = Math.max(1, Math.round(totalWeeks * blocks[1].percentage));
+      const realWeeks = Math.max(1, totalWeeks - accumWeeks - transWeeks);
+      return { accumWeeks, transWeeks, realWeeks };
+    },
 
-      const weekDistribution = [
-        ...Array(accumWeeks).fill(blocks[0]),
-        ...Array(transWeeks).fill(blocks[1]),
-        ...Array(realWeeks).fill(blocks[2]),
-      ].slice(0, weeks);
+    // Generate weeks for a single block (used when creating individual phases)
+    generateWeeksForBlock: (blockId, weeks, track = null) => {
+      const block = PROGRESSION_MODELS.block.blocks.find(b => b.id === blockId);
+      if (!block) return [];
 
-      return weekDistribution.map((block, i) => {
-        const weekInBlock = i - weekDistribution.slice(0, i).filter(b => b.id === block.id).length + 1;
-        const totalBlockWeeks = weekDistribution.filter(b => b.id === block.id).length;
-
-        // Progress within each block
-        const blockProgress = weekInBlock / totalBlockWeeks;
+      return Array.from({ length: weeks }, (_, i) => {
+        const blockProgress = (i + 1) / weeks;
         const withinBlockIntensityAdd = Math.round(blockProgress * 5);
 
         return {
@@ -360,17 +366,32 @@ export const PROGRESSION_MODELS = {
           phaseId: block.id,
           phaseColor: block.color,
           phaseDescription: block.description,
-          weekInPhase: weekInBlock,
-          totalPhaseWeeks: totalBlockWeeks,
+          weekInPhase: i + 1,
+          totalPhaseWeeks: weeks,
           focus: block.name,
           intensityAdjust: block.characteristics.intensityAdjust + withinBlockIntensityAdd,
           setsMultiplier: block.characteristics.setsMultiplier,
           repShift: block.characteristics.repShift,
           rpeAdjust: block.characteristics.rpeAdjust,
           includeAccessories: block.characteristics.includeAccessories,
-          isDeload: false, // Block periodization typically doesn't have built-in deloads
+          isDeload: false,
         };
       });
+    },
+
+    // Legacy: Generate all weeks as single progression (for backwards compatibility)
+    generateWeeks: (weeks, track = null) => {
+      const { accumWeeks, transWeeks, realWeeks } = PROGRESSION_MODELS.block.getBlockWeeks(weeks);
+      const blocks = PROGRESSION_MODELS.block.blocks;
+
+      const allWeeks = [
+        ...PROGRESSION_MODELS.block.generateWeeksForBlock('accumulation', accumWeeks, track),
+        ...PROGRESSION_MODELS.block.generateWeeksForBlock('transmutation', transWeeks, track),
+        ...PROGRESSION_MODELS.block.generateWeeksForBlock('realization', realWeeks, track),
+      ];
+
+      // Re-number weeks sequentially
+      return allWeeks.map((w, i) => ({ ...w, week: i + 1 }));
     },
   },
 
@@ -715,4 +736,57 @@ export const calculateWeekValues = (weekProgression, track) => {
     rpe,
     track: track.id,
   };
+};
+
+// Generate block periodization phases (returns array of phase configs)
+// This creates 3 separate phases: Accumulation, Transmutation, Realization
+export const generateBlockPhases = (totalWeeks, trackId, startWeek = 1) => {
+  const blockModel = PROGRESSION_MODELS.block;
+  const { accumWeeks, transWeeks, realWeeks } = blockModel.getBlockWeeks(totalWeeks);
+
+  const phases = [];
+  let currentStartWeek = startWeek;
+
+  // Accumulation Phase
+  phases.push({
+    id: `phase_block_accum_${Date.now()}`,
+    name: 'Accumulation',
+    weeks: accumWeeks,
+    progression: 'block_accumulation', // Special marker
+    blockId: 'accumulation',
+    track: trackId,
+    weeksRange: [currentStartWeek, currentStartWeek + accumWeeks - 1],
+    weeklyProgression: blockModel.generateWeeksForBlock('accumulation', accumWeeks),
+    blockInfo: blockModel.blocks[0],
+  });
+  currentStartWeek += accumWeeks;
+
+  // Transmutation Phase
+  phases.push({
+    id: `phase_block_trans_${Date.now() + 1}`,
+    name: 'Transmutation',
+    weeks: transWeeks,
+    progression: 'block_transmutation',
+    blockId: 'transmutation',
+    track: trackId,
+    weeksRange: [currentStartWeek, currentStartWeek + transWeeks - 1],
+    weeklyProgression: blockModel.generateWeeksForBlock('transmutation', transWeeks),
+    blockInfo: blockModel.blocks[1],
+  });
+  currentStartWeek += transWeeks;
+
+  // Realization Phase
+  phases.push({
+    id: `phase_block_real_${Date.now() + 2}`,
+    name: 'Realization',
+    weeks: realWeeks,
+    progression: 'block_realization',
+    blockId: 'realization',
+    track: trackId,
+    weeksRange: [currentStartWeek, currentStartWeek + realWeeks - 1],
+    weeklyProgression: blockModel.generateWeeksForBlock('realization', realWeeks),
+    blockInfo: blockModel.blocks[2],
+  });
+
+  return phases;
 };

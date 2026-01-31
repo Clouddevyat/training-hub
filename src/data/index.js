@@ -23,7 +23,8 @@ export {
   getCompatibleTracks,
   getCompatibleModels,
   applyRepShift,
-  calculateWeekValues
+  calculateWeekValues,
+  generateBlockPhases
 } from './progressionModels';
 
 // Cardio zones and session templates

@@ -43,6 +43,7 @@ import {
   getCompatibleModels,
   calculateWeekValues,
   applyRepShift,
+  generateBlockPhases,
 } from './data';
 
 // ============== STORAGE HOOK ==============
@@ -3943,21 +3944,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     }
 
     const startWeek = phases.reduce((sum, p) => sum + p.weeks, 0) + 1;
-    const endWeek = startWeek + newPhaseWeeks - 1;
     const progressionModel = PROGRESSION_MODELS[newPhaseProgression];
     const track = TRAINING_TRACKS[newPhaseTrack];
 
-    // Generate weekly progression using the new system
-    // Models now return repShift, intensityAdjust, etc. that get merged with track values
-    const rawProgression = progressionModel.generateWeeks(newPhaseWeeks, track);
-
-    const weeklyProgression = rawProgression.map(week => {
-      // Use the new calculateWeekValues utility for consistent merging
-      return calculateWeekValues(week, track);
-    });
-
-    // Create base weekly template
-    let weeklyTemplate = Array(7).fill(null).map((_, i) => ({
+    // Create base weekly template (shared by all phase types)
+    const createBaseTemplate = () => Array(7).fill(null).map((_, i) => ({
       day: i + 1,
       dayName: `Day ${i + 1}`,
       session: '',
@@ -3970,7 +3961,39 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       cooldown: 'none',
     }));
 
-    // Apply Conjugate suggested split if that model is selected
+    // BLOCK PERIODIZATION: Generate 3 separate phases
+    if (newPhaseProgression === 'block') {
+      const blockPhases = generateBlockPhases(newPhaseWeeks, newPhaseTrack, startWeek);
+
+      const newPhases = blockPhases.map((blockPhase, idx) => {
+        // Calculate week values with track
+        const weeklyProgression = blockPhase.weeklyProgression.map(week =>
+          calculateWeekValues(week, track)
+        );
+
+        return {
+          id: blockPhase.id,
+          name: blockPhase.name,
+          weeks: blockPhase.weeks,
+          progression: blockPhase.progression,
+          blockId: blockPhase.blockId,
+          track: newPhaseTrack,
+          weeksRange: blockPhase.weeksRange,
+          weeklyProgression,
+          weeklyTemplate: createBaseTemplate(),
+          weekOverrides: {},
+          blockInfo: blockPhase.blockInfo, // Store block characteristics for UI
+        };
+      });
+
+      setPhases(prev => [...prev, ...newPhases]);
+      setNewPhaseName('');
+      setNewPhaseWeeks(4);
+      return;
+    }
+
+    // CONJUGATE: Apply suggested split
+    let weeklyTemplate = createBaseTemplate();
     if (newPhaseProgression === 'conjugate' && progressionModel.suggestedSplit) {
       weeklyTemplate = progressionModel.suggestedSplit.days.map((day, i) => ({
         day: i + 1,
@@ -3983,10 +4006,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
         cardioActivity: 'run',
         warmup: day.type === 'strength' ? 'full' : 'none',
         cooldown: 'none',
-        // Store the conjugate day type for later use
         conjugateType: day.conjugateType ? PROGRESSION_MODELS.conjugate.dayTypes.find(t => t.id === day.conjugateType) : null,
       }));
     }
+
+    // STANDARD PHASES: Generate weekly progression
+    const rawProgression = progressionModel.generateWeeks(newPhaseWeeks, track);
+    const weeklyProgression = rawProgression.map(week => calculateWeekValues(week, track));
+
+    const endWeek = startWeek + newPhaseWeeks - 1;
 
     setPhases(prev => [...prev, {
       id: `phase_${Date.now()}`,
@@ -3997,7 +4025,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       weeksRange: [startWeek, endWeek],
       weeklyProgression,
       weeklyTemplate,
-      weekOverrides: {}, // { weekNum: { dayIdx: { ...overrides } } }
+      weekOverrides: {},
     }]);
     setNewPhaseName('');
     setNewPhaseWeeks(4);
@@ -4783,11 +4811,24 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             <span className={`text-sm ${theme.textMuted}`}>{totalWeeks} weeks total</span>
           </div>
           {phases.map((phase, idx) => (
-            <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
+            <div key={phase.id} className={`${theme.card} rounded-xl p-4 ${phase.blockInfo ? `border-l-4 border-${phase.blockInfo.color}-500` : ''}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`font-medium ${theme.text}`}>{phase.name}</p>
-                  <p className={`text-sm ${theme.textMuted}`}>Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} • {PROGRESSION_MODELS[phase.progression]?.name || 'Custom'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className={`font-medium ${theme.text}`}>{phase.name}</p>
+                    {phase.blockInfo && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full bg-${phase.blockInfo.color}-500/20 text-${phase.blockInfo.color}-400`}>
+                        🧱 {phase.blockInfo.shortName}
+                      </span>
+                    )}
+                  </div>
+                  <p className={`text-sm ${theme.textMuted}`}>
+                    Weeks {phase.weeksRange[0]}-{phase.weeksRange[1]} •
+                    {phase.blockInfo ? ` Block Periodization` : ` ${PROGRESSION_MODELS[phase.progression]?.name || 'Custom'}`}
+                  </p>
+                  {phase.blockInfo?.description && (
+                    <p className={`text-xs ${theme.textMuted} mt-1 italic`}>{phase.blockInfo.description}</p>
+                  )}
                   {phase.track && TRAINING_TRACKS[phase.track] && (
                     <p className={`text-xs ${theme.textMuted} mt-1`}>
                       {TRAINING_TRACKS[phase.track].icon} {TRAINING_TRACKS[phase.track].name}: {TRAINING_TRACKS[phase.track].baseReps} @ {TRAINING_TRACKS[phase.track].baseIntensity}%
@@ -4883,17 +4924,22 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 
               {newPhaseProgression === 'block' && (
                 <div className={`mt-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30`}>
-                  <p className={`text-xs text-yellow-400 font-medium mb-1`}>🧱 Block Phases ({newPhaseWeeks} weeks)</p>
+                  <p className={`text-xs text-yellow-400 font-medium mb-1`}>🧱 Creates 3 Separate Phases ({newPhaseWeeks} weeks total)</p>
                   <div className="flex flex-wrap gap-1">
-                    {PROGRESSION_MODELS.block.blocks.map(b => {
-                      const weeks = Math.max(1, Math.ceil(newPhaseWeeks * b.percentage));
-                      return (
+                    {(() => {
+                      const { accumWeeks, transWeeks, realWeeks } = PROGRESSION_MODELS.block.getBlockWeeks(newPhaseWeeks);
+                      return [
+                        { ...PROGRESSION_MODELS.block.blocks[0], weeks: accumWeeks },
+                        { ...PROGRESSION_MODELS.block.blocks[1], weeks: transWeeks },
+                        { ...PROGRESSION_MODELS.block.blocks[2], weeks: realWeeks },
+                      ].map(b => (
                         <span key={b.id} className={`text-xs px-2 py-0.5 rounded-full bg-${b.color}-500/20 text-${b.color}-400`}>
-                          {b.shortName}: {weeks}wk
+                          {b.name}: {b.weeks}wk
                         </span>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
+                  <p className={`text-xs ${theme.textMuted} mt-1`}>Each phase can have its own weekly template and exercises</p>
                 </div>
               )}
 
