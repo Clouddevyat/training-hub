@@ -461,7 +461,27 @@ export const validateTemplate = (template) => {
       if (!phase.weeks || phase.weeks.length !== 2) {
         errors.push(`phases[${i}] missing or invalid weeks array (should be [start, end])`);
       }
+      // Check for weekly template (accept both formats)
+      if (!phase.weeklyTemplate && !phase.week_template) {
+        warnings.push(`phases[${i}] has no weeklyTemplate - workouts may be empty`);
+      }
     });
+
+    // Validate availableDetours if present
+    if (template.availableDetours) {
+      if (template.availableDetours.specialty) {
+        template.availableDetours.specialty.forEach((block, i) => {
+          if (!block.id) errors.push(`availableDetours.specialty[${i}] missing id`);
+          if (!block.name) warnings.push(`availableDetours.specialty[${i}] missing name`);
+        });
+      }
+      if (template.availableDetours.life) {
+        template.availableDetours.life.forEach((block, i) => {
+          if (!block.id) errors.push(`availableDetours.life[${i}] missing id`);
+          if (!block.name) warnings.push(`availableDetours.life[${i}] missing name`);
+        });
+      }
+    }
   }
 
   // Validate exercise references in slots
@@ -1119,19 +1139,99 @@ export const templateToProgram = (template, athleteProfile) => {
       name: phase.name,
       weeks: phase.weeks,
       description: phase.description || '',
+      exitCriteria: phase.exitCriteria || phase.exit_criteria || [],
       benchmarks: phase.benchmarks || [],
       guardrails: phase.guardrails || {},
-      weeklyTemplate: convertWeekTemplate(phase.week_template, athleteProfile)
+      weeklyTemplate: convertWeekTemplate(phase.weeklyTemplate || phase.week_template, athleteProfile)
     }));
+
+    // Store available detours if provided (specialty and life blocks)
+    if (template.availableDetours) {
+      program.availableDetours = {
+        specialty: (template.availableDetours.specialty || []).map(b => ({
+          ...b,
+          weeklyTemplate: convertWeekTemplate(b.weeklyTemplate || b.week_template, athleteProfile)
+        })),
+        life: (template.availableDetours.life || []).map(b => ({
+          ...b,
+          weeklyTemplate: convertWeekTemplate(b.weeklyTemplate || b.week_template, athleteProfile)
+        }))
+      };
+    }
+
+    // Store global rules if provided
+    if (template.globalRules || template.global_rules) {
+      program.globalRules = template.globalRules || template.global_rules;
+    }
+
+    // Store quarterly testing if provided
+    if (template.quarterlyTesting || template.quarterly_testing) {
+      program.quarterlyTesting = template.quarterlyTesting || template.quarterly_testing;
+    }
   }
 
   return program;
 };
 
 // Convert template week_template to app's weeklyTemplate format
+// Handles both formats:
+// 1. Day-of-week object: { monday: {...}, tuesday: {...}, ... }
+// 2. Array format: [{ day: 1, ... }, { day: 2, ... }, ...]
 const convertWeekTemplate = (weekTemplate, athleteProfile) => {
   if (!weekTemplate) return [];
 
+  // Check if it's already in array format (Combat Alpinist style)
+  if (Array.isArray(weekTemplate)) {
+    return weekTemplate.map(templateDay => {
+      // If it already has the right structure, just ensure exercises are converted
+      const day = {
+        day: templateDay.day,
+        dayName: templateDay.dayName || `Day ${templateDay.day}`,
+        session: templateDay.session || templateDay.name || `Day ${templateDay.day}`,
+        type: templateDay.type || 'strength',
+        duration: templateDay.duration || 60,
+        prescription: templateDay.prescription || {}
+      };
+
+      // Convert exercises if in prescription and need processing
+      if (day.prescription.exercises && Array.isArray(day.prescription.exercises)) {
+        day.prescription.exercises = day.prescription.exercises.map(ex => {
+          // If exercise already has proper structure, use it
+          const converted = {
+            name: ex.name || EXERCISE_LIBRARY[ex.exercise_id]?.name || EXERCISE_LIBRARY[ex.default]?.name || ex.slot,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest: ex.rest,
+            prKey: ex.prKey || ex.pr_key || EXERCISE_LIBRARY[ex.exercise_id]?.prKey || EXERCISE_LIBRARY[ex.default]?.prKey,
+            percentage: ex.percentage || null,
+            slot: ex.slot || null,
+            allowedSubs: ex.allowedSubs || ex.allowed || [],
+            forbiddenSubs: ex.forbiddenSubs || ex.forbidden || [],
+            locked: ex.locked || false
+          };
+
+          // Parse intensity to percentage if provided and percentage not already set
+          if (ex.intensity && !converted.percentage) {
+            const intensityStr = ex.intensity.toString();
+            const percentMatch = intensityStr.match(/^(\d+(?:\.\d+)?)\s*\*\s*1rm/i);
+            if (percentMatch) {
+              converted.percentage = Math.round(parseFloat(percentMatch[1]) * 100);
+            } else if (/^\d+(\.\d+)?$/.test(intensityStr)) {
+              const num = parseFloat(intensityStr);
+              converted.percentage = num > 1 ? num : Math.round(num * 100);
+            }
+            converted.intensityExpression = ex.intensity;
+          }
+
+          return converted;
+        });
+      }
+
+      return day;
+    });
+  }
+
+  // Handle day-of-week object format
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const result = [];
 
@@ -1167,7 +1267,7 @@ const convertWeekTemplate = (weekTemplate, athleteProfile) => {
           sets: ex.sets,
           reps: ex.reps,
           rest: ex.rest,
-          prKey: ex.pr_key || EXERCISE_LIBRARY[ex.exercise_id]?.prKey || EXERCISE_LIBRARY[ex.default]?.prKey,
+          prKey: ex.prKey || ex.pr_key || EXERCISE_LIBRARY[ex.exercise_id]?.prKey || EXERCISE_LIBRARY[ex.default]?.prKey,
           percentage: null,
           slot: ex.slot || null,
           allowedSubs: ex.allowed || [],
