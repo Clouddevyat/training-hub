@@ -9134,11 +9134,11 @@ export default function App() {
               {/* Charts Pane */}
               {floatingPane === 'charts' && (
                 <div className="p-5">
-                  <TrendsChartsView
-                    readiness={readiness}
+                  <ChartsView
                     workoutLogs={workoutLogs}
+                    benchmarkResults={benchmarkResults}
+                    readiness={readiness}
                     athleteProfile={athleteProfile}
-                    programState={programState}
                     theme={theme}
                     darkMode={darkMode}
                   />
