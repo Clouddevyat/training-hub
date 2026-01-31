@@ -2496,37 +2496,75 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
       y: padding.top + chartHeight - pct * chartHeight
     }));
 
+    const gradientId = `line-gradient-${yKey}`;
+    const glowId = `line-glow-${yKey}`;
+
     return (
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-        {/* Grid lines */}
+        <defs>
+          {/* Altitude gradient for area fill */}
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+          {/* Glow filter for line */}
+          <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Grid lines - styled as contour lines */}
         {yTicks.map((tick, i) => (
           <g key={i}>
-            <line x1={padding.left} y1={tick.y} x2={width - padding.right} y2={tick.y} stroke={darkMode ? '#374151' : '#e5e7eb'} strokeWidth="1" />
+            <line
+              x1={padding.left} y1={tick.y} x2={width - padding.right} y2={tick.y}
+              stroke={darkMode ? '#374151' : '#e5e7eb'}
+              strokeWidth="1"
+              strokeDasharray={i === 0 ? "0" : "4 4"}
+              opacity={0.5}
+            />
             <text x={padding.left - 5} y={tick.y + 4} textAnchor="end" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
               {formatY(Math.round(tick.value))}
             </text>
           </g>
         ))}
-        
-        {/* Area fill */}
-        <path d={areaD} fill={color} fillOpacity="0.1" />
-        
-        {/* Line */}
-        <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        
-        {/* Dots */}
-        {showDots && points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill={color} stroke={darkMode ? '#1f2937' : '#fff'} strokeWidth="2" />
-        ))}
-        
-        {/* X-axis labels (first and last) */}
+
+        {/* Area fill with gradient */}
+        <path d={areaD} fill={`url(#${gradientId})`} />
+
+        {/* Line with glow effect */}
+        <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${glowId})`} />
+
+        {/* Summit dots - larger at peaks */}
+        {showDots && points.map((p, i) => {
+          const isPeak = (i > 0 && i < points.length - 1 && p.y <= points[i-1].y && p.y <= points[i+1].y);
+          const isValley = (i > 0 && i < points.length - 1 && p.y >= points[i-1].y && p.y >= points[i+1].y);
+          return (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={isPeak ? 5 : isValley ? 3 : 4}
+              fill={isPeak ? '#10b981' : color}
+              stroke={darkMode ? '#1f2937' : '#fff'}
+              strokeWidth="2"
+              filter={isPeak ? `url(#${glowId})` : undefined}
+            />
+          );
+        })}
+
+        {/* X-axis labels */}
         <text x={padding.left} y={height - 5} textAnchor="start" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
           {data[0]?.[xKey]?.slice(5) || ''}
         </text>
         <text x={width - padding.right} y={height - 5} textAnchor="end" className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
           {data[data.length - 1]?.[xKey]?.slice(5) || ''}
         </text>
-        
+
         {/* Y-axis label */}
         {yLabel && (
           <text x={10} y={height / 2} textAnchor="middle" transform={`rotate(-90, 10, ${height / 2})`} className={`text-[10px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
@@ -2537,35 +2575,78 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
     );
   };
 
-  // Bar Chart Component
-  const BarChart = ({ data, xKey, yKey, color = '#3b82f6', height = 150 }) => {
+  // Bar Chart Component - Mountain peak style
+  const BarChart = ({ data, xKey, yKey, color = '#06b6d4', height = 150 }) => {
     if (!data || data.length === 0) {
       return <div className={`h-[${height}px] flex items-center justify-center ${theme.textMuted}`}><p className="text-sm">No data</p></div>;
     }
 
-    const padding = { top: 20, right: 20, bottom: 40, left: 40 };
+    const padding = { top: 25, right: 20, bottom: 40, left: 40 };
     const width = 320;
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
 
-    const yMax = Math.max(...data.map(d => d[yKey])) * 1.1 || 1;
+    const values = data.map(d => d[yKey]);
+    const yMax = Math.max(...values) * 1.1 || 1;
+    const maxIdx = values.indexOf(Math.max(...values));
     const barWidth = (chartWidth / data.length) * 0.7;
     const barGap = (chartWidth / data.length) * 0.3;
 
+    const barGradientId = 'bar-gradient';
+
     return (
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id={barGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="1" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+          </linearGradient>
+          <filter id="bar-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
         {data.map((d, i) => {
           const barHeight = (d[yKey] / yMax) * chartHeight;
           const x = padding.left + i * (barWidth + barGap) + barGap / 2;
           const y = padding.top + chartHeight - barHeight;
+          const isMax = i === maxIdx && d[yKey] > 0;
+
           return (
             <g key={i}>
-              <rect x={x} y={y} width={barWidth} height={barHeight} fill={color} rx="4" fillOpacity="0.8" />
+              {/* Bar with gradient */}
+              <rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill={`url(#${barGradientId})`}
+                rx="4"
+                filter={isMax ? 'url(#bar-glow)' : undefined}
+              />
+              {/* Peak marker for highest */}
+              {isMax && (
+                <polygon
+                  points={`${x + barWidth/2},${y - 8} ${x + barWidth/2 - 6},${y} ${x + barWidth/2 + 6},${y}`}
+                  fill="#10b981"
+                />
+              )}
+              {/* Value label */}
+              <text
+                x={x + barWidth / 2}
+                y={y - (isMax ? 12 : 5)}
+                textAnchor="middle"
+                className={`text-[10px] font-medium ${isMax ? 'fill-emerald-400' : darkMode ? 'fill-gray-300' : 'fill-gray-600'}`}
+              >
+                {d[yKey]}
+              </text>
+              {/* X label */}
               <text x={x + barWidth / 2} y={height - 5} textAnchor="middle" className={`text-[9px] ${darkMode ? 'fill-gray-500' : 'fill-gray-400'}`}>
                 {d[xKey]?.slice(5, 10) || i}
-              </text>
-              <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" className={`text-[10px] font-medium ${darkMode ? 'fill-gray-300' : 'fill-gray-600'}`}>
-                {d[yKey]}
               </text>
             </g>
           );
@@ -2879,30 +2960,59 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
             </div>
           )}
 
-          {/* Strength Standards */}
+          {/* Strength Standards - Summit Progress */}
           <div className={`${theme.card} rounded-xl p-4`}>
-            <h3 className={`font-semibold ${theme.text} mb-3`}>Program Standards</h3>
-            <p className={`text-xs ${theme.textMuted} mb-3`}>Based on {athleteProfile.weight || 225} lb bodyweight</p>
-            <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Mountain size={18} className="text-cyan-500" />
+              <h3 className={`font-semibold ${theme.text}`}>Summit Standards</h3>
+            </div>
+            <p className={`text-xs ${theme.textMuted} mb-4`}>Based on {athleteProfile.weight || 225} lb bodyweight</p>
+            <div className="space-y-4">
               {[
-                { lift: 'Trap Bar Deadlift', target: 2.0, current: athleteProfile.prs?.trapBarDeadlift?.value },
-                { lift: 'Back Squat', target: 1.5, current: athleteProfile.prs?.backSquat?.value },
-                { lift: 'Bench Press', target: 1.25, current: athleteProfile.prs?.benchPress?.value },
-                { lift: 'Weighted Pull-up', target: 0.5, current: athleteProfile.prs?.weightedPullUp?.value },
+                { lift: 'Trap Bar Deadlift', target: 2.0, current: athleteProfile.prs?.trapBarDeadlift?.value, color: '#ef4444' },
+                { lift: 'Back Squat', target: 1.5, current: athleteProfile.prs?.backSquat?.value, color: '#f97316' },
+                { lift: 'Bench Press', target: 1.25, current: athleteProfile.prs?.benchPress?.value, color: '#06b6d4' },
+                { lift: 'Weighted Pull-up', target: 0.5, current: athleteProfile.prs?.weightedPullUp?.value, color: '#8b5cf6' },
               ].map((item, i) => {
                 const targetLbs = Math.round((athleteProfile.weight || 225) * item.target);
                 const progress = item.current ? Math.min((item.current / targetLbs) * 100, 100) : 0;
+                const summited = progress >= 100;
                 return (
                   <div key={i}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className={theme.text}>{item.lift}</span>
-                      <span className={theme.textMuted}>{item.current || 0} / {targetLbs} lbs</span>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className={`font-medium ${theme.text}`}>{item.lift}</span>
+                      <span className={summited ? 'text-emerald-500 font-semibold' : theme.textMuted}>
+                        {summited ? '⛰️ ' : ''}{item.current || 0} / {targetLbs} lbs
+                      </span>
                     </div>
-                    <div className={`h-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
-                      <div 
-                        className={`h-full ${progress >= 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all`}
-                        style={{ width: `${progress}%` }}
+                    <div className={`relative h-3 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+                      {/* Progress bar with gradient */}
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${progress}%`,
+                          background: summited
+                            ? 'linear-gradient(90deg, #10b981, #34d399)'
+                            : `linear-gradient(90deg, ${item.color}99, ${item.color})`,
+                          boxShadow: summited ? '0 0 10px #10b981' : `0 0 6px ${item.color}50`
+                        }}
                       />
+                      {/* Milestone markers */}
+                      {[25, 50, 75].map(mark => (
+                        <div
+                          key={mark}
+                          className={`absolute top-0 bottom-0 w-px ${darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}
+                          style={{ left: `${mark}%` }}
+                        />
+                      ))}
+                      {/* Summit flag at 100% */}
+                      <div className={`absolute top-0 bottom-0 right-0 w-0.5 ${progress >= 100 ? 'bg-emerald-400' : darkMode ? 'bg-gray-500' : 'bg-gray-400'}`} />
+                    </div>
+                    {/* Progress percentage */}
+                    <div className="flex justify-end mt-1">
+                      <span className={`text-[10px] font-mono ${summited ? 'text-emerald-500' : theme.textMuted}`}>
+                        {Math.round(progress)}%
+                      </span>
                     </div>
                   </div>
                 );
@@ -3142,7 +3252,10 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
         {/* Header */}
         <div className="flex items-center justify-between">
           <h3 className={`text-xl font-bold ${theme.text}`}>Performance</h3>
-          <button onClick={onClose} className={`p-2 rounded-full ${theme.cardAlt}`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            className={`p-2 rounded-full ${theme.cardAlt} active:scale-95 transition-transform`}
+          >
             <X size={20} className={theme.textMuted} />
           </button>
         </div>
@@ -9004,7 +9117,7 @@ export default function App() {
             {todayReadiness && (
               <button onClick={() => setFloatingPane('readiness')} className={`w-full ${theme.card} rounded-2xl p-5 card-hover`}>
                 <div className="flex items-center justify-between mb-2">
-                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Altitude Status</p>
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Readiness Status</p>
                   <div className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={14} className={theme.textMuted} /></div>
                 </div>
                 <div className="flex justify-center">
@@ -9203,32 +9316,53 @@ export default function App() {
               </button>
             )}
 
-            {/* This Week Card */}
+            {/* This Week Card - Route Map Style */}
             <div className={`${theme.card} rounded-2xl p-5`}>
-              <h3 className={`font-semibold ${theme.text} mb-4`}>This Week</h3>
-              <div className="space-y-2">
-                {phase?.weeklyTemplate?.map((w, idx) => {
-                  const isCurrent = w.day === programState.currentDay;
-                  const logged = thisWeekLogs.find(l => l.day === w.day && l.completed);
-                  return (
-                    <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                      isCurrent
-                        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/10 border border-blue-500/30 shadow-sm'
-                        : theme.cardAlt
-                    }`}>
-                      {logged ? (
-                        <div className="p-1 bg-green-500/20 rounded-full">
-                          <CheckCircle2 size={16} className="text-green-500" />
+              <div className="flex items-center gap-2 mb-4">
+                <Flag size={16} className="text-cyan-500" />
+                <h3 className={`font-semibold ${theme.text}`}>Weekly Route</h3>
+              </div>
+              <div className="relative">
+                {/* Trail line connecting waypoints */}
+                <div className={`absolute left-[19px] top-6 bottom-6 w-0.5 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+
+                <div className="space-y-2 relative">
+                  {phase?.weeklyTemplate?.map((w, idx) => {
+                    const isCurrent = w.day === programState.currentDay;
+                    const logged = thisWeekLogs.find(l => l.day === w.day && l.completed);
+                    const isPast = w.day < programState.currentDay;
+                    return (
+                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        isCurrent
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 shadow-sm'
+                          : theme.cardAlt
+                      }`}>
+                        {/* Waypoint marker */}
+                        <div className={`relative z-10 w-[22px] h-[22px] rounded-full flex items-center justify-center ${
+                          logged
+                            ? 'bg-emerald-500'
+                            : isCurrent
+                              ? 'bg-cyan-500 ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-transparent'
+                              : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                        }`}>
+                          {logged ? (
+                            <CheckCircle2 size={14} className="text-white" />
+                          ) : isCurrent ? (
+                            <Mountain size={12} className="text-white" />
+                          ) : (
+                            <span className={`text-[10px] font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{w.day}</span>
+                          )}
                         </div>
-                      ) : (
-                        <Circle size={18} className={theme.textSubtle} />
-                      )}
-                      <span className={`flex-1 text-sm font-medium ${theme.text} truncate`}>{w.session || w.name}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${theme.cardAlt} ${theme.textMuted}`}>D{w.day}</span>
-                      <span className={`text-xs ${theme.textMuted}`}>{w.duration || 0}m</span>
-                    </div>
-                  );
-                })}
+                        <span className={`flex-1 text-sm font-medium ${isCurrent ? 'text-cyan-500' : theme.text} truncate`}>
+                          {w.session || w.name}
+                        </span>
+                        <span className={`text-xs font-mono ${logged ? 'text-emerald-500' : theme.textMuted}`}>
+                          {w.duration || 0}m
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
