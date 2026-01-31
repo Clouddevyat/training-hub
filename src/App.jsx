@@ -4393,7 +4393,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
     // Find which phase this week belongs to
     let phaseForWeek = null;
     let weekInPhase = 1;
-    
+
     for (const phase of phases) {
       if (weekNum >= phase.weeksRange[0] && weekNum <= phase.weeksRange[1]) {
         phaseForWeek = phase;
@@ -4401,12 +4401,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
         break;
       }
     }
-    
+
     if (!phaseForWeek) return null;
-    
+
     // Get progression data for this week
     const weekProgression = phaseForWeek.weeklyProgression?.[weekInPhase - 1] || {};
-    
+    const isCustom = phaseForWeek.progression === 'custom' || weekProgression.isCustom;
+
     // Apply progression to template
     return {
       phase: phaseForWeek,
@@ -4417,21 +4418,27 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
         if (day.type === 'recovery' || day.type === 'rest') {
           return { ...day, adjustedExercises: [] };
         }
-        
-        // Apply intensity modifier from progression
-        const intensityMod = weekProgression.intensityMod || 1;
-        const volumeMod = weekProgression.volumeMod || 1;
-        const baseIntensity = weekProgression.intensity || 70;
-        const baseSets = weekProgression.sets || 4;
-        const baseReps = weekProgression.reps || '8-10';
-        
-        const adjustedExercises = (day.exercises || []).map(ex => ({
-          ...ex,
-          adjustedIntensity: Math.round((ex.intensity || baseIntensity) * intensityMod),
-          adjustedSets: Math.round((ex.sets || baseSets) * volumeMod),
-          adjustedReps: baseReps,
-        }));
-        
+
+        const adjustedExercises = (day.exercises || []).map(ex => {
+          if (isCustom) {
+            // Custom periodization: use exercise's stored values unchanged
+            return {
+              ...ex,
+              adjustedIntensity: ex.intensity || 70,
+              adjustedSets: ex.sets || 3,
+              adjustedReps: ex.reps || '8-10',
+            };
+          } else {
+            // Non-custom periodization: use the week's prescribed values from the model
+            return {
+              ...ex,
+              adjustedIntensity: weekProgression.intensity || ex.intensity || 70,
+              adjustedSets: weekProgression.sets || ex.sets || 4,
+              adjustedReps: weekProgression.reps || ex.reps || '8-10',
+            };
+          }
+        });
+
         return { ...day, adjustedExercises };
       }),
     };
