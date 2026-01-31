@@ -957,6 +957,405 @@ const EXERCISE_LIBRARY = {
   hipFlexorStretch: { id: 'hipFlexorStretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
 };
 
+// ============== UNIVERSAL DETOUR BLOCKS ==============
+// These can be applied to ANY program
+const UNIVERSAL_DETOURS = {
+  specialty: [
+    {
+      id: 'strength_emphasis',
+      name: 'Strength Emphasis',
+      icon: '💪',
+      type: 'specialty',
+      category: 'strength',
+      duration: { min: 4, max: 6, unit: 'weeks' },
+      description: 'Focus on building maximal strength',
+      when_to_use: ['Strength numbers dropped >10%', 'Pre-expedition strength peak', 'Coming off long aerobic focus'],
+      sacrifice: ['Aerobic capacity may decline slightly', 'Muscular endurance reduced'],
+      exit_criteria: ['Hit new PR on main lifts', 'Completed planned weeks', 'Strength tests improved'],
+      weeklyTemplate: [
+        { day: 1, session: 'Heavy Lower', type: 'strength', duration: 75 },
+        { day: 2, session: 'Zone 2 (Maintenance)', type: 'cardio', duration: 40 },
+        { day: 3, session: 'Heavy Upper', type: 'strength', duration: 70 },
+        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Power + Accessories', type: 'strength', duration: 60 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'running_emphasis',
+      name: 'Running Emphasis',
+      icon: '🏃',
+      type: 'specialty',
+      category: 'cardio',
+      duration: { min: 4, max: 8, unit: 'weeks' },
+      description: 'Improve running performance and aerobic capacity',
+      when_to_use: ['5-mile time regressed', 'Running-heavy event coming', 'AeT/AnT gap too wide'],
+      sacrifice: ['Strength gains will plateau', 'Muscle mass may decrease'],
+      exit_criteria: ['Run test improved', 'AeT pace improved by 30+ sec/mile', 'Event completed'],
+      weeklyTemplate: [
+        { day: 1, session: 'Tempo Run', type: 'cardio', duration: 50 },
+        { day: 2, session: 'Strength (Maintenance)', type: 'strength', duration: 45 },
+        { day: 3, session: 'Easy Run', type: 'cardio', duration: 45 },
+        { day: 4, session: 'Intervals', type: 'cardio', duration: 55 },
+        { day: 5, session: 'Easy Run + Strides', type: 'cardio', duration: 40 },
+        { day: 6, session: 'Long Run', type: 'long_effort', duration: 90 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'me_peak',
+      name: 'Muscular Endurance Peak',
+      icon: '⛰️',
+      type: 'specialty',
+      category: 'endurance',
+      duration: { min: 3, max: 5, unit: 'weeks' },
+      description: 'Peak loaded carrying capacity',
+      when_to_use: ['Event requiring sustained load', 'Pre-expedition ME peak', 'Testing max capacity'],
+      sacrifice: ['Max strength will decrease', 'Power output reduced', 'Need extra recovery'],
+      exit_criteria: ['ME test improved', 'Completed target ruck weight/distance', 'Event date reached'],
+      weeklyTemplate: [
+        { day: 1, session: 'Gym ME Circuit', type: 'muscular_endurance', duration: 70 },
+        { day: 2, session: 'Zone 2', type: 'cardio', duration: 45 },
+        { day: 3, session: 'Outdoor Loaded Carry', type: 'muscular_endurance', duration: 90 },
+        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Light Strength', type: 'strength', duration: 40 },
+        { day: 6, session: 'Peak ME Session', type: 'muscular_endurance', duration: 120 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'hypertrophy',
+      name: 'Hypertrophy Block',
+      icon: '🏋️',
+      type: 'specialty',
+      category: 'strength',
+      duration: { min: 4, max: 8, unit: 'weeks' },
+      description: 'Build muscle mass and work capacity',
+      when_to_use: ['Need more muscle mass', 'Building base before strength', 'After extended cut'],
+      sacrifice: ['Max strength temporarily lower', 'Cardio capacity may drop', 'Higher calorie needs'],
+      exit_criteria: ['Gained target weight', 'All lifts show rep improvements', 'Work capacity increased'],
+      weeklyTemplate: [
+        { day: 1, session: 'Upper Hypertrophy', type: 'strength', duration: 60 },
+        { day: 2, session: 'Lower Hypertrophy', type: 'strength', duration: 60 },
+        { day: 3, session: 'Cardio', type: 'cardio', duration: 40 },
+        { day: 4, session: 'Push Focus', type: 'strength', duration: 55 },
+        { day: 5, session: 'Pull Focus', type: 'strength', duration: 55 },
+        { day: 6, session: 'Legs + Cardio', type: 'strength', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'power_speed',
+      name: 'Power & Speed',
+      icon: '⚡',
+      type: 'specialty',
+      category: 'performance',
+      duration: { min: 3, max: 6, unit: 'weeks' },
+      description: 'Develop explosive power and speed',
+      when_to_use: ['Pre-competition peaking', 'Converting strength to power', 'Speed improvement needed'],
+      sacrifice: ['Endurance capacity drops', 'Muscle mass may not increase', 'Higher CNS fatigue'],
+      exit_criteria: ['Vertical jump improved', 'Sprint times faster', 'Power output tests improved'],
+      weeklyTemplate: [
+        { day: 1, session: 'Lower Power', type: 'strength', duration: 50 },
+        { day: 2, session: 'Sprint Intervals', type: 'cardio', duration: 40 },
+        { day: 3, session: 'Upper Power', type: 'strength', duration: 50 },
+        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Plyometrics + Agility', type: 'strength', duration: 45 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'grip_forearm',
+      name: 'Grip & Forearm Focus',
+      icon: '🤚',
+      type: 'specialty',
+      category: 'strength',
+      duration: { min: 3, max: 6, unit: 'weeks' },
+      description: 'Build crushing grip strength and forearm endurance',
+      when_to_use: ['Grip limiting deadlift', 'Climbing goals', 'Tactical/rescue applications'],
+      sacrifice: ['Upper body volume reduced', 'May affect pulling exercises short-term'],
+      exit_criteria: ['Grip tests improved 15%+', 'Dead hang time doubled', 'No longer limiting main lifts'],
+      weeklyTemplate: [
+        { day: 1, session: 'Heavy Pulls + Grip', type: 'strength', duration: 60 },
+        { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
+        { day: 3, session: 'Forearm Hypertrophy', type: 'strength', duration: 45 },
+        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Grip Endurance + Carries', type: 'strength', duration: 55 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'core_stability',
+      name: 'Core & Stability',
+      icon: '🎯',
+      type: 'specialty',
+      category: 'strength',
+      duration: { min: 3, max: 5, unit: 'weeks' },
+      description: 'Build trunk stability and anti-rotation strength',
+      when_to_use: ['Core limiting compound lifts', 'Back pain history', 'Pre-heavy lifting cycle'],
+      sacrifice: ['Main lift progression slowed', 'Less overall volume'],
+      exit_criteria: ['Plank tests improved', 'Core no longer limiting factor', 'Back feels stronger'],
+      weeklyTemplate: [
+        { day: 1, session: 'Anti-Extension + Lower', type: 'strength', duration: 55 },
+        { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
+        { day: 3, session: 'Anti-Rotation + Upper', type: 'strength', duration: 55 },
+        { day: 4, session: 'Mobility + Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Loaded Carries + Full Body', type: 'strength', duration: 50 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'mobility_flexibility',
+      name: 'Mobility & Flexibility',
+      icon: '🧘',
+      type: 'specialty',
+      category: 'recovery',
+      duration: { min: 2, max: 4, unit: 'weeks' },
+      description: 'Improve range of motion and movement quality',
+      when_to_use: ['ROM limiting lifts', 'Feeling stiff/immobile', 'After injury recovery'],
+      sacrifice: ['Strength gains paused', 'Less training volume overall'],
+      exit_criteria: ['Target ROM achieved', 'Movement quality improved', 'No compensation patterns'],
+      weeklyTemplate: [
+        { day: 1, session: 'Lower Body Mobility + Light Strength', type: 'strength', duration: 50 },
+        { day: 2, session: 'Yoga/Stretch Flow', type: 'recovery', duration: 45 },
+        { day: 3, session: 'Upper Body Mobility + Light Strength', type: 'strength', duration: 50 },
+        { day: 4, session: 'Active Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Full Body Movement', type: 'strength', duration: 45 },
+        { day: 6, session: 'Long Stretch Session', type: 'recovery', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'conditioning_gpp',
+      name: 'Conditioning/GPP',
+      icon: '🔥',
+      type: 'specialty',
+      category: 'cardio',
+      duration: { min: 3, max: 6, unit: 'weeks' },
+      description: 'Build general physical preparedness and work capacity',
+      when_to_use: ['Work capacity is limiting', 'Pre-season conditioning', 'Base building phase'],
+      sacrifice: ['Max strength maintenance only', 'Specific skills not trained'],
+      exit_criteria: ['Conditioning tests improved', 'Recovery between sets faster', 'Can handle more volume'],
+      weeklyTemplate: [
+        { day: 1, session: 'Circuit Training', type: 'muscular_endurance', duration: 50 },
+        { day: 2, session: 'Intervals', type: 'cardio', duration: 45 },
+        { day: 3, session: 'Strength Maintenance', type: 'strength', duration: 45 },
+        { day: 4, session: 'Easy Cardio', type: 'cardio', duration: 40 },
+        { day: 5, session: 'Mixed Modal', type: 'muscular_endurance', duration: 55 },
+        { day: 6, session: 'Long Slow Distance', type: 'cardio', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'swimming_focus',
+      name: 'Swimming Focus',
+      icon: '🏊',
+      type: 'specialty',
+      category: 'cardio',
+      duration: { min: 4, max: 8, unit: 'weeks' },
+      description: 'Improve swimming technique and water fitness',
+      when_to_use: ['Swim test coming up', 'Triathlon prep', 'Cross-training variety'],
+      sacrifice: ['Running volume reduced', 'Strength maintenance only'],
+      exit_criteria: ['Swim test improved', 'Technique comfort achieved', 'Target distance/pace met'],
+      weeklyTemplate: [
+        { day: 1, session: 'Technique Swim', type: 'cardio', duration: 45 },
+        { day: 2, session: 'Strength Maintenance', type: 'strength', duration: 40 },
+        { day: 3, session: 'Interval Swim', type: 'cardio', duration: 50 },
+        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Easy Swim + Drills', type: 'cardio', duration: 40 },
+        { day: 6, session: 'Long Swim', type: 'cardio', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    }
+  ],
+  life: [
+    {
+      id: 'post_injury',
+      name: 'Post-Injury Return',
+      icon: '🩹',
+      type: 'life',
+      category: 'recovery',
+      duration: { min: 2, max: 8, unit: 'weeks' },
+      description: 'Gradual return to training after injury',
+      when_to_use: ['Returning from injury', 'Medical clearance received', 'Pain-free in daily activities'],
+      exit_criteria: ['Pain-free under load', 'Passed movement screens', 'Back to baseline strength'],
+      weeklyTemplate: [
+        { day: 1, session: 'Movement Assessment', type: 'strength', duration: 45 },
+        { day: 2, session: 'Easy Cardio', type: 'cardio', duration: 30 },
+        { day: 3, session: 'Rehab + Light Strength', type: 'strength', duration: 40 },
+        { day: 4, session: 'Rest or Mobility', type: 'recovery', duration: 20 },
+        { day: 5, session: 'Progressive Load Test', type: 'strength', duration: 45 },
+        { day: 6, session: 'Easy Movement', type: 'cardio', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'mental_reset',
+      name: 'Mental Reset',
+      icon: '🧘',
+      type: 'life',
+      category: 'recovery',
+      duration: { min: 1, max: 3, unit: 'weeks' },
+      description: 'Recovery from burnout and motivation loss',
+      when_to_use: ['Burnout symptoms', 'Zero motivation', 'Life stress overwhelming'],
+      exit_criteria: ['Feel excited to train again', 'Energy levels restored', 'Sleep quality improved'],
+      weeklyTemplate: [
+        { day: 1, session: 'Optional Movement', type: 'recovery', duration: 30 },
+        { day: 2, session: 'Optional Movement', type: 'recovery', duration: 30 },
+        { day: 3, session: 'Optional Movement', type: 'recovery', duration: 30 },
+        { day: 4, session: 'Optional Movement', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Optional Movement', type: 'recovery', duration: 30 },
+        { day: 6, session: 'Outdoor Activity', type: 'recovery', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'field_maintenance',
+      name: 'Field/Travel Maintenance',
+      icon: '🎒',
+      type: 'life',
+      category: 'situational',
+      duration: { min: 1, max: 52, unit: 'weeks' },
+      description: 'Maintain fitness with limited equipment',
+      when_to_use: ['Deployed/traveling', 'No gym access', 'Limited equipment'],
+      exit_criteria: ['Back to normal gym access', 'Trip/deployment ended', 'Equipment available again'],
+      weeklyTemplate: [
+        { day: 1, session: 'Bodyweight Strength', type: 'strength', duration: 40 },
+        { day: 2, session: 'Run or Ruck', type: 'cardio', duration: 45 },
+        { day: 3, session: 'Hotel Room Circuit', type: 'strength', duration: 30 },
+        { day: 4, session: 'Easy Movement', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Bodyweight + Core', type: 'strength', duration: 40 },
+        { day: 6, session: 'Long Cardio', type: 'cardio', duration: 60 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'pre_event_taper',
+      name: 'Pre-Event Taper',
+      icon: '🎯',
+      type: 'life',
+      category: 'performance',
+      duration: { min: 1, max: 3, unit: 'weeks' },
+      description: 'Peak performance for upcoming event',
+      when_to_use: ['1-3 weeks before major event', 'Need to peak performance', 'Competition prep'],
+      exit_criteria: ['Event completed', 'Feel fresh and ready', 'Taper period complete'],
+      weeklyTemplate: [
+        { day: 1, session: 'Reduced Volume Strength', type: 'strength', duration: 40 },
+        { day: 2, session: 'Light Cardio', type: 'cardio', duration: 30 },
+        { day: 3, session: 'Event-Specific Practice', type: 'strength', duration: 45 },
+        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+        { day: 5, session: 'Activation Session', type: 'strength', duration: 30 },
+        { day: 6, session: 'Easy Movement', type: 'recovery', duration: 20 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'deload_week',
+      name: 'Deload Week',
+      icon: '😌',
+      type: 'life',
+      category: 'recovery',
+      duration: { min: 1, max: 1, unit: 'weeks' },
+      description: 'Planned recovery week to reduce fatigue',
+      when_to_use: ['After 3-4 hard weeks', 'Feeling run down', 'Performance declining'],
+      exit_criteria: ['Feel refreshed', 'Week completed', 'Ready for hard training'],
+      weeklyTemplate: [
+        { day: 1, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
+        { day: 2, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
+        { day: 3, session: 'Mobility Focus', type: 'recovery', duration: 30 },
+        { day: 4, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
+        { day: 5, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
+        { day: 6, session: 'Light Activity', type: 'recovery', duration: 45 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'sick_return',
+      name: 'Return from Illness',
+      icon: '🤒',
+      type: 'life',
+      category: 'recovery',
+      duration: { min: 1, max: 2, unit: 'weeks' },
+      description: 'Gradual return after being sick',
+      when_to_use: ['Recovering from illness', 'Post-flu/cold', 'Energy still low'],
+      exit_criteria: ['Energy back to normal', 'No symptoms for 3+ days', 'Can complete easy workout'],
+      weeklyTemplate: [
+        { day: 1, session: 'Walk Only', type: 'cardio', duration: 20 },
+        { day: 2, session: 'Light Movement', type: 'recovery', duration: 25 },
+        { day: 3, session: 'Easy Cardio', type: 'cardio', duration: 30 },
+        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+        { day: 5, session: 'Light Strength', type: 'strength', duration: 30 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 35 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'busy_schedule',
+      name: 'Busy Schedule Mode',
+      icon: '📅',
+      type: 'life',
+      category: 'situational',
+      duration: { min: 1, max: 8, unit: 'weeks' },
+      description: 'Maintain fitness with minimal time investment',
+      when_to_use: ['Work deadline crunch', 'Family obligations', 'Limited training time'],
+      exit_criteria: ['Schedule freed up', 'Can return to normal training', 'Busy period ended'],
+      weeklyTemplate: [
+        { day: 1, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
+        { day: 2, session: 'Rest or Walk', type: 'recovery', duration: 20 },
+        { day: 3, session: 'Intervals (20 min)', type: 'cardio', duration: 20 },
+        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+        { day: 5, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
+        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 25 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'weight_cut',
+      name: 'Weight Cut Protocol',
+      icon: '⚖️',
+      type: 'life',
+      category: 'performance',
+      duration: { min: 2, max: 8, unit: 'weeks' },
+      description: 'Preserve muscle while cutting weight',
+      when_to_use: ['Making weight for competition', 'Planned fat loss phase', 'Pre-selection cut'],
+      exit_criteria: ['Target weight reached', 'Competition completed', 'Cut phase ended'],
+      weeklyTemplate: [
+        { day: 1, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
+        { day: 2, session: 'LISS Cardio', type: 'cardio', duration: 40 },
+        { day: 3, session: 'Full Body Maintenance', type: 'strength', duration: 40 },
+        { day: 4, session: 'Light Cardio or Rest', type: 'recovery', duration: 30 },
+        { day: 5, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
+        { day: 6, session: 'LISS Cardio', type: 'cardio', duration: 45 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    },
+    {
+      id: 'new_parent',
+      name: 'New Parent Mode',
+      icon: '👶',
+      type: 'life',
+      category: 'situational',
+      duration: { min: 4, max: 24, unit: 'weeks' },
+      description: 'Flexible training for sleep-deprived new parents',
+      when_to_use: ['New baby at home', 'Sleep deprived', 'Unpredictable schedule'],
+      exit_criteria: ['Sleep improving', 'Schedule more predictable', 'Ready for more structure'],
+      weeklyTemplate: [
+        { day: 1, session: 'When Possible - Strength', type: 'strength', duration: 30 },
+        { day: 2, session: 'When Possible - Walk', type: 'cardio', duration: 20 },
+        { day: 3, session: 'Rest as Needed', type: 'recovery', duration: 0 },
+        { day: 4, session: 'When Possible - Strength', type: 'strength', duration: 30 },
+        { day: 5, session: 'Rest as Needed', type: 'recovery', duration: 0 },
+        { day: 6, session: 'When Possible - Any Activity', type: 'cardio', duration: 30 },
+        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+      ]
+    }
+  ]
+};
+
 // ============== PROGRESSION MODELS ==============
 const PROGRESSION_MODELS = {
   linear: {
@@ -1009,10 +1408,10 @@ const PROGRESSION_MODELS = {
     icon: '📊',
     generateWeeks: (weeks) => {
       const pattern = [
-        { focus: 'Volume', sets: 4, reps: '10-12', intensity: 65, rpe: 7 },
-        { focus: 'Strength', sets: 4, reps: '5-6', intensity: 80, rpe: 8 },
-        { focus: 'Peak', sets: 5, reps: '2-4', intensity: 88, rpe: 9 },
-        { focus: 'Deload', sets: 2, reps: '8-10', intensity: 60, rpe: 5, isDeload: true },
+        { focus: 'Volume', sets: 4, reps: '10-12', intensity: 65, rpe: 7, intensityMod: 0.85, volumeMod: 1.2 },
+        { focus: 'Strength', sets: 4, reps: '5-6', intensity: 80, rpe: 8, intensityMod: 1.0, volumeMod: 1.0 },
+        { focus: 'Peak', sets: 5, reps: '2-4', intensity: 88, rpe: 9, intensityMod: 1.1, volumeMod: 0.9 },
+        { focus: 'Deload', sets: 2, reps: '8-10', intensity: 60, rpe: 5, isDeload: true, intensityMod: 0.75, volumeMod: 0.5 },
       ];
       return Array.from({ length: weeks }, (_, i) => ({
         week: i + 1,
@@ -1029,15 +1428,15 @@ const PROGRESSION_MODELS = {
       const accumWeeks = Math.ceil(weeks * 0.4);
       const transWeeks = Math.ceil(weeks * 0.35);
       const realWeeks = weeks - accumWeeks - transWeeks;
-      
+
       return Array.from({ length: weeks }, (_, i) => {
         if (i < accumWeeks) {
-          return { week: i + 1, phase: 'Accumulation', sets: 4, reps: '8-12', intensity: 65 + (i * 2), rpe: 7, focus: 'Volume' };
+          return { week: i + 1, phase: 'Accumulation', sets: 4, reps: '8-12', intensity: 65 + (i * 2), rpe: 7, focus: 'Volume', intensityMod: 0.85 + (i * 0.02), volumeMod: 1.2 };
         } else if (i < accumWeeks + transWeeks) {
-          return { week: i + 1, phase: 'Transmutation', sets: 4, reps: '4-6', intensity: 78 + ((i - accumWeeks) * 3), rpe: 8, focus: 'Intensity' };
+          return { week: i + 1, phase: 'Transmutation', sets: 4, reps: '4-6', intensity: 78 + ((i - accumWeeks) * 3), rpe: 8, focus: 'Intensity', intensityMod: 1.0 + ((i - accumWeeks) * 0.03), volumeMod: 1.0 };
         } else {
           const realIdx = i - accumWeeks - transWeeks;
-          return { week: i + 1, phase: 'Realization', sets: 3, reps: '1-3', intensity: 90 + (realIdx * 2), rpe: 9, focus: 'Peak' };
+          return { week: i + 1, phase: 'Realization', sets: 3, reps: '1-3', intensity: 90 + (realIdx * 2), rpe: 9, focus: 'Peak', intensityMod: 1.1 + (realIdx * 0.02), volumeMod: 0.7 };
         }
       });
     },
@@ -1055,7 +1454,38 @@ const PROGRESSION_MODELS = {
         intensity: 80,
         rpe: 7,
         note: 'Maintenance only',
+        intensityMod: 1.0,
+        volumeMod: 0.6,
       }));
+    },
+  },
+  conjugate: {
+    id: 'conjugate',
+    name: 'Conjugate/Westside',
+    description: 'Max Effort & Dynamic Effort rotation with weekly exercise variation',
+    icon: '🔀',
+    dayPatterns: [
+      { name: 'Max Effort Upper', sets: 5, reps: '1-3', intensity: 90, rpe: 9, note: 'Work to daily max' },
+      { name: 'Max Effort Lower', sets: 5, reps: '1-3', intensity: 90, rpe: 9, note: 'Work to daily max' },
+      { name: 'Dynamic Effort Upper', sets: 8, reps: '3', intensity: 60, rpe: 7, note: 'Speed work + bands/chains' },
+      { name: 'Dynamic Effort Lower', sets: 10, reps: '2', intensity: 55, rpe: 6, note: 'Speed work + bands/chains' },
+    ],
+    generateWeeks: (weeks) => {
+      return Array.from({ length: weeks }, (_, i) => {
+        const isDeload = (i + 1) % 4 === 0;
+        // Conjugate waves intensity slightly each week for max effort days
+        const meIntensityWave = [90, 92, 95, 85]; // Week 4 is deload
+        return {
+          week: i + 1,
+          pattern: 'Conjugate',
+          meIntensity: meIntensityWave[i % 4],
+          deIntensity: isDeload ? 50 : 55 + ((i % 3) * 5), // 55, 60, 65 wave
+          intensityMod: isDeload ? 0.75 : 1.0 + ((i % 3) * 0.05),
+          volumeMod: isDeload ? 0.5 : 1.0,
+          isDeload,
+          note: isDeload ? 'Deload week' : `Wave ${(i % 3) + 1}`,
+        };
+      });
     },
   },
 };
@@ -1224,6 +1654,160 @@ const DEFAULT_PROGRAMS = {
             { day: 6, session: 'Peak ME Test', type: 'muscular_endurance', duration: 120, prescription: { description: 'Max steps at target load, or long loaded hike' } },
             { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
           ]
+        },
+        {
+          id: 'hypertrophy',
+          name: 'Hypertrophy Block',
+          icon: '🏋️',
+          type: 'specialty',
+          category: 'strength',
+          duration: { min: 4, max: 8, unit: 'weeks' },
+          description: 'Build muscle mass and work capacity',
+          when_to_use: ['Need more muscle mass', 'Building base before strength', 'After extended cut'],
+          sacrifice: ['Max strength temporarily lower', 'Cardio capacity may drop', 'Higher calorie needs'],
+          exit_criteria: ['Gained target weight', 'All lifts show rep improvements', 'Work capacity increased'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Upper Hypertrophy', type: 'strength', duration: 60 },
+            { day: 2, session: 'Lower Hypertrophy', type: 'strength', duration: 60 },
+            { day: 3, session: 'Cardio', type: 'cardio', duration: 40 },
+            { day: 4, session: 'Push Focus', type: 'strength', duration: 55 },
+            { day: 5, session: 'Pull Focus', type: 'strength', duration: 55 },
+            { day: 6, session: 'Legs + Cardio', type: 'strength', duration: 60 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'power_speed',
+          name: 'Power & Speed',
+          icon: '⚡',
+          type: 'specialty',
+          category: 'performance',
+          duration: { min: 3, max: 6, unit: 'weeks' },
+          description: 'Develop explosive power and speed',
+          when_to_use: ['Pre-competition peaking', 'Converting strength to power', 'Speed improvement needed'],
+          sacrifice: ['Endurance capacity drops', 'Muscle mass may not increase', 'Higher CNS fatigue'],
+          exit_criteria: ['Vertical jump improved', 'Sprint times faster', 'Power output tests improved'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Lower Power', type: 'strength', duration: 50 },
+            { day: 2, session: 'Sprint Intervals', type: 'cardio', duration: 40 },
+            { day: 3, session: 'Upper Power', type: 'strength', duration: 50 },
+            { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Plyometrics + Agility', type: 'strength', duration: 45 },
+            { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'grip_forearm',
+          name: 'Grip & Forearm Focus',
+          icon: '🤚',
+          type: 'specialty',
+          category: 'strength',
+          duration: { min: 3, max: 6, unit: 'weeks' },
+          description: 'Build crushing grip strength and forearm endurance',
+          when_to_use: ['Grip limiting deadlift', 'Climbing goals', 'Tactical/rescue applications'],
+          sacrifice: ['Upper body volume reduced', 'May affect pulling exercises short-term'],
+          exit_criteria: ['Grip tests improved 15%+', 'Dead hang time doubled', 'No longer limiting main lifts'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Heavy Pulls + Grip', type: 'strength', duration: 60 },
+            { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
+            { day: 3, session: 'Forearm Hypertrophy', type: 'strength', duration: 45 },
+            { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Grip Endurance + Carries', type: 'strength', duration: 55 },
+            { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'core_stability',
+          name: 'Core & Stability',
+          icon: '🎯',
+          type: 'specialty',
+          category: 'strength',
+          duration: { min: 3, max: 5, unit: 'weeks' },
+          description: 'Build trunk stability and anti-rotation strength',
+          when_to_use: ['Core limiting compound lifts', 'Back pain history', 'Pre-heavy lifting cycle'],
+          sacrifice: ['Main lift progression slowed', 'Less overall volume'],
+          exit_criteria: ['Plank tests improved', 'Core no longer limiting factor', 'Back feels stronger'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Anti-Extension + Lower', type: 'strength', duration: 55 },
+            { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
+            { day: 3, session: 'Anti-Rotation + Upper', type: 'strength', duration: 55 },
+            { day: 4, session: 'Mobility + Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Loaded Carries + Full Body', type: 'strength', duration: 50 },
+            { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'mobility_flexibility',
+          name: 'Mobility & Flexibility',
+          icon: '🧘',
+          type: 'specialty',
+          category: 'recovery',
+          duration: { min: 2, max: 4, unit: 'weeks' },
+          description: 'Improve range of motion and movement quality',
+          when_to_use: ['ROM limiting lifts', 'Feeling stiff/immobile', 'After injury recovery'],
+          sacrifice: ['Strength gains paused', 'Less training volume overall'],
+          exit_criteria: ['Target ROM achieved', 'Movement quality improved', 'No compensation patterns'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Lower Body Mobility + Light Strength', type: 'strength', duration: 50 },
+            { day: 2, session: 'Yoga/Stretch Flow', type: 'recovery', duration: 45 },
+            { day: 3, session: 'Upper Body Mobility + Light Strength', type: 'strength', duration: 50 },
+            { day: 4, session: 'Active Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Full Body Movement', type: 'strength', duration: 45 },
+            { day: 6, session: 'Long Stretch Session', type: 'recovery', duration: 60 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'conditioning_gpp',
+          name: 'Conditioning/GPP',
+          icon: '🔥',
+          type: 'specialty',
+          category: 'cardio',
+          duration: { min: 3, max: 6, unit: 'weeks' },
+          description: 'Build general physical preparedness and work capacity',
+          when_to_use: ['Work capacity is limiting', 'Pre-season conditioning', 'Base building phase'],
+          sacrifice: ['Max strength maintenance only', 'Specific skills not trained'],
+          exit_criteria: ['Conditioning tests improved', 'Recovery between sets faster', 'Can handle more volume'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Circuit Training', type: 'muscular_endurance', duration: 50 },
+            { day: 2, session: 'Intervals', type: 'cardio', duration: 45 },
+            { day: 3, session: 'Strength Maintenance', type: 'strength', duration: 45 },
+            { day: 4, session: 'Easy Cardio', type: 'cardio', duration: 40 },
+            { day: 5, session: 'Mixed Modal', type: 'muscular_endurance', duration: 55 },
+            { day: 6, session: 'Long Slow Distance', type: 'cardio', duration: 60 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'swimming_focus',
+          name: 'Swimming Focus',
+          icon: '🏊',
+          type: 'specialty',
+          category: 'cardio',
+          duration: { min: 4, max: 8, unit: 'weeks' },
+          description: 'Improve swimming technique and water fitness',
+          when_to_use: ['Swim test coming up', 'Triathlon prep', 'Cross-training variety'],
+          sacrifice: ['Running volume reduced', 'Strength maintenance only'],
+          exit_criteria: ['Swim test improved', 'Technique comfort achieved', 'Target distance/pace met'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Technique Swim', type: 'cardio', duration: 45 },
+            { day: 2, session: 'Strength Maintenance', type: 'strength', duration: 40 },
+            { day: 3, session: 'Interval Swim', type: 'cardio', duration: 50 },
+            { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Easy Swim + Drills', type: 'cardio', duration: 40 },
+            { day: 6, session: 'Long Swim', type: 'cardio', duration: 60 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
         }
       ],
       life: [
@@ -1349,6 +1933,111 @@ const DEFAULT_PROGRAMS = {
             { day: 5, session: 'Shakeout', type: 'cardio', duration: 20, prescription: { description: 'Easy movement + strides' } },
             { day: 6, session: 'Rest', type: 'recovery', duration: 0 },
             { day: 7, session: 'Event or Travel', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'deload_week',
+          name: 'Deload Week',
+          icon: '😌',
+          type: 'life',
+          category: 'recovery',
+          duration: { min: 1, max: 1, unit: 'weeks' },
+          description: 'Planned recovery week to reduce fatigue',
+          when_to_use: ['After 3-4 hard weeks', 'Feeling run down', 'Performance declining'],
+          exit_criteria: ['Feel refreshed', 'Week completed', 'Ready for hard training'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
+            { day: 2, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
+            { day: 3, session: 'Mobility Focus', type: 'recovery', duration: 30 },
+            { day: 4, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
+            { day: 5, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
+            { day: 6, session: 'Light Activity', type: 'recovery', duration: 45 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'sick_return',
+          name: 'Return from Illness',
+          icon: '🤒',
+          type: 'life',
+          category: 'recovery',
+          duration: { min: 1, max: 2, unit: 'weeks' },
+          description: 'Gradual return after being sick',
+          when_to_use: ['Recovering from illness', 'Post-flu/cold', 'Energy still low'],
+          exit_criteria: ['Energy back to normal', 'No symptoms for 3+ days', 'Can complete easy workout'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Walk Only', type: 'cardio', duration: 20 },
+            { day: 2, session: 'Light Movement', type: 'recovery', duration: 25 },
+            { day: 3, session: 'Easy Cardio', type: 'cardio', duration: 30 },
+            { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+            { day: 5, session: 'Light Strength', type: 'strength', duration: 30 },
+            { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 35 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'busy_schedule',
+          name: 'Busy Schedule Mode',
+          icon: '📅',
+          type: 'life',
+          category: 'situational',
+          duration: { min: 1, max: 8, unit: 'weeks' },
+          description: 'Maintain fitness with minimal time investment',
+          when_to_use: ['Work deadline crunch', 'Family obligations', 'Limited training time'],
+          exit_criteria: ['Schedule freed up', 'Can return to normal training', 'Busy period ended'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
+            { day: 2, session: 'Rest or Walk', type: 'recovery', duration: 20 },
+            { day: 3, session: 'Intervals (20 min)', type: 'cardio', duration: 20 },
+            { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
+            { day: 5, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
+            { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 25 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'weight_cut',
+          name: 'Weight Cut Protocol',
+          icon: '⚖️',
+          type: 'life',
+          category: 'performance',
+          duration: { min: 2, max: 8, unit: 'weeks' },
+          description: 'Preserve muscle while cutting weight',
+          when_to_use: ['Making weight for competition', 'Planned fat loss phase', 'Pre-selection cut'],
+          exit_criteria: ['Target weight reached', 'Competition completed', 'Cut phase ended'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
+            { day: 2, session: 'LISS Cardio', type: 'cardio', duration: 40 },
+            { day: 3, session: 'Full Body Maintenance', type: 'strength', duration: 40 },
+            { day: 4, session: 'Light Cardio or Rest', type: 'recovery', duration: 30 },
+            { day: 5, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
+            { day: 6, session: 'LISS Cardio', type: 'cardio', duration: 45 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
+          ]
+        },
+        {
+          id: 'new_parent',
+          name: 'New Parent Mode',
+          icon: '👶',
+          type: 'life',
+          category: 'situational',
+          duration: { min: 4, max: 24, unit: 'weeks' },
+          description: 'Flexible training for sleep-deprived new parents',
+          when_to_use: ['New baby at home', 'Sleep deprived', 'Unpredictable schedule'],
+          exit_criteria: ['Sleep improving', 'Schedule more predictable', 'Ready for more structure'],
+          return_to: 'foundation',
+          weeklyTemplate: [
+            { day: 1, session: 'When Possible - Strength', type: 'strength', duration: 30 },
+            { day: 2, session: 'When Possible - Walk', type: 'cardio', duration: 20 },
+            { day: 3, session: 'Rest as Needed', type: 'recovery', duration: 0 },
+            { day: 4, session: 'When Possible - Strength', type: 'strength', duration: 30 },
+            { day: 5, session: 'Rest as Needed', type: 'recovery', duration: 0 },
+            { day: 6, session: 'When Possible - Any Activity', type: 'cardio', duration: 30 },
+            { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
           ]
         }
       ]
@@ -3868,26 +4557,55 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
     if (!showExercisePicker) return null;
     const day = currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx];
     if (!day) return null;
-    
+
     const sessionLower = (day.session || '').toLowerCase();
     const dayNameLower = (day.dayName || '').toLowerCase();
     const combined = `${sessionLower} ${dayNameLower}`;
-    
-    // Map session keywords to movement patterns
-    if (combined.includes('push') || combined.includes('chest') || combined.includes('tricep')) {
-      return ['horizontalPush', 'verticalPush'];
+
+    // Map session keywords to movement patterns - more comprehensive matching
+    // Push movements (chest, shoulders, triceps)
+    if (combined.includes('push') || combined.includes('chest') || combined.includes('tricep') || combined.includes('press')) {
+      return ['horizontalPush', 'verticalPush', 'accessory'];
     }
-    if (combined.includes('pull') || combined.includes('back') || combined.includes('bicep')) {
-      return ['horizontalPull', 'verticalPull'];
+    // Pull movements (back, biceps, rear delts)
+    if (combined.includes('pull') || combined.includes('back') || combined.includes('bicep') || combined.includes('row')) {
+      return ['horizontalPull', 'verticalPull', 'accessory'];
     }
-    if (combined.includes('leg') || combined.includes('lower')) {
+    // Lower body
+    if (combined.includes('leg') || combined.includes('lower') || combined.includes('quad') || combined.includes('ham') || combined.includes('glute')) {
       return ['squat', 'hipHinge', 'lunge', 'accessory'];
     }
+    // Upper body (both push and pull)
     if (combined.includes('upper')) {
-      return ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'];
+      return ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull', 'accessory'];
     }
-    if (combined.includes('full body') || combined.includes('total')) {
+    // Full body
+    if (combined.includes('full body') || combined.includes('total') || combined.includes('full-body')) {
       return null; // Show all
+    }
+    // Power/explosive
+    if (combined.includes('power') || combined.includes('explosive') || combined.includes('plyometric')) {
+      return ['squat', 'hipHinge', 'carry', 'accessory'];
+    }
+    // Shoulder focus
+    if (combined.includes('shoulder') || combined.includes('delt')) {
+      return ['verticalPush', 'horizontalPull', 'accessory'];
+    }
+    // Core/Abs
+    if (combined.includes('core') || combined.includes('ab')) {
+      return ['accessory', 'carry'];
+    }
+    // Arms focus
+    if (combined.includes('arm')) {
+      return ['accessory', 'horizontalPush', 'horizontalPull'];
+    }
+    // Strength (default compound movements)
+    if (combined.includes('strength')) {
+      return ['squat', 'hipHinge', 'horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'];
+    }
+    // ME/Circuits
+    if (combined.includes('circuit') || combined.includes('me ') || combined.includes('muscular endurance')) {
+      return ['squat', 'hipHinge', 'lunge', 'horizontalPush', 'horizontalPull', 'carry'];
     }
     return null;
   };
@@ -4078,6 +4796,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
       {step === 'details' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
+            <button onClick={() => setStep('type')} className={`flex items-center gap-1 ${theme.textMuted}`}>
+              <ChevronLeft size={20} /> Back
+            </button>
             <h3 className={`text-lg font-bold ${theme.text}`}>
               {editingProgramId ? 'Edit Program' : 'Program Details'}
             </h3>
@@ -4097,7 +4818,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
 
       {step === 'phases' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between"><h3 className={`text-lg font-bold ${theme.text}`}>{programType === 'meso' ? 'Phase Setup' : 'Mesocycles'}</h3><span className={`text-sm ${theme.textMuted}`}>{totalWeeks} weeks total</span></div>
+          <div className="flex items-center justify-between">
+            <button onClick={() => setStep('details')} className={`flex items-center gap-1 ${theme.textMuted}`}>
+              <ChevronLeft size={20} /> Back
+            </button>
+            <h3 className={`text-lg font-bold ${theme.text}`}>{programType === 'meso' ? 'Phase Setup' : 'Mesocycles'}</h3>
+            <span className={`text-sm ${theme.textMuted}`}>{totalWeeks} weeks total</span>
+          </div>
           {phases.map((phase, idx) => (
             <div key={phase.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between">
@@ -4376,7 +5103,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
 
       {step === 'review' && (
         <div className="space-y-4">
-          <h3 className={`text-lg font-bold ${theme.text}`}>Review Program</h3>
+          <div className="flex items-center justify-between">
+            <button onClick={() => setStep('phases')} className={`flex items-center gap-1 ${theme.textMuted}`}>
+              <ChevronLeft size={20} /> Back
+            </button>
+            <h3 className={`text-lg font-bold ${theme.text}`}>Review Program</h3>
+            <button onClick={resetEditor} className={`text-sm ${theme.textMuted}`}>Cancel</button>
+          </div>
           {editingProgramId && (
             <div className={`${theme.cardAlt} rounded-lg p-2 text-center`}>
               <p className={`text-xs ${theme.textMuted}`}>✏️ Updating existing program</p>
@@ -5047,8 +5780,12 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
     return colors[type] || 'bg-gray-100 text-gray-600';
   };
 
-  // Get detours if this is a block-based template
-  const availableDetours = program.availableDetours || {};
+  // Get detours - use program-specific if available, otherwise use universal
+  const programDetours = program.availableDetours || {};
+  const availableDetours = {
+    specialty: [...(programDetours.specialty || []), ...UNIVERSAL_DETOURS.specialty].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i),
+    life: [...(programDetours.life || []), ...UNIVERSAL_DETOURS.life].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)
+  };
   const hasDetours = (availableDetours.specialty?.length > 0) || (availableDetours.life?.length > 0);
 
   return (
@@ -5306,52 +6043,106 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
 // ============== DETOUR PICKER VIEW ==============
 const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
   const [expandedBlock, setExpandedBlock] = useState(null);
-  
-  if (!program?.availableDetours) return null;
-  
-  const { specialty = [], life = [] } = program.availableDetours;
-  
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Merge program-specific detours with universal detours, removing duplicates
+  const programDetours = program?.availableDetours || {};
+  const specialty = [...(programDetours.specialty || []), ...UNIVERSAL_DETOURS.specialty]
+    .filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i);
+  const life = [...(programDetours.life || []), ...UNIVERSAL_DETOURS.life]
+    .filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i);
+
+  // Get unique categories for filter
+  const specialtyCategories = [...new Set(specialty.map(b => b.category).filter(Boolean))];
+  const lifeCategories = [...new Set(life.map(b => b.category).filter(Boolean))];
+
+  // Filter blocks by category
+  const filteredSpecialty = categoryFilter === 'all'
+    ? specialty
+    : specialty.filter(b => b.category === categoryFilter);
+  const filteredLife = categoryFilter === 'all'
+    ? life
+    : life.filter(b => b.category === categoryFilter);
+
+  const categoryColors = {
+    strength: 'bg-red-500/20 text-red-500 border-red-500',
+    cardio: 'bg-blue-500/20 text-blue-500 border-blue-500',
+    endurance: 'bg-orange-500/20 text-orange-500 border-orange-500',
+    performance: 'bg-purple-500/20 text-purple-500 border-purple-500',
+    recovery: 'bg-green-500/20 text-green-500 border-green-500',
+    situational: 'bg-yellow-500/20 text-yellow-500 border-yellow-500',
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
       <div className={`${theme.bg} min-h-full md:min-h-0 md:max-w-lg md:mx-auto md:my-8 md:rounded-2xl`}>
         {/* Header */}
-        <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
-          <div>
-            <h2 className={`font-bold text-lg ${theme.text}`}>Take a Detour</h2>
-            <p className={`text-sm ${theme.textMuted}`}>Inject a block, then return to main cycle</p>
+        <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 z-10`}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className={`font-bold text-lg ${theme.text}`}>Take a Detour</h2>
+              <p className={`text-sm ${theme.textMuted}`}>Inject a block, then return to main cycle</p>
+            </div>
+            <button onClick={onClose} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+              <X size={24} className={theme.text} />
+            </button>
           </div>
-          <button onClick={onClose} className={`p-2 rounded-lg ${theme.cardAlt}`}>
-            <X size={24} className={theme.text} />
-          </button>
+          {/* Category Filter Dropdown */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className={`w-full p-2.5 rounded-lg ${theme.input} border text-sm font-medium`}
+          >
+            <option value="all">All Categories</option>
+            <optgroup label="Specialty">
+              {specialtyCategories.map(cat => (
+                <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Life">
+              {lifeCategories.map(cat => (
+                <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+              ))}
+            </optgroup>
+          </select>
         </div>
 
         <div className="p-4 space-y-6 pb-8">
           {/* Specialty Blocks */}
-          {specialty.length > 0 && (
+          {filteredSpecialty.length > 0 && (
             <div>
               <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
                 <Zap size={18} className="text-orange-500" />
                 Specialty Blocks
+                <span className={`text-xs ${theme.textMuted}`}>({filteredSpecialty.length})</span>
               </h3>
               <p className={`text-sm ${theme.textMuted} mb-3`}>
                 Focused training when specific demands arise.
               </p>
               <div className="space-y-3">
-                {specialty.map(block => (
+                {filteredSpecialty.map(block => (
                   <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-orange-500`}>
                     <button
                       onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)}
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
-                      <div>
-                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
-                        <p className={`text-sm ${theme.textMuted}`}>
-                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{block.icon}</span>
+                        <div>
+                          <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                          <p className={`text-sm ${theme.textMuted}`}>
+                            {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                            {block.category && (
+                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${categoryColors[block.category] || theme.cardAlt}`}>
+                                {block.category}
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
                       {expandedBlock === block.id ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
                     </button>
-                    
+
                     {expandedBlock === block.id && (
                       <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
                         {block.when_to_use?.length > 0 && (
@@ -5393,31 +6184,40 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
           )}
 
           {/* Life Blocks */}
-          {life.length > 0 && (
+          {filteredLife.length > 0 && (
             <div>
               <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
                 <Heart size={18} className="text-green-500" />
                 Life Blocks
+                <span className={`text-xs ${theme.textMuted}`}>({filteredLife.length})</span>
               </h3>
               <p className={`text-sm ${theme.textMuted} mb-3`}>
                 Adaptive responses for injuries, burnout, deployment, etc.
               </p>
               <div className="space-y-3">
-                {life.map(block => (
+                {filteredLife.map(block => (
                   <div key={block.id} className={`${theme.card} rounded-xl overflow-hidden border-l-4 border-green-500`}>
                     <button
                       onClick={() => setExpandedBlock(expandedBlock === `life_${block.id}` ? null : `life_${block.id}`)}
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
-                      <div>
-                        <p className={`font-semibold ${theme.text}`}>{block.name}</p>
-                        <p className={`text-sm ${theme.textMuted}`}>
-                          {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{block.icon}</span>
+                        <div>
+                          <p className={`font-semibold ${theme.text}`}>{block.name}</p>
+                          <p className={`text-sm ${theme.textMuted}`}>
+                            {block.duration?.min}-{block.duration?.max} {block.duration?.unit}
+                            {block.category && (
+                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${categoryColors[block.category] || theme.cardAlt}`}>
+                                {block.category}
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
                       {expandedBlock === `life_${block.id}` ? <ChevronUp size={20} className={theme.textMuted} /> : <ChevronDown size={20} className={theme.textMuted} />}
                     </button>
-                    
+
                     {expandedBlock === `life_${block.id}` && (
                       <div className={`px-4 pb-4 border-t ${theme.border} space-y-3`}>
                         {block.when_to_use?.length > 0 && (
@@ -5455,6 +6255,19 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* No results message */}
+          {filteredSpecialty.length === 0 && filteredLife.length === 0 && (
+            <div className={`text-center py-8 ${theme.textMuted}`}>
+              <p>No detours match the selected category.</p>
+              <button
+                onClick={() => setCategoryFilter('all')}
+                className="mt-2 text-blue-500 underline"
+              >
+                Show all detours
+              </button>
             </div>
           )}
         </div>
@@ -6724,12 +7537,22 @@ export default function App() {
   
   // Check if we're in a detour block
   const activeDetour = programState.activeDetour;
+  
+  // Get available detours - merge program-specific with universal
+  const availableDetoursForProgram = useMemo(() => {
+    const programDetours = program?.availableDetours || {};
+    return {
+      specialty: [...(programDetours.specialty || []), ...UNIVERSAL_DETOURS.specialty].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i),
+      life: [...(programDetours.life || []), ...UNIVERSAL_DETOURS.life].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)
+    };
+  }, [program?.availableDetours]);
+  
   const detourBlock = useMemo(() => {
-    if (!activeDetour || !program?.availableDetours) return null;
+    if (!activeDetour) return null;
     const { blockId, blockType } = activeDetour;
-    const blocks = program.availableDetours[blockType] || [];
+    const blocks = availableDetoursForProgram[blockType] || [];
     return blocks.find(b => b.id === blockId);
-  }, [activeDetour, program?.availableDetours]);
+  }, [activeDetour, availableDetoursForProgram]);
 
   // Get current phase - either from detour or main cycle
   const phase = useMemo(() => {
