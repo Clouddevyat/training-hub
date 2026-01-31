@@ -1,17 +1,19 @@
 // Movement Patterns for exercise categorization
+import { Dumbbell, Footprints, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Briefcase, Target, Wrench, Heart, PersonStanding } from 'lucide-react';
+
 export const MOVEMENT_PATTERNS = {
-  hipHinge: { id: 'hipHinge', name: 'Hip Hinge', icon: '🏋️' },
-  squat: { id: 'squat', name: 'Squat', icon: '🦵' },
-  horizontalPush: { id: 'horizontalPush', name: 'Horizontal Push', icon: '💪' },
-  horizontalPull: { id: 'horizontalPull', name: 'Horizontal Pull', icon: '🚣' },
-  verticalPush: { id: 'verticalPush', name: 'Vertical Push', icon: '🙆' },
-  verticalPull: { id: 'verticalPull', name: 'Vertical Pull', icon: '🧗' },
-  carry: { id: 'carry', name: 'Carry', icon: '🎒' },
-  lunge: { id: 'lunge', name: 'Lunge/Single Leg', icon: '🦿' },
-  core: { id: 'core', name: 'Core', icon: '🎯' },
-  accessory: { id: 'accessory', name: 'Accessory', icon: '🔧' },
-  cardio: { id: 'cardio', name: 'Cardio', icon: '❤️' },
-  mobility: { id: 'mobility', name: 'Mobility', icon: '🧘' },
+  hipHinge: { id: 'hipHinge', name: 'Hip Hinge', Icon: Dumbbell },
+  squat: { id: 'squat', name: 'Squat', Icon: Footprints },
+  horizontalPush: { id: 'horizontalPush', name: 'Horizontal Push', Icon: ArrowRight },
+  horizontalPull: { id: 'horizontalPull', name: 'Horizontal Pull', Icon: ArrowLeft },
+  verticalPush: { id: 'verticalPush', name: 'Vertical Push', Icon: ArrowUp },
+  verticalPull: { id: 'verticalPull', name: 'Vertical Pull', Icon: ArrowDown },
+  carry: { id: 'carry', name: 'Carry', Icon: Briefcase },
+  lunge: { id: 'lunge', name: 'Lunge/Single Leg', Icon: Footprints },
+  core: { id: 'core', name: 'Core', Icon: Target },
+  accessory: { id: 'accessory', name: 'Accessory', Icon: Wrench },
+  cardio: { id: 'cardio', name: 'Cardio', Icon: Heart },
+  mobility: { id: 'mobility', name: 'Mobility', Icon: PersonStanding },
 };
 
 export const EQUIPMENT_TYPES = {

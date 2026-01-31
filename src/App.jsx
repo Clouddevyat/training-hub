@@ -236,14 +236,28 @@ const EMOJI_TO_ICON = {
   '🧳': Briefcase, '🏔️': Mountain,
 };
 
-// Helper to render an icon - handles both Icon component references and emoji strings
+// Icon ID to Lucide icon mapping for program icons
+const ICON_ID_MAP = {
+  'mountain': Mountain, 'dumbbell': Dumbbell, 'activity': Activity,
+  'flame': Flame, 'zap': Zap, 'target': Target, 'heart': Heart,
+  'scale': Scale, 'bike': Bike, 'waves': Waves, 'trophy': Award,
+  'calendar': Calendar,
+};
+
+// Helper to render an icon - handles Icon component refs, iconId strings, and emoji strings
 const RenderIcon = ({ icon, Icon, size = 20, className = '' }) => {
   // If Icon is a component reference, render it directly
   if (Icon && typeof Icon === 'function') {
     return <Icon size={size} className={className} />;
   }
-  // If icon is an emoji string, try to convert it
+  // If icon is a string, try to resolve it
   if (icon && typeof icon === 'string') {
+    // First check if it's an iconId (like 'mountain', 'dumbbell')
+    const IconFromId = ICON_ID_MAP[icon];
+    if (IconFromId) {
+      return <IconFromId size={size} className={className} />;
+    }
+    // Then check if it's an emoji
     const LucideIcon = EMOJI_TO_ICON[icon];
     if (LucideIcon) {
       return <LucideIcon size={size} className={className} />;
@@ -4311,7 +4325,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
   const [programType, setProgramType] = useState(null);
   const [programName, setProgramName] = useState('');
   const [programDescription, setProgramDescription] = useState('');
-  const [programIcon, setProgramIcon] = useState('🏋️');
+  const [programIcon, setProgramIcon] = useState('mountain');
   const [phases, setPhases] = useState([]);
   const [currentPhaseIdx, setCurrentPhaseIdx] = useState(0);
   const [showExercisePicker, setShowExercisePicker] = useState(null);
@@ -4347,6 +4361,26 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     { id: 'mobility', name: 'Mobility', Icon: PersonStanding },
     { id: 'recovery', name: 'Recovery/Off', Icon: Moon },
   ];
+  // Icon options for program icon picker
+  const PROGRAM_ICONS = [
+    { id: 'mountain', Icon: Mountain, name: 'Mountain' },
+    { id: 'dumbbell', Icon: Dumbbell, name: 'Dumbbell' },
+    { id: 'activity', Icon: Activity, name: 'Activity' },
+    { id: 'flame', Icon: Flame, name: 'Flame' },
+    { id: 'zap', Icon: Zap, name: 'Zap' },
+    { id: 'target', Icon: Target, name: 'Target' },
+    { id: 'heart', Icon: Heart, name: 'Heart' },
+    { id: 'scale', Icon: Scale, name: 'Scale' },
+    { id: 'bike', Icon: Bike, name: 'Bike' },
+    { id: 'waves', Icon: Waves, name: 'Waves' },
+    { id: 'trophy', Icon: Award, name: 'Trophy' },
+    { id: 'calendar', Icon: Calendar, name: 'Calendar' },
+  ];
+  // Helper to get Icon component from iconId
+  const getProgramIcon = (iconId) => {
+    const iconObj = PROGRAM_ICONS.find(i => i.id === iconId);
+    return iconObj?.Icon || Mountain;
+  };
   
   const WARMUP_TEMPLATES = [
     { id: 'none', name: 'None', description: '', duration: 0 },
@@ -4737,7 +4771,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     // Set basic info
     setProgramName(isDuplicate ? `${program.name} (Copy)` : program.name);
     setProgramDescription(program.description || '');
-    setProgramIcon(program.icon || '🏋️');
+    setProgramIcon(program.iconId || program.icon || 'mountain');
     setProgramType(program.phases?.length > 1 ? 'macro' : 'meso');
     
     // Convert saved phases back to editable format
@@ -4810,7 +4844,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     setProgramType(null);
     setProgramName('');
     setProgramDescription('');
-    setProgramIcon('🏋️');
+    setProgramIcon('mountain');
     setPhases([]);
     setCurrentPhaseIdx(0);
     setEditingProgramId(null);
@@ -5068,7 +5102,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       id: editingProgramId || `custom_${Date.now()}`,
       name: programName,
       description: programDescription,
-      icon: programIcon,
+      iconId: programIcon,
       phases: phases.map(phase => ({
         id: phase.id, name: phase.name, weeks: phase.weeksRange,
         description: `${PROGRESSION_MODELS[phase.progression].name} progression`,
@@ -5218,10 +5252,20 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           
           {/* Create New Options */}
           <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
-            <div className="flex items-center gap-4"><span className="text-3xl">📦</span><div><p className={`font-bold ${theme.text}`}>New Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div></div>
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                <Dumbbell size={24} className="text-blue-500" />
+              </div>
+              <div><p className={`font-bold ${theme.text}`}>New Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div>
+            </div>
           </button>
           <button onClick={() => { setProgramType('macro'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
-            <div className="flex items-center gap-4"><span className="text-3xl">📅</span><div><p className={`font-bold ${theme.text}`}>New Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div></div>
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
+                <Calendar size={24} className="text-purple-500" />
+              </div>
+              <div><p className={`font-bold ${theme.text}`}>New Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div>
+            </div>
           </button>
           
           {/* Manage Existing Programs - only show if there are custom programs */}
@@ -5235,7 +5279,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
-                          <RenderIcon icon={prog.icon} Icon={prog.Icon} size={20} className="text-purple-500" />
+                          <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={20} className="text-purple-500" />
                         </div>
                         <div>
                           <p className={`font-medium ${theme.text}`}>{prog.name}</p>
@@ -5381,7 +5425,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           )}
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Program Name</label><input type="text" value={programName} onChange={(e) => setProgramName(e.target.value)} placeholder="e.g., Pre-Season Strength" className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Description</label><textarea value={programDescription} onChange={(e) => setProgramDescription(e.target.value)} placeholder="Brief description..." rows={2} className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
-          <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{ICONS.map(icon => (<button key={icon} onClick={() => setProgramIcon(icon)} className={`text-2xl p-2 rounded-lg ${programIcon === icon ? 'bg-blue-500' : theme.cardAlt}`}>{icon}</button>))}</div></div>
+          <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{PROGRAM_ICONS.map(iconObj => (<button key={iconObj.id} onClick={() => setProgramIcon(iconObj.id)} className={`p-2 rounded-lg ${programIcon === iconObj.id ? 'bg-blue-500 text-white' : theme.cardAlt}`} title={iconObj.name}><iconObj.Icon size={24} /></button>))}</div></div>
           <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : theme.btnDisabled}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
         </div>
       )}
@@ -5915,7 +5959,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             </div>
           )}
           <div className={`${theme.card} rounded-xl p-5`}>
-            <div className="flex items-center gap-3 mb-4"><span className="text-4xl">{programIcon}</span><div><h4 className={`text-xl font-bold ${theme.text}`}>{programName}</h4><p className={`text-sm ${theme.textMuted}`}>{programDescription}</p></div></div>
+            <div className="flex items-center gap-3 mb-4">{(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={40} className="text-blue-500" />; })()}<div><h4 className={`text-xl font-bold ${theme.text}`}>{programName}</h4><p className={`text-sm ${theme.textMuted}`}>{programDescription}</p></div></div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{totalWeeks}</p><p className={`text-xs ${theme.textMuted}`}>Total Weeks</p></div>
               <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{phases.length}</p><p className={`text-xs ${theme.textMuted}`}>Phases</p></div>
@@ -5968,7 +6012,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             <div className="flex flex-wrap gap-2 mb-3">
               <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
               {Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (
-                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{pattern.icon} {pattern.name}</button>
+                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}><pattern.Icon size={14} /> {pattern.name}</button>
               ))}
             </div>
 
@@ -6124,7 +6168,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             {/* Header */}
             <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{programIcon}</span>
+                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-blue-500" />; })()}
                 <div>
                   <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
                   <p className={`text-xs ${theme.textMuted}`}>Preview Mode</p>
@@ -6323,7 +6367,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             {/* Header */}
             <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{programIcon}</span>
+                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-blue-500" />; })()}
                 <div>
                   <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
                   <p className={`text-xs ${theme.textMuted}`}>Calendar Preview • {totalWeeks} weeks</p>
@@ -6673,7 +6717,7 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
         <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-              <RenderIcon icon={program.icon} Icon={program.Icon} size={24} className="text-blue-500" />
+              <RenderIcon icon={program.iconId || program.icon} Icon={program.Icon} size={24} className="text-blue-500" />
             </div>
             <div>
               <h2 className={`font-bold text-lg ${theme.text}`}>{program.name}</h2>
@@ -10146,7 +10190,7 @@ export default function App() {
                 <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                      <RenderIcon icon={prog.icon} Icon={prog.Icon} size={24} className="text-blue-500" />
+                      <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={24} className="text-blue-500" />
                     </div>
                     <div className="flex-1">
                       <p className={`font-semibold ${theme.text}`}>{prog.name}</p>
@@ -10571,8 +10615,8 @@ export default function App() {
               <div className={`p-4 border-b ${theme.border} flex items-center justify-between`}>
                 <div>
                   <h3 className={`font-bold ${theme.text}`}>Smart Swap</h3>
-                  <p className={`text-sm ${theme.textMuted}`}>
-                    {MOVEMENT_PATTERNS[swappingExercise.pattern]?.icon} {swappingExercise.name}
+                  <p className={`text-sm ${theme.textMuted} flex items-center gap-1.5`}>
+                    {(() => { const PatternIcon = MOVEMENT_PATTERNS[swappingExercise.pattern]?.Icon; return PatternIcon ? <PatternIcon size={14} /> : null; })()} {swappingExercise.name}
                   </p>
                 </div>
                 <button onClick={() => { setSwappingExercise(null); setShowAllSwapOptions(false); }} className={`p-2 rounded-lg ${theme.cardAlt}`}>
