@@ -1493,36 +1493,8 @@ const DEFAULT_PROGRAMS = {
 
 // ============== READINESS CHECK COMPONENT ==============
 const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, darkMode }) => {
-  // Track current date and update it when it changes (e.g., app left open overnight)
-  const [currentDate, setCurrentDate] = useState(getTodayKey());
-
-  useEffect(() => {
-    // Check for date change every minute
-    const interval = setInterval(() => {
-      const newDate = getTodayKey();
-      if (newDate !== currentDate) {
-        setCurrentDate(newDate);
-      }
-    }, 60000); // Check every minute
-
-    // Also check on visibility change (when user returns to tab)
-    const handleVisibility = () => {
-      if (!document.hidden) {
-        const newDate = getTodayKey();
-        if (newDate !== currentDate) {
-          setCurrentDate(newDate);
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [currentDate]);
-
-  const todayKey = currentDate;
+  // Always get fresh date on each render - no stale state
+  const todayKey = getTodayKey();
   const todayCheck = readiness.logs?.find(l => l.date === todayKey);
   const [formData, setFormData] = useState(todayCheck || {
     sleepQuality: 3,
