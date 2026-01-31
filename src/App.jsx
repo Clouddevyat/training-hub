@@ -3096,7 +3096,15 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
             )}
           </div>
           <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1`}>
-            {exercise.sets && <span className={`font-medium ${theme.textMuted}`}>{exercise.sets}×{exercise.reps || '—'}</span>}
+            {exercise.sets && exercise.reps && (
+              // Check if reps is numeric or descriptive
+              /^\d/.test(String(exercise.reps)) ? (
+                <span className={`font-medium ${theme.textMuted}`}>{exercise.sets}×{exercise.reps}</span>
+              ) : (
+                <span className={`font-medium ${theme.textMuted}`}>{exercise.reps}</span>
+              )
+            )}
+            {exercise.sets && !exercise.reps && <span className={`font-medium ${theme.textMuted}`}>{exercise.sets} sets</span>}
             {workingWeight && (
               <span className="font-mono font-bold text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-md text-xs">
                 {workingWeight} lb
