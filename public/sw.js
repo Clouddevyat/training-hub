@@ -1,6 +1,11 @@
-const CACHE_NAME = 'training-hub-v1';
+// Training Hub Service Worker v2
+// Provides offline capability with smart caching strategies
 
-// Files to cache for offline use
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE = `training-hub-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `training-hub-dynamic-${CACHE_VERSION}`;
+
+// Core files to cache immediately on install
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,86 +13,133 @@ const STATIC_ASSETS = [
   '/mountain.svg',
 ];
 
-// Install event - cache static assets
+// Install event - cache core static assets
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing service worker...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(STATIC_CACHE)
+      .then((cache) => {
+        console.log('[SW] Caching core static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        console.log('[SW] Install complete, skipping waiting');
+        return self.skipWaiting();
+      })
   );
-  // Activate immediately
-  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and take control
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => {
+              // Delete old versioned caches
+              return name.startsWith('training-hub-') &&
+                     name !== STATIC_CACHE &&
+                     name !== DYNAMIC_CACHE;
+            })
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Claiming clients');
+        return self.clients.claim();
+      })
   );
-  // Take control of all pages immediately
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - smart caching strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  
-  // Skip non-GET requests
+  const url = new URL(request.url);
+
+  // Skip non-GET requests (POST, PUT, DELETE go to network)
   if (request.method !== 'GET') return;
-  
-  // Skip chrome-extension and other non-http requests
-  if (!request.url.startsWith('http')) return;
-  
+
+  // Skip non-http(s) requests
+  if (!url.protocol.startsWith('http')) return;
+
+  // Skip Supabase API calls - always go to network (data sync)
+  if (url.hostname.includes('supabase')) {
+    return;
+  }
+
+  // Skip WebAuthn/authentication requests
+  if (url.pathname.includes('auth') || url.pathname.includes('webauthn')) {
+    return;
+  }
+
+  // For navigation requests (HTML pages) - network first, fallback to cache
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the latest version
+          const responseClone = response.clone();
+          caches.open(DYNAMIC_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Offline - serve from cache
+          return caches.match(request)
+            .then((cached) => cached || caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
+  // For assets (JS, CSS, images) - cache first, network fallback
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      // Return cached version if available
-      if (cachedResponse) {
-        // Fetch fresh version in background for next time
-        event.waitUntil(
-          fetch(request).then((response) => {
-            if (response.ok) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(request, response);
-              });
-            }
-          }).catch(() => {})
-        );
-        return cachedResponse;
-      }
-      
-      // Not in cache - fetch from network
-      return fetch(request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response.ok) return response;
-        
-        // Clone response since it can only be consumed once
-        const responseToCache = response.clone();
-        
-        // Cache the fetched response
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
-        
-        return response;
-      }).catch(() => {
-        // Network failed and not in cache
-        // Return offline fallback for navigation requests
-        if (request.mode === 'navigate') {
-          return caches.match('/index.html');
+    caches.match(request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          // Return cached, but update in background
+          event.waitUntil(
+            fetch(request)
+              .then((response) => {
+                if (response.ok) {
+                  caches.open(DYNAMIC_CACHE).then((cache) => {
+                    cache.put(request, response);
+                  });
+                }
+              })
+              .catch(() => {}) // Ignore background update failures
+          );
+          return cachedResponse;
         }
-        return new Response('Offline', { status: 503 });
-      });
-    })
+
+        // Not in cache - fetch and cache
+        return fetch(request)
+          .then((response) => {
+            // Don't cache errors
+            if (!response.ok) return response;
+
+            // Cache successful responses
+            const responseClone = response.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+
+            return response;
+          })
+          .catch(() => {
+            // Return empty response for failed asset requests when offline
+            return new Response('', {
+              status: 503,
+              statusText: 'Offline - Resource unavailable'
+            });
+          });
+      })
   );
 });
 
@@ -95,5 +147,12 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
+  }
+
+  // Force cache refresh
+  if (event.data === 'clearCache') {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name));
+    });
   }
 });
