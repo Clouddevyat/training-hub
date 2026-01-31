@@ -5782,31 +5782,31 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             <input type="text" placeholder="Search exercises..." value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} className={`w-full p-3 rounded-lg ${theme.input} border mb-3`} />
 
             {/* Movement Pattern Filter */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}>All</button>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
               {Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (
-                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}>{pattern.icon} {pattern.name}</button>
+                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{pattern.icon} {pattern.name}</button>
               ))}
             </div>
 
             {/* Muscle Group Filter */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              <span className={`text-xs ${theme.textMuted} self-center`}>Muscles:</span>
-              <button onClick={() => setMuscleFilter('all')} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === 'all' ? 'bg-purple-500 text-white' : theme.cardAlt}`}>All</button>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className={`text-sm font-medium ${theme.text} self-center mr-1`}>Muscles:</span>
+              <button onClick={() => setMuscleFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${muscleFilter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
               {suggestedMuscles && suggestedMuscles.map(muscle => (
-                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-purple-500/20 text-purple-400'}`}>★ {muscle}</button>
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/40'}`}>★ {muscle}</button>
               ))}
               {MUSCLE_FILTER_OPTIONS.filter(m => !suggestedMuscles?.includes(m)).slice(0, 12).map(muscle => (
-                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2 py-0.5 rounded-full text-xs capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : theme.cardAlt}`}>{muscle}</button>
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{muscle}</button>
               ))}
             </div>
 
             {/* Equipment Filter */}
             <div className="flex flex-wrap gap-2 mb-4">
-              <span className={`text-xs ${theme.textMuted} self-center`}>Equipment:</span>
-              <button onClick={() => setEquipmentFilter('all')} className={`px-2 py-0.5 rounded-full text-xs ${equipmentFilter === 'all' ? 'bg-green-500 text-white' : theme.cardAlt}`}>All</button>
+              <span className={`text-sm font-medium ${theme.text} self-center mr-1`}>Equipment:</span>
+              <button onClick={() => setEquipmentFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
               {EQUIPMENT_OPTIONS.map(eq => (
-                <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2 py-0.5 rounded-full text-xs ${equipmentFilter === eq ? 'bg-green-500 text-white' : theme.cardAlt}`}>{eq}</button>
+                <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === eq ? 'bg-green-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{eq}</button>
               ))}
             </div>
 
@@ -5817,13 +5817,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                 filteredExercises.map(ex => {
                   const isSuggested = suggestedPatterns?.includes(ex.pattern) || (suggestedMuscles && ex.muscles?.some(m => suggestedMuscles.includes(m)));
                   return (
-                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
+                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left hover:bg-gray-700/50 ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
                       <p className={`font-medium ${theme.text}`}>
-                        {isSuggested && <span className="text-blue-500 mr-1">★</span>}
+                        {isSuggested && <span className="text-blue-400 mr-1">★</span>}
                         {ex.name}
-                        {ex.isCustom && <span className="ml-2 text-xs text-green-500">(Custom)</span>}
+                        {ex.isCustom && <span className="ml-2 text-xs text-green-400">(Custom)</span>}
                       </p>
-                      <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
+                      <p className="text-sm text-gray-400">{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
                     </button>
                   );
                 })
