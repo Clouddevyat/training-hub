@@ -1,0 +1,226 @@
+// Exercise Library - 150+ exercises organized by movement pattern
+
+export const EXERCISE_LIBRARY = {
+  // === HIP HINGE ===
+  trapBarDeadlift: { id: 'trapBarDeadlift', name: 'Trap Bar Deadlift', pattern: 'hipHinge', equipment: ['trapBar'], muscles: ['glutes', 'hamstrings', 'back', 'quads'], prKey: 'trapBarDeadlift' },
+  conventionalDeadlift: { id: 'conventionalDeadlift', name: 'Conventional Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'back'] },
+  sumoDeadlift: { id: 'sumoDeadlift', name: 'Sumo Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'quads', 'adductors'] },
+  romanianDeadlift: { id: 'romanianDeadlift', name: 'Romanian Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes'] },
+  stiffLegDeadlift: { id: 'stiffLegDeadlift', name: 'Stiff Leg Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes', 'back'] },
+  kettlebellSwing: { id: 'kettlebellSwing', name: 'Kettlebell Swing', pattern: 'hipHinge', equipment: ['kettlebell'], muscles: ['glutes', 'hamstrings', 'core'] },
+  hipThrust: { id: 'hipThrust', name: 'Hip Thrust', pattern: 'hipHinge', equipment: ['barbell', 'bench'], muscles: ['glutes'] },
+  machineHipThrust: { id: 'machineHipThrust', name: 'Machine Hip Thrust', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes'] },
+  goodMorning: { id: 'goodMorning', name: 'Good Morning', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['hamstrings', 'back'] },
+  cableKickback: { id: 'cableKickback', name: 'Cable Kickback', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes'] },
+  gluteHamRaise: { id: 'gluteHamRaise', name: 'Glute Ham Raise', pattern: 'hipHinge', equipment: ['machine'], muscles: ['hamstrings', 'glutes'] },
+  reverseHyper: { id: 'reverseHyper', name: 'Reverse Hyperextension', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes', 'hamstrings', 'back'] },
+  backExtension: { id: 'backExtension', name: 'Back Extension', pattern: 'hipHinge', equipment: ['machine', 'bodyweight'], muscles: ['back', 'glutes', 'hamstrings'] },
+  pullThrough: { id: 'pullThrough', name: 'Cable Pull-Through', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes', 'hamstrings'] },
+
+  // === SQUAT ===
+  backSquat: { id: 'backSquat', name: 'Back Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes'], prKey: 'backSquat' },
+  frontSquat: { id: 'frontSquat', name: 'Front Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'core'], prKey: 'frontSquat' },
+  safetyBarSquat: { id: 'safetyBarSquat', name: 'Safety Bar Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
+  gobletSquat: { id: 'gobletSquat', name: 'Goblet Squat', pattern: 'squat', equipment: ['kettlebell', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  zercher_squat: { id: 'zercher_squat', name: 'Zercher Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
+  legPress: { id: 'legPress', name: 'Leg Press', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  legPressWide: { id: 'legPressWide', name: 'Leg Press (Wide Stance)', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes', 'adductors'] },
+  hackSquat: { id: 'hackSquat', name: 'Hack Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads'] },
+  pendulumSquat: { id: 'pendulumSquat', name: 'Pendulum Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  vSquat: { id: 'vSquat', name: 'V-Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  smithSquat: { id: 'smithSquat', name: 'Smith Machine Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  beltSquat: { id: 'beltSquat', name: 'Belt Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+
+  // === LUNGE/SINGLE LEG ===
+  boxStepUp: { id: 'boxStepUp', name: 'Box Step-Up', pattern: 'lunge', equipment: ['box', 'dumbbell'], muscles: ['quads', 'glutes'], prKey: 'boxStepUp' },
+  walkingLunge: { id: 'walkingLunge', name: 'Walking Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  reverseLunge: { id: 'reverseLunge', name: 'Reverse Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell', 'barbell'], muscles: ['quads', 'glutes'] },
+  lateralLunge: { id: 'lateralLunge', name: 'Lateral Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes', 'adductors'] },
+  curtsy_lunge: { id: 'curtsy_lunge', name: 'Curtsy Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['glutes', 'quads'] },
+  bulgarianSplitSquat: { id: 'bulgarianSplitSquat', name: 'Bulgarian Split Squat', pattern: 'lunge', equipment: ['bench', 'dumbbell'], muscles: ['quads', 'glutes'] },
+  singleLegRDL: { id: 'singleLegRDL', name: 'Single Leg RDL', pattern: 'lunge', equipment: ['dumbbell', 'kettlebell'], muscles: ['hamstrings', 'glutes'] },
+  singleLegPress: { id: 'singleLegPress', name: 'Single Leg Press', pattern: 'lunge', equipment: ['machine'], muscles: ['quads', 'glutes'] },
+  singleLegLegCurl: { id: 'singleLegLegCurl', name: 'Single Leg Curl', pattern: 'lunge', equipment: ['machine'], muscles: ['hamstrings'] },
+  pistolSquat: { id: 'pistolSquat', name: 'Pistol Squat', pattern: 'lunge', equipment: ['bodyweight'], muscles: ['quads', 'glutes'] },
+  splitSquat: { id: 'splitSquat', name: 'Split Squat', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
+
+  // === HORIZONTAL PUSH ===
+  benchPress: { id: 'benchPress', name: 'Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps', 'shoulders'], prKey: 'benchPress' },
+  inclineBenchPress: { id: 'inclineBenchPress', name: 'Incline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'shoulders'] },
+  declineBenchPress: { id: 'declineBenchPress', name: 'Decline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps'] },
+  closeGripBench: { id: 'closeGripBench', name: 'Close Grip Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['triceps', 'chest'] },
+  dbBenchPress: { id: 'dbBenchPress', name: 'DB Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'triceps'] },
+  dbInclineBenchPress: { id: 'dbInclineBenchPress', name: 'DB Incline Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'shoulders'] },
+  pushUp: { id: 'pushUp', name: 'Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps', 'core'] },
+  diamondPushUp: { id: 'diamondPushUp', name: 'Diamond Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['triceps', 'chest'] },
+  chestDip: { id: 'chestDip', name: 'Dip', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps'], prKey: 'weightedDip' },
+  machineChestPress: { id: 'machineChestPress', name: 'Machine Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  machineInclinePress: { id: 'machineInclinePress', name: 'Machine Incline Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'shoulders'] },
+  smithBenchPress: { id: 'smithBenchPress', name: 'Smith Machine Bench Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  cableChestPress: { id: 'cableChestPress', name: 'Cable Chest Press', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest', 'triceps'] },
+  chestFly: { id: 'chestFly', name: 'Dumbbell Chest Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
+  inclineChestFly: { id: 'inclineChestFly', name: 'Incline Dumbbell Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
+  cableFly: { id: 'cableFly', name: 'Cable Fly', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest'] },
+  pecDeck: { id: 'pecDeck', name: 'Pec Deck Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest'] },
+
+  // === HORIZONTAL PULL ===
+  barbellRow: { id: 'barbellRow', name: 'Barbell Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  pendlayRow: { id: 'pendlayRow', name: 'Pendlay Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  tBarRow: { id: 'tBarRow', name: 'T-Bar Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  dbRow: { id: 'dbRow', name: 'DB Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back', 'biceps'] },
+  meadowsRow: { id: 'meadowsRow', name: 'Meadows Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
+  cableRow: { id: 'cableRow', name: 'Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  wideGripCableRow: { id: 'wideGripCableRow', name: 'Wide Grip Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'rear delts'] },
+  chestSupportedRow: { id: 'chestSupportedRow', name: 'Chest Supported Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
+  machineRow: { id: 'machineRow', name: 'Machine Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
+  hammerStrengthRow: { id: 'hammerStrengthRow', name: 'Hammer Strength Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
+  invertedRow: { id: 'invertedRow', name: 'Inverted Row', pattern: 'horizontalPull', equipment: ['bodyweight', 'pullupBar'], muscles: ['back', 'biceps'] },
+  sealRow: { id: 'sealRow', name: 'Seal Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
+
+  // === VERTICAL PUSH ===
+  overheadPress: { id: 'overheadPress', name: 'Overhead Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps'], prKey: 'overheadPress' },
+  seatedOHP: { id: 'seatedOHP', name: 'Seated Overhead Press', pattern: 'verticalPush', equipment: ['barbell', 'bench'], muscles: ['shoulders', 'triceps'] },
+  dbShoulderPress: { id: 'dbShoulderPress', name: 'DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders', 'triceps'] },
+  seatedDbShoulderPress: { id: 'seatedDbShoulderPress', name: 'Seated DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell', 'bench'], muscles: ['shoulders', 'triceps'] },
+  pushPress: { id: 'pushPress', name: 'Push Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps', 'legs'] },
+  arnoldPress: { id: 'arnoldPress', name: 'Arnold Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+  pikePushUp: { id: 'pikePushUp', name: 'Pike Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
+  handstandPushUp: { id: 'handstandPushUp', name: 'Handstand Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
+  machineShoulderPress: { id: 'machineShoulderPress', name: 'Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
+  smithShoulderPress: { id: 'smithShoulderPress', name: 'Smith Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
+  landminePress: { id: 'landminePress', name: 'Landmine Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'chest'] },
+  lateralRaise: { id: 'lateralRaise', name: 'Lateral Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+  cableLateralRaise: { id: 'cableLateralRaise', name: 'Cable Lateral Raise', pattern: 'verticalPush', equipment: ['cable'], muscles: ['shoulders'] },
+  machineLateralRaise: { id: 'machineLateralRaise', name: 'Machine Lateral Raise', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders'] },
+  frontRaise: { id: 'frontRaise', name: 'Front Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
+
+  // === VERTICAL PULL ===
+  pullUp: { id: 'pullUp', name: 'Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'], prKey: 'weightedPullUp' },
+  chinUp: { id: 'chinUp', name: 'Chin-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  neutralGripPullUp: { id: 'neutralGripPullUp', name: 'Neutral Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  wideGripPullUp: { id: 'wideGripPullUp', name: 'Wide Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
+  latPulldown: { id: 'latPulldown', name: 'Lat Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  closeGripPulldown: { id: 'closeGripPulldown', name: 'Close Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
+  wideGripPulldown: { id: 'wideGripPulldown', name: 'Wide Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
+  straightArmPulldown: { id: 'straightArmPulldown', name: 'Straight Arm Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
+  assistedPullUp: { id: 'assistedPullUp', name: 'Assisted Pull-Up', pattern: 'verticalPull', equipment: ['machine', 'bands'], muscles: ['back', 'biceps'] },
+  machinePullover: { id: 'machinePullover', name: 'Machine Pullover', pattern: 'verticalPull', equipment: ['machine'], muscles: ['back', 'chest'] },
+
+  // === CARRY ===
+  farmerCarry: { id: 'farmerCarry', name: "Farmer's Carry", pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'core', 'traps'] },
+  suitcaseCarry: { id: 'suitcaseCarry', name: 'Suitcase Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['core', 'grip'] },
+  overheadCarry: { id: 'overheadCarry', name: 'Overhead Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['shoulders', 'core'] },
+  rackCarry: { id: 'rackCarry', name: 'Rack Carry', pattern: 'carry', equipment: ['kettlebell'], muscles: ['core', 'shoulders'] },
+  ruckMarch: { id: 'ruckMarch', name: 'Ruck March', pattern: 'carry', equipment: ['none'], muscles: ['legs', 'core', 'back'] },
+  sandbagCarry: { id: 'sandbagCarry', name: 'Sandbag Carry', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
+  trapBarCarry: { id: 'trapBarCarry', name: 'Trap Bar Carry', pattern: 'carry', equipment: ['trapBar'], muscles: ['grip', 'traps', 'core'] },
+  yoke_walk: { id: 'yoke_walk', name: 'Yoke Walk', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
+
+  // === CORE ===
+  plank: { id: 'plank', name: 'Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  sidePlank: { id: 'sidePlank', name: 'Side Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'obliques'] },
+  deadBug: { id: 'deadBug', name: 'Dead Bug', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  birdDog: { id: 'birdDog', name: 'Bird Dog', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'back'] },
+  pallofPress: { id: 'pallofPress', name: 'Pallof Press', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['core', 'obliques'] },
+  hangingLegRaise: { id: 'hangingLegRaise', name: 'Hanging Leg Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
+  hangingKneeRaise: { id: 'hangingKneeRaise', name: 'Hanging Knee Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
+  abWheel: { id: 'abWheel', name: 'Ab Wheel Rollout', pattern: 'core', equipment: ['none'], muscles: ['core'] },
+  cableCrunch: { id: 'cableCrunch', name: 'Cable Crunch', pattern: 'core', equipment: ['cable'], muscles: ['core'] },
+  cableWoodchop: { id: 'cableWoodchop', name: 'Cable Woodchop', pattern: 'core', equipment: ['cable'], muscles: ['core', 'obliques'] },
+  russianTwist: { id: 'russianTwist', name: 'Russian Twist', pattern: 'core', equipment: ['bodyweight', 'dumbbell'], muscles: ['core', 'obliques'] },
+  legRaise: { id: 'legRaise', name: 'Leg Raise', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  sitUp: { id: 'sitUp', name: 'Sit-Up', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  crunch: { id: 'crunch', name: 'Crunch', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
+  machineCrunch: { id: 'machineCrunch', name: 'Machine Crunch', pattern: 'core', equipment: ['machine'], muscles: ['core'] },
+  declineSitUp: { id: 'declineSitUp', name: 'Decline Sit-Up', pattern: 'core', equipment: ['bench'], muscles: ['core'] },
+
+  // === ACCESSORIES - REAR DELTS ===
+  facePull: { id: 'facePull', name: 'Face Pull', pattern: 'accessory', equipment: ['cable', 'bands'], muscles: ['rear delts', 'rotator cuff'] },
+  rearDeltFly: { id: 'rearDeltFly', name: 'Rear Delt Fly', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['rear delts'] },
+  reversePecDeck: { id: 'reversePecDeck', name: 'Reverse Pec Deck', pattern: 'accessory', equipment: ['machine'], muscles: ['rear delts'] },
+  cableRearDeltFly: { id: 'cableRearDeltFly', name: 'Cable Rear Delt Fly', pattern: 'accessory', equipment: ['cable'], muscles: ['rear delts'] },
+
+  // === ACCESSORIES - BICEPS ===
+  barbellCurl: { id: 'barbellCurl', name: 'Barbell Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
+  ezBarCurl: { id: 'ezBarCurl', name: 'EZ Bar Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
+  dumbbellCurl: { id: 'dumbbellCurl', name: 'Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
+  hammerCurl: { id: 'hammerCurl', name: 'Hammer Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps', 'forearms'] },
+  inclineCurl: { id: 'inclineCurl', name: 'Incline Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell', 'bench'], muscles: ['biceps'] },
+  preacherCurl: { id: 'preacherCurl', name: 'Preacher Curl', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['biceps'] },
+  machinePreacherCurl: { id: 'machinePreacherCurl', name: 'Machine Preacher Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['biceps'] },
+  cableCurl: { id: 'cableCurl', name: 'Cable Curl', pattern: 'accessory', equipment: ['cable'], muscles: ['biceps'] },
+  concentrationCurl: { id: 'concentrationCurl', name: 'Concentration Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
+  spiderCurl: { id: 'spiderCurl', name: 'Spider Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['biceps'] },
+
+  // === ACCESSORIES - TRICEPS ===
+  tricepPushdown: { id: 'tricepPushdown', name: 'Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
+  ropeTriPushdown: { id: 'ropeTriPushdown', name: 'Rope Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
+  overheadTricepExtension: { id: 'overheadTricepExtension', name: 'Overhead Tricep Extension', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
+  skullCrusher: { id: 'skullCrusher', name: 'Skull Crusher', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['triceps'] },
+  tricepKickback: { id: 'tricepKickback', name: 'Tricep Kickback', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
+  machineTricepDip: { id: 'machineTricepDip', name: 'Machine Tricep Dip', pattern: 'accessory', equipment: ['machine'], muscles: ['triceps'] },
+  benchDip: { id: 'benchDip', name: 'Bench Dip', pattern: 'accessory', equipment: ['bench'], muscles: ['triceps'] },
+
+  // === ACCESSORIES - FOREARMS/GRIP ===
+  wristCurl: { id: 'wristCurl', name: 'Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
+  reverseWristCurl: { id: 'reverseWristCurl', name: 'Reverse Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
+  farmerHold: { id: 'farmerHold', name: 'Farmer Hold', pattern: 'accessory', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'forearms'] },
+  deadHang: { id: 'deadHang', name: 'Dead Hang', pattern: 'accessory', equipment: ['pullupBar'], muscles: ['grip', 'shoulders'] },
+  plateHold: { id: 'plateHold', name: 'Plate Pinch Hold', pattern: 'accessory', equipment: ['none'], muscles: ['grip'] },
+
+  // === ACCESSORIES - CALVES ===
+  standingCalfRaise: { id: 'standingCalfRaise', name: 'Standing Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  seatedCalfRaise: { id: 'seatedCalfRaise', name: 'Seated Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  legPressCalfRaise: { id: 'legPressCalfRaise', name: 'Leg Press Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
+  singleLegCalfRaise: { id: 'singleLegCalfRaise', name: 'Single Leg Calf Raise', pattern: 'accessory', equipment: ['bodyweight'], muscles: ['calves'] },
+
+  // === MACHINES - LEGS ===
+  legExtension: { id: 'legExtension', name: 'Leg Extension', pattern: 'accessory', equipment: ['machine'], muscles: ['quads'] },
+  legCurl: { id: 'legCurl', name: 'Lying Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
+  seatedLegCurl: { id: 'seatedLegCurl', name: 'Seated Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
+  hipAbductor: { id: 'hipAbductor', name: 'Hip Abductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['glutes', 'abductors'] },
+  hipAdductor: { id: 'hipAdductor', name: 'Hip Adductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['adductors'] },
+
+  // === MACHINES - UPPER BODY ===
+  chestPressMachine: { id: 'chestPressMachine', name: 'Chest Press Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
+  converging_chest_press: { id: 'converging_chest_press', name: 'Converging Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps'] },
+
+  // === CARDIO ===
+  run: { id: 'run', name: 'Run', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  treadmill: { id: 'treadmill', name: 'Treadmill', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  hike: { id: 'hike', name: 'Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  ruckHike: { id: 'ruckHike', name: 'Ruck Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  bike: { id: 'bike', name: 'Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  assaultBike: { id: 'assaultBike', name: 'Assault Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  spinBike: { id: 'spinBike', name: 'Spin Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  rowErg: { id: 'rowErg', name: 'Row Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  skiErg: { id: 'skiErg', name: 'Ski Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  swim: { id: 'swim', name: 'Swim', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  stairClimber: { id: 'stairClimber', name: 'Stair Climber', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  elliptical: { id: 'elliptical', name: 'Elliptical', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
+  jumpRope: { id: 'jumpRope', name: 'Jump Rope', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  battleRopes: { id: 'battleRopes', name: 'Battle Ropes', pattern: 'cardio', equipment: ['none'], isCardio: true },
+  boxJumps: { id: 'boxJumps', name: 'Box Jumps', pattern: 'cardio', equipment: ['box'], isCardio: true },
+  burpees: { id: 'burpees', name: 'Burpees', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
+  mountainClimbers: { id: 'mountainClimbers', name: 'Mountain Climbers', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
+
+  // === MOBILITY ===
+  pigeonPose: { id: 'pigeonPose', name: 'Pigeon Pose', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  worldsGreatestStretch: { id: 'worldsGreatestStretch', name: "World's Greatest Stretch", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  catCow: { id: 'catCow', name: 'Cat-Cow', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  thoracicRotation: { id: 'thoracicRotation', name: 'Thoracic Rotation', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  hipFlexorStretch: { id: 'hipFlexorStretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  couch_stretch: { id: 'couch_stretch', name: 'Couch Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  downwardDog: { id: 'downwardDog', name: 'Downward Dog', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  childsPose: { id: 'childsPose', name: "Child's Pose", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  ankleCircles: { id: 'ankleCircles', name: 'Ankle Circles', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
+  shoulderDislocates: { id: 'shoulderDislocates', name: 'Shoulder Dislocates', pattern: 'mobility', equipment: ['bands'], isMobility: true },
+  foamRoll: { id: 'foamRoll', name: 'Foam Rolling', pattern: 'mobility', equipment: ['none'], isMobility: true },
+  lacrosseBall: { id: 'lacrosseBall', name: 'Lacrosse Ball Release', pattern: 'mobility', equipment: ['none'], isMobility: true },
+};
+
+// Equipment filter options (for UI)
+export const EQUIPMENT_OPTIONS = [
+  'bands', 'barbell', 'bench', 'bodyweight', 'box', 'cable',
+  'dumbbell', 'kettlebell', 'machine', 'none', 'pullupBar', 'trapBar'
+];

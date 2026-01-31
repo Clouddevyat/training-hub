@@ -14,13 +14,32 @@ import {
 import { TemplateUploadView } from './TemplateUpload';
 import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud, loadWithSyncCode, getCurrentDeviceId, setSyncCode } from './useCloudSync';
 import { useAuth, isBiometricAvailable, getSavedProfile } from './useAuth';
-import { 
-  generateWorkoutFromTemplate, 
-  templateToProgram, 
+import {
+  generateWorkoutFromTemplate,
+  templateToProgram,
   checkRequiredFields,
   getValidSubstitutes,
-  EXERCISE_LIBRARY as TEMPLATE_EXERCISE_LIBRARY 
+  EXERCISE_LIBRARY as TEMPLATE_EXERCISE_LIBRARY
 } from './TemplateEngine';
+
+// Import extracted data modules
+import {
+  MOVEMENT_PATTERNS,
+  EQUIPMENT_TYPES,
+  EXERCISE_LIBRARY,
+  DEFAULT_ATHLETE_PROFILE,
+  DEFAULT_READINESS,
+  PR_DISPLAY_NAMES,
+  BENCHMARK_DISPLAY_NAMES,
+  BENCHMARK_TESTS,
+  PROGRESSION_MODELS,
+  MESO_TEMPLATES,
+  CARDIO_ZONES,
+  CARDIO_SESSION_TEMPLATES,
+  calculateZones,
+  calculateLoadTargets,
+  UNIVERSAL_DETOURS,
+} from './data';
 
 // ============== STORAGE HOOK ==============
 const useLocalStorage = (key, initialValue) => {
@@ -40,391 +59,10 @@ const useLocalStorage = (key, initialValue) => {
   return [storedValue, setValue];
 };
 
-// ============== ATHLETE PROFILE DEFAULTS ==============
-const DEFAULT_ATHLETE_PROFILE = {
-  name: '',
-  age: null,
-  weight: 225,
-  height: 74,
-  prs: {
-    trapBarDeadlift: { value: null, date: null, unit: 'lbs' },
-    backSquat: { value: null, date: null, unit: 'lbs' },
-    frontSquat: { value: null, date: null, unit: 'lbs' },
-    benchPress: { value: null, date: null, unit: 'lbs' },
-    overheadPress: { value: null, date: null, unit: 'lbs' },
-    weightedPullUp: { value: null, date: null, unit: 'lbs', note: 'Added weight' },
-    weightedDip: { value: null, date: null, unit: 'lbs', note: 'Added weight' },
-    boxStepUp: { value: null, date: null, unit: 'lbs', note: 'Per hand DB' },
-  },
-  benchmarks: {
-    fiveMileTime: { value: null, date: null, unit: 'min:sec' },
-    aerobicThresholdHR: { value: null, date: null, unit: 'bpm' },
-    anaerobicThresholdHR: { value: null, date: null, unit: 'bpm' },
-    maxHR: { value: null, date: null, unit: 'bpm' },
-    restingHR: { value: null, date: null, unit: 'bpm' },
-    hrvBaseline: { value: null, date: null, unit: 'ms' },
-    verticalRate: { value: null, date: null, unit: 'ft/hr', note: 'At 25% BW' },
-    vo2max: { value: null, date: null, unit: 'ml/kg/min' },
-  },
-  history: [],
-  lastUpdated: null,
-};
+// DEFAULT_ATHLETE_PROFILE - imported from ./data
+// DEFAULT_READINESS - imported from ./data
 
-// ============== READINESS CHECK DEFAULTS ==============
-const DEFAULT_READINESS = {
-  // Daily check-in data
-  logs: [], // Array of { date, sleepQuality, sleepHours, energyLevel, musclesoreness, motivation, restingHR, hrv, notes, score }
-};
-
-// ============== BENCHMARK TEST PROTOCOLS ==============
-const BENCHMARK_TESTS = {
-  fiveMile: {
-    id: 'fiveMile',
-    name: '5-Mile Time Trial',
-    icon: '🏃',
-    duration: '30-40 min',
-    frequency: 6, // months
-    category: 'aerobic',
-    description: 'All-out 5-mile effort to track aerobic progress',
-    protocol: [
-      'Ensure adequate rest (no hard training 48 hrs prior)',
-      'Warm up: 10-15 min easy jog + dynamic stretches + 2-3 strides',
-      'Find flat, measurable course (track ideal)',
-      'Start GPS/timer',
-      'Run at maximum sustainable pace',
-      'Record total time immediately',
-      'Cool down: 10 min easy jog'
-    ],
-    metrics: [
-      { key: 'time', label: 'Total Time', type: 'time', unit: 'min:sec' },
-      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
-      { key: 'maxHR', label: 'Max HR', type: 'number', unit: 'bpm' },
-      { key: 'avgPace', label: 'Avg Pace', type: 'pace', unit: 'min/mile' },
-    ],
-    targetKey: 'fiveMileTime',
-    notes: 'Goal progression: 36:00 → 34:00 → 32:00',
-    benchmarkTargets: { excellent: '32:00', good: '35:00', passing: '40:00' }
-  },
-  aetDrift: {
-    id: 'aetDrift',
-    name: 'Aerobic Threshold (AeT) Drift Test',
-    icon: '💓',
-    duration: '60 min',
-    frequency: 3, // months
-    category: 'aerobic',
-    description: 'Measure cardiac drift to assess aerobic base fitness',
-    protocol: [
-      'Warm up: 15 min building to AeT pace',
-      'Set treadmill/pace to maintain AeT HR (or best guess ~75% max)',
-      'Run for 60 minutes at CONSTANT PACE',
-      'Record HR at 0, 15, 30, 45, 60 min marks',
-      'Calculate drift: (HR at 60min - HR at 15min) / HR at 15min × 100',
-      'Pass: <5% drift. Fail: >5% drift means more base needed'
-    ],
-    metrics: [
-      { key: 'pace', label: 'Constant Pace', type: 'pace', unit: 'min/mile' },
-      { key: 'hr15', label: 'HR at 15 min', type: 'number', unit: 'bpm' },
-      { key: 'hr30', label: 'HR at 30 min', type: 'number', unit: 'bpm' },
-      { key: 'hr45', label: 'HR at 45 min', type: 'number', unit: 'bpm' },
-      { key: 'hr60', label: 'HR at 60 min', type: 'number', unit: 'bpm' },
-      { key: 'drift', label: 'Drift %', type: 'calculated', unit: '%' },
-    ],
-    calculateDrift: (data) => {
-      if (data.hr15 && data.hr60) {
-        return (((data.hr60 - data.hr15) / data.hr15) * 100).toFixed(1);
-      }
-      return null;
-    },
-    targetKey: 'aetDrift',
-    notes: '<5% = strong aerobic base. 5-10% = adequate. >10% = needs work',
-    benchmarkTargets: { excellent: '<3%', good: '<5%', passing: '<10%' }
-  },
-  anaerobicThreshold: {
-    id: 'anaerobicThreshold',
-    name: 'Anaerobic Threshold (AnT) Test',
-    icon: '🔥',
-    duration: '30-35 min',
-    frequency: 6, // months
-    category: 'aerobic',
-    description: '30-minute time trial to find sustainable threshold pace and HR',
-    protocol: [
-      'Warm up: 15 min progressive (easy → moderate)',
-      'Find flat course or treadmill',
-      'Start timer and run at HARDEST SUSTAINABLE PACE for 30 minutes',
-      'This should feel like a hard tempo - uncomfortable but maintainable',
-      'Record average HR for final 20 minutes (ignore first 10 min)',
-      'This HR is your Anaerobic Threshold',
-      'Cool down: 10 min easy'
-    ],
-    metrics: [
-      { key: 'distance', label: 'Distance', type: 'number', unit: 'miles' },
-      { key: 'avgHRLast20', label: 'Avg HR (last 20 min)', type: 'number', unit: 'bpm' },
-      { key: 'avgPace', label: 'Avg Pace', type: 'pace', unit: 'min/mile' },
-      { key: 'maxHR', label: 'Max HR', type: 'number', unit: 'bpm' },
-    ],
-    targetKey: 'anaerobicThresholdHR',
-    notes: 'AnT HR typically 85-90% of max. Compare to AeT to find your gap.',
-    benchmarkTargets: { excellent: '<10% gap from AeT', good: '<15% gap', passing: '<20% gap' }
-  },
-  verticalRate: {
-    id: 'verticalRate',
-    name: 'Vertical Rate Test',
-    icon: '⛰️',
-    duration: '60 min',
-    frequency: 3, // months
-    category: 'mountaineering',
-    description: 'Measure uphill hiking efficiency under load',
-    protocol: [
-      'Load pack to 25% bodyweight',
-      'Find sustained climb or use treadmill at 15% grade',
-      'Warm up: 10 min easy hiking',
-      'Start timer and elevation tracking',
-      'Hike at maximum sustainable pace for 60 min',
-      'Maintain Zone 2-3 HR if possible',
-      'Record total vertical feet gained',
-      'Calculate rate: vertical feet / time in hours'
-    ],
-    metrics: [
-      { key: 'load', label: 'Pack Weight', type: 'number', unit: 'lbs' },
-      { key: 'loadPercent', label: 'Load % BW', type: 'calculated', unit: '%' },
-      { key: 'verticalFeet', label: 'Vertical Gain', type: 'number', unit: 'ft' },
-      { key: 'duration', label: 'Duration', type: 'number', unit: 'min' },
-      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
-      { key: 'rate', label: 'Vertical Rate', type: 'calculated', unit: 'ft/hr' },
-    ],
-    calculateRate: (data) => {
-      if (data.verticalFeet && data.duration) {
-        return Math.round((data.verticalFeet / data.duration) * 60);
-      }
-      return null;
-    },
-    targetKey: 'verticalRate',
-    notes: 'Target: 1000 ft/hr at 25% BW while staying in Zone 2',
-    benchmarkTargets: { excellent: '>1200 ft/hr', good: '>1000 ft/hr', passing: '>800 ft/hr' }
-  },
-  ruckMarch: {
-    id: 'ruckMarch',
-    name: '3-Mile Ruck March',
-    icon: '🎒',
-    duration: '35-50 min',
-    frequency: 3, // months
-    category: 'mountaineering',
-    description: 'Loaded 3-mile march for tactical/mountain fitness baseline',
-    protocol: [
-      'Load pack to 35 lbs (or specified weight)',
-      'Find flat to rolling terrain',
-      'Warm up: 5 min easy walk',
-      'Start timer',
-      'Move as fast as possible - run/walk as needed',
-      'Maintain good posture, no shuffling',
-      'Record total time at 3 miles',
-      'Note conditions (terrain, weather)'
-    ],
-    metrics: [
-      { key: 'load', label: 'Pack Weight', type: 'number', unit: 'lbs' },
-      { key: 'time', label: 'Total Time', type: 'time', unit: 'min:sec' },
-      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
-      { key: 'terrain', label: 'Terrain', type: 'select', options: ['Flat', 'Rolling', 'Hilly', 'Trail'] },
-      { key: 'pace', label: 'Pace', type: 'calculated', unit: 'min/mile' },
-    ],
-    calculatePace: (data) => {
-      if (data.time) {
-        const [mins, secs] = data.time.split(':').map(Number);
-        const totalMins = mins + (secs || 0) / 60;
-        return (totalMins / 3).toFixed(2);
-      }
-      return null;
-    },
-    targetKey: 'ruckMarchTime',
-    notes: 'Selection standard: 3 miles in 45 min with 35 lbs',
-    benchmarkTargets: { excellent: '<36:00', good: '<42:00', passing: '<45:00' }
-  },
-  maxHR: {
-    id: 'maxHR',
-    name: 'Max Heart Rate Test',
-    icon: '❤️‍🔥',
-    duration: '20-25 min',
-    frequency: 12, // months (once per year)
-    category: 'baseline',
-    description: 'Find true max HR for accurate zone calculation',
-    protocol: [
-      'Ensure full recovery and no fatigue',
-      'Warm up: 15 min progressive (easy → moderate → hard)',
-      'Find a hill or set treadmill to 6-8% grade',
-      'Run 3 × 2 min at increasing max effort:',
-      '  - Interval 1: Hard (90% effort)',
-      '  - Interval 2: Very Hard (95% effort)', 
-      '  - Interval 3: ALL OUT (100% effort)',
-      '1 min recovery between intervals',
-      'Record highest HR achieved',
-      'Cool down: 10 min easy'
-    ],
-    metrics: [
-      { key: 'maxHR', label: 'Max HR Achieved', type: 'number', unit: 'bpm' },
-      { key: 'method', label: 'Method', type: 'select', options: ['Hill repeats', 'Treadmill', 'Track', 'Other'] },
-    ],
-    targetKey: 'maxHR',
-    notes: 'This will be uncomfortable. Have this number dialed before starting a program.'
-  },
-  strengthTest: {
-    id: 'strengthTest',
-    name: 'Strength Testing Session',
-    icon: '🏋️',
-    duration: '90 min',
-    frequency: 6, // months
-    category: 'strength',
-    description: 'Establish or re-test 1RM for program calculations',
-    protocol: [
-      'Full rest day before testing',
-      'Extended warm-up: 15 min cardio + mobility',
-      'For each lift, pyramid up:',
-      '  - 10 reps @ 50%',
-      '  - 5 reps @ 70%',
-      '  - 3 reps @ 80%',
-      '  - 1 rep @ 90%',
-      '  - Attempt new 1RM',
-      'Rest 3-5 min between max attempts',
-      'Test in order: Deadlift → Squat → Bench/Press → Pull-up → Dip',
-      'Stop if form breaks down'
-    ],
-    metrics: [
-      { key: 'trapBarDeadlift', label: 'Trap Bar Deadlift', type: 'number', unit: 'lbs' },
-      { key: 'backSquat', label: 'Back Squat', type: 'number', unit: 'lbs' },
-      { key: 'benchPress', label: 'Bench Press', type: 'number', unit: 'lbs' },
-      { key: 'overheadPress', label: 'Overhead Press', type: 'number', unit: 'lbs' },
-      { key: 'weightedPullUp', label: 'Weighted Pull-up', type: 'number', unit: 'lbs added' },
-      { key: 'weightedDip', label: 'Weighted Dip', type: 'number', unit: 'lbs added' },
-    ],
-    targetKey: 'prs',
-    notes: 'Not every lift needs testing every time. Focus on program-relevant lifts.'
-  },
-  meCapacity: {
-    id: 'meCapacity',
-    name: 'Muscular Endurance Capacity Test',
-    icon: '🔄',
-    duration: '30-45 min',
-    frequency: 3, // months
-    category: 'muscular_endurance',
-    description: 'Max step-ups in 20 minutes to benchmark ME fitness',
-    protocol: [
-      'Set up 20" box with dumbbells (start at 20% BW total)',
-      'Warm up: 5 min easy step-ups + mobility',
-      'Start 20-minute timer',
-      'Perform continuous alternating step-ups',
-      'Pace: 1 step every 2 seconds (30/min) or faster',
-      'Count total steps (each foot = 1 step)',
-      'Stop if form breaks or pace drops significantly',
-      'Record total steps and any stops'
-    ],
-    metrics: [
-      { key: 'load', label: 'Total DB Weight', type: 'number', unit: 'lbs' },
-      { key: 'loadPercent', label: 'Load % BW', type: 'calculated', unit: '%' },
-      { key: 'totalSteps', label: 'Total Steps', type: 'number', unit: 'steps' },
-      { key: 'duration', label: 'Actual Duration', type: 'number', unit: 'min' },
-      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
-      { key: 'stepsPerMin', label: 'Steps/min', type: 'calculated', unit: 'spm' },
-    ],
-    calculateStepsPerMin: (data) => {
-      if (data.totalSteps && data.duration) {
-        return (data.totalSteps / data.duration).toFixed(1);
-      }
-      return null;
-    },
-    targetKey: 'meCapacity',
-    notes: 'Target: 600 steps @ 20% BW for Conversion phase exit',
-    benchmarkTargets: { excellent: '>700 steps', good: '>600 steps', passing: '>500 steps' }
-  },
-  gripEndurance: {
-    id: 'gripEndurance',
-    name: 'Grip Strength & Endurance',
-    icon: '✊',
-    duration: '15 min',
-    frequency: 3, // months
-    category: 'strength',
-    description: 'Dead hang and farmer carry to test grip for loaded carries',
-    protocol: [
-      'Test 1: Dead Hang',
-      '  - Hang from pull-up bar with overhand grip',
-      '  - Time until failure (hands release)',
-      '',
-      'Rest 5 minutes',
-      '',
-      'Test 2: Farmer Carry',
-      '  - Load 50% bodyweight total (25% each hand)',
-      '  - Walk until grip fails',
-      '  - Record distance or time'
-    ],
-    metrics: [
-      { key: 'deadHangTime', label: 'Dead Hang Time', type: 'number', unit: 'sec' },
-      { key: 'farmerWeight', label: 'Farmer Carry Weight (total)', type: 'number', unit: 'lbs' },
-      { key: 'farmerDistance', label: 'Farmer Carry Distance', type: 'number', unit: 'ft' },
-      { key: 'farmerTime', label: 'Farmer Carry Time', type: 'number', unit: 'sec' },
-    ],
-    targetKey: 'gripEndurance',
-    notes: 'Dead hang >90 sec and farmer carry 200+ ft at 50% BW = solid grip',
-    benchmarkTargets: { excellent: '>120s hang', good: '>90s hang', passing: '>60s hang' }
-  },
-  workCapacity: {
-    id: 'workCapacity',
-    name: 'Work Capacity Test',
-    icon: '⚡',
-    duration: '20 min',
-    frequency: 6, // months
-    category: 'conditioning',
-    description: 'Timed circuit to measure overall work capacity',
-    protocol: [
-      'Complete the following for time:',
-      '',
-      '5 Rounds:',
-      '  - 10 Box Jumps (20")',
-      '  - 10 Push-ups',
-      '  - 10 KB Swings (53/35 lbs)',
-      '  - 10 Air Squats',
-      '  - 200m Run',
-      '',
-      'Minimal rest between movements',
-      'Record total time',
-      'Note any scaling or modifications'
-    ],
-    metrics: [
-      { key: 'totalTime', label: 'Total Time', type: 'time', unit: 'min:sec' },
-      { key: 'kbWeight', label: 'KB Weight', type: 'number', unit: 'lbs' },
-      { key: 'avgHR', label: 'Average HR', type: 'number', unit: 'bpm' },
-      { key: 'maxHR', label: 'Max HR', type: 'number', unit: 'bpm' },
-      { key: 'scaled', label: 'Scaled?', type: 'select', options: ['Rx', 'Scaled', 'Modified'] },
-    ],
-    targetKey: 'workCapacity',
-    notes: 'Rx target: <18 minutes. Tests anaerobic endurance and recovery.',
-    benchmarkTargets: { excellent: '<15:00', good: '<18:00', passing: '<22:00' }
-  },
-  bodyComp: {
-    id: 'bodyComp',
-    name: 'Body Composition Check',
-    icon: '📏',
-    duration: '5 min',
-    frequency: 1, // monthly
-    category: 'baseline',
-    description: 'Track weight and basic measurements for trends',
-    protocol: [
-      'Weigh first thing in morning, after bathroom',
-      'Same scale, same conditions each time',
-      'Optional measurements (relaxed, not flexed):',
-      '  - Waist at navel',
-      '  - Chest at nipple line',
-      '  - Thigh at midpoint',
-      'Note any significant changes in diet or training'
-    ],
-    metrics: [
-      { key: 'weight', label: 'Body Weight', type: 'number', unit: 'lbs' },
-      { key: 'waist', label: 'Waist', type: 'number', unit: 'in' },
-      { key: 'chest', label: 'Chest', type: 'number', unit: 'in' },
-      { key: 'thigh', label: 'Thigh', type: 'number', unit: 'in' },
-      { key: 'notes', label: 'Notes', type: 'text', unit: '' },
-    ],
-    targetKey: 'bodyComp',
-    notes: 'Track trends, not daily fluctuations. Weekly weigh-ins are enough.'
-  }
-};
+// BENCHMARK_TESTS - imported from ./data
 
 // ============== UTILITY FUNCTIONS ==============
 const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
@@ -458,28 +96,7 @@ const getTypeIcon = (type) => ({
   long_effort: Mountain 
 }[type] || Circle);
 
-const calculateZones = (maxHR, aetHR, antHR) => {
-  if (!maxHR) return null;
-  return {
-    zone1: { min: Math.round(maxHR * 0.50), max: Math.round(maxHR * 0.60), name: 'Recovery' },
-    zone2: { min: Math.round(maxHR * 0.60), max: Math.round(maxHR * 0.70), name: 'Aerobic Base' },
-    zone3: { min: Math.round(maxHR * 0.70), max: Math.round(maxHR * 0.80), name: 'Tempo' },
-    zone4: { min: Math.round(maxHR * 0.80), max: Math.round(maxHR * 0.90), name: 'Threshold' },
-    zone5: { min: Math.round(maxHR * 0.90), max: maxHR, name: 'VO2 Max' },
-    aet: aetHR || Math.round(maxHR * 0.75),
-    ant: antHR || Math.round(maxHR * 0.85),
-  };
-};
-
-const calculateLoadTargets = (weight) => {
-  if (!weight) return null;
-  return {
-    light: Math.round(weight * 0.15),
-    base: Math.round(weight * 0.20),
-    standard: Math.round(weight * 0.25),
-    peak: Math.round(weight * 0.30),
-  };
-};
+// calculateZones, calculateLoadTargets - imported from ./data
 
 // Calculate readiness score from check-in data
 const calculateReadinessScore = (data) => {
@@ -710,28 +327,7 @@ const getLoadHistory = (workoutLogs, days = 28) => {
   return history;
 };
 
-const PR_DISPLAY_NAMES = {
-  trapBarDeadlift: 'Trap Bar Deadlift',
-  backSquat: 'Back Squat',
-  frontSquat: 'Front Squat',
-  benchPress: 'Bench Press',
-  overheadPress: 'Overhead Press',
-  weightedPullUp: 'Weighted Pull-Up',
-  weightedDip: 'Weighted Dip',
-  boxStepUp: 'Box Step-Up',
-};
-
-const BENCHMARK_DISPLAY_NAMES = {
-  fiveMileTime: '5-Mile Time',
-  aerobicThresholdHR: 'Aerobic Threshold HR',
-  anaerobicThresholdHR: 'Anaerobic Threshold HR',
-  maxHR: 'Max Heart Rate',
-  restingHR: 'Resting HR',
-  hrvBaseline: 'HRV Baseline',
-  verticalRate: 'Vertical Rate',
-  vo2max: 'VO2 Max',
-  aetDrift: 'AeT Drift %',
-};
+// PR_DISPLAY_NAMES, BENCHMARK_DISPLAY_NAMES - imported from ./data
 
 // ============== PROGRESSION ANALYSIS SYSTEM ==============
 const analyzeProgressionForExercise = (exerciseName, workoutLogs, profile, weeks = 4) => {
@@ -846,838 +442,346 @@ const analyzeAllProgressions = (workoutLogs, profile, todayExercises = []) => {
   return analyses;
 };
 
-// ============== EXERCISE LIBRARY ==============
-const MOVEMENT_PATTERNS = {
-  hipHinge: { id: 'hipHinge', name: 'Hip Hinge', icon: '🏋️' },
-  squat: { id: 'squat', name: 'Squat', icon: '🦵' },
-  horizontalPush: { id: 'horizontalPush', name: 'Horizontal Push', icon: '💪' },
-  horizontalPull: { id: 'horizontalPull', name: 'Horizontal Pull', icon: '🚣' },
-  verticalPush: { id: 'verticalPush', name: 'Vertical Push', icon: '🙆' },
-  verticalPull: { id: 'verticalPull', name: 'Vertical Pull', icon: '🧗' },
-  carry: { id: 'carry', name: 'Carry', icon: '🎒' },
-  lunge: { id: 'lunge', name: 'Lunge/Single Leg', icon: '🦿' },
-  core: { id: 'core', name: 'Core', icon: '🎯' },
-  cardio: { id: 'cardio', name: 'Cardio', icon: '❤️' },
-  mobility: { id: 'mobility', name: 'Mobility', icon: '🧘' },
-};
+// ============== LIMITING FACTORS ANALYSIS ==============
+const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athleteProfile) => {
+  const factors = [];
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-const EQUIPMENT_TYPES = {
-  barbell: 'Barbell',
-  dumbbell: 'Dumbbell',
-  kettlebell: 'Kettlebell',
-  bodyweight: 'Bodyweight',
-  machine: 'Machine',
-  cable: 'Cable',
-  bands: 'Bands',
-  trapBar: 'Trap Bar',
-  pullupBar: 'Pull-up Bar',
-  bench: 'Bench',
-  box: 'Box/Step',
-  cardioMachine: 'Cardio Machine',
-  none: 'None',
-};
+  // 1. SLEEP ANALYSIS
+  const recentReadiness = (readiness.logs || []).filter(l => new Date(l.date) >= thirtyDaysAgo);
+  if (recentReadiness.length >= 7) {
+    const avgSleep = recentReadiness.reduce((sum, l) => sum + (l.sleepHours || 0), 0) / recentReadiness.length;
+    const avgSleepQuality = recentReadiness.reduce((sum, l) => sum + (l.sleepQuality || 3), 0) / recentReadiness.length;
 
-const EXERCISE_LIBRARY = {
-  // === HIP HINGE ===
-  trapBarDeadlift: { id: 'trapBarDeadlift', name: 'Trap Bar Deadlift', pattern: 'hipHinge', equipment: ['trapBar'], muscles: ['glutes', 'hamstrings', 'back', 'quads'], prKey: 'trapBarDeadlift' },
-  conventionalDeadlift: { id: 'conventionalDeadlift', name: 'Conventional Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'back'] },
-  sumoDeadlift: { id: 'sumoDeadlift', name: 'Sumo Deadlift', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['glutes', 'hamstrings', 'quads', 'adductors'] },
-  romanianDeadlift: { id: 'romanianDeadlift', name: 'Romanian Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes'] },
-  stiffLegDeadlift: { id: 'stiffLegDeadlift', name: 'Stiff Leg Deadlift', pattern: 'hipHinge', equipment: ['barbell', 'dumbbell'], muscles: ['hamstrings', 'glutes', 'back'] },
-  kettlebellSwing: { id: 'kettlebellSwing', name: 'Kettlebell Swing', pattern: 'hipHinge', equipment: ['kettlebell'], muscles: ['glutes', 'hamstrings', 'core'] },
-  hipThrust: { id: 'hipThrust', name: 'Hip Thrust', pattern: 'hipHinge', equipment: ['barbell', 'bench'], muscles: ['glutes'] },
-  machineHipThrust: { id: 'machineHipThrust', name: 'Machine Hip Thrust', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes'] },
-  goodMorning: { id: 'goodMorning', name: 'Good Morning', pattern: 'hipHinge', equipment: ['barbell'], muscles: ['hamstrings', 'back'] },
-  cableKickback: { id: 'cableKickback', name: 'Cable Kickback', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes'] },
-  gluteHamRaise: { id: 'gluteHamRaise', name: 'Glute Ham Raise', pattern: 'hipHinge', equipment: ['machine'], muscles: ['hamstrings', 'glutes'] },
-  reverseHyper: { id: 'reverseHyper', name: 'Reverse Hyperextension', pattern: 'hipHinge', equipment: ['machine'], muscles: ['glutes', 'hamstrings', 'back'] },
-  backExtension: { id: 'backExtension', name: 'Back Extension', pattern: 'hipHinge', equipment: ['machine', 'bodyweight'], muscles: ['back', 'glutes', 'hamstrings'] },
-  pullThrough: { id: 'pullThrough', name: 'Cable Pull-Through', pattern: 'hipHinge', equipment: ['cable'], muscles: ['glutes', 'hamstrings'] },
-
-  // === SQUAT ===
-  backSquat: { id: 'backSquat', name: 'Back Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes'], prKey: 'backSquat' },
-  frontSquat: { id: 'frontSquat', name: 'Front Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'core'], prKey: 'frontSquat' },
-  safetyBarSquat: { id: 'safetyBarSquat', name: 'Safety Bar Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
-  gobletSquat: { id: 'gobletSquat', name: 'Goblet Squat', pattern: 'squat', equipment: ['kettlebell', 'dumbbell'], muscles: ['quads', 'glutes'] },
-  zercher_squat: { id: 'zercher_squat', name: 'Zercher Squat', pattern: 'squat', equipment: ['barbell'], muscles: ['quads', 'glutes', 'core'] },
-  legPress: { id: 'legPress', name: 'Leg Press', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-  legPressWide: { id: 'legPressWide', name: 'Leg Press (Wide Stance)', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes', 'adductors'] },
-  hackSquat: { id: 'hackSquat', name: 'Hack Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads'] },
-  pendulumSquat: { id: 'pendulumSquat', name: 'Pendulum Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-  vSquat: { id: 'vSquat', name: 'V-Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-  smithSquat: { id: 'smithSquat', name: 'Smith Machine Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-  beltSquat: { id: 'beltSquat', name: 'Belt Squat', pattern: 'squat', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-
-  // === LUNGE/SINGLE LEG ===
-  boxStepUp: { id: 'boxStepUp', name: 'Box Step-Up', pattern: 'lunge', equipment: ['box', 'dumbbell'], muscles: ['quads', 'glutes'], prKey: 'boxStepUp' },
-  walkingLunge: { id: 'walkingLunge', name: 'Walking Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
-  reverseLunge: { id: 'reverseLunge', name: 'Reverse Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell', 'barbell'], muscles: ['quads', 'glutes'] },
-  lateralLunge: { id: 'lateralLunge', name: 'Lateral Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes', 'adductors'] },
-  curtsy_lunge: { id: 'curtsy_lunge', name: 'Curtsy Lunge', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['glutes', 'quads'] },
-  bulgarianSplitSquat: { id: 'bulgarianSplitSquat', name: 'Bulgarian Split Squat', pattern: 'lunge', equipment: ['bench', 'dumbbell'], muscles: ['quads', 'glutes'] },
-  singleLegRDL: { id: 'singleLegRDL', name: 'Single Leg RDL', pattern: 'lunge', equipment: ['dumbbell', 'kettlebell'], muscles: ['hamstrings', 'glutes'] },
-  singleLegPress: { id: 'singleLegPress', name: 'Single Leg Press', pattern: 'lunge', equipment: ['machine'], muscles: ['quads', 'glutes'] },
-  singleLegLegCurl: { id: 'singleLegLegCurl', name: 'Single Leg Curl', pattern: 'lunge', equipment: ['machine'], muscles: ['hamstrings'] },
-  pistolSquat: { id: 'pistolSquat', name: 'Pistol Squat', pattern: 'lunge', equipment: ['bodyweight'], muscles: ['quads', 'glutes'] },
-  splitSquat: { id: 'splitSquat', name: 'Split Squat', pattern: 'lunge', equipment: ['bodyweight', 'dumbbell'], muscles: ['quads', 'glutes'] },
-
-  // === HORIZONTAL PUSH ===
-  benchPress: { id: 'benchPress', name: 'Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps', 'shoulders'], prKey: 'benchPress' },
-  inclineBenchPress: { id: 'inclineBenchPress', name: 'Incline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'shoulders'] },
-  declineBenchPress: { id: 'declineBenchPress', name: 'Decline Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['chest', 'triceps'] },
-  closeGripBench: { id: 'closeGripBench', name: 'Close Grip Bench Press', pattern: 'horizontalPush', equipment: ['barbell', 'bench'], muscles: ['triceps', 'chest'] },
-  dbBenchPress: { id: 'dbBenchPress', name: 'DB Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'triceps'] },
-  dbInclineBenchPress: { id: 'dbInclineBenchPress', name: 'DB Incline Bench Press', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest', 'shoulders'] },
-  pushUp: { id: 'pushUp', name: 'Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps', 'core'] },
-  diamondPushUp: { id: 'diamondPushUp', name: 'Diamond Push-Up', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['triceps', 'chest'] },
-  chestDip: { id: 'chestDip', name: 'Dip', pattern: 'horizontalPush', equipment: ['bodyweight'], muscles: ['chest', 'triceps'], prKey: 'weightedDip' },
-  machineChestPress: { id: 'machineChestPress', name: 'Machine Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
-  machineInclinePress: { id: 'machineInclinePress', name: 'Machine Incline Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'shoulders'] },
-  smithBenchPress: { id: 'smithBenchPress', name: 'Smith Machine Bench Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
-  cableChestPress: { id: 'cableChestPress', name: 'Cable Chest Press', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest', 'triceps'] },
-  chestFly: { id: 'chestFly', name: 'Dumbbell Chest Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
-  inclineChestFly: { id: 'inclineChestFly', name: 'Incline Dumbbell Fly', pattern: 'horizontalPush', equipment: ['dumbbell', 'bench'], muscles: ['chest'] },
-  cableFly: { id: 'cableFly', name: 'Cable Fly', pattern: 'horizontalPush', equipment: ['cable'], muscles: ['chest'] },
-  pecDeck: { id: 'pecDeck', name: 'Pec Deck Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest'] },
-
-  // === HORIZONTAL PULL ===
-  barbellRow: { id: 'barbellRow', name: 'Barbell Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
-  pendlayRow: { id: 'pendlayRow', name: 'Pendlay Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
-  tBarRow: { id: 'tBarRow', name: 'T-Bar Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
-  dbRow: { id: 'dbRow', name: 'DB Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back', 'biceps'] },
-  meadowsRow: { id: 'meadowsRow', name: 'Meadows Row', pattern: 'horizontalPull', equipment: ['barbell'], muscles: ['back', 'biceps'] },
-  cableRow: { id: 'cableRow', name: 'Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
-  wideGripCableRow: { id: 'wideGripCableRow', name: 'Wide Grip Cable Row', pattern: 'horizontalPull', equipment: ['cable'], muscles: ['back', 'rear delts'] },
-  chestSupportedRow: { id: 'chestSupportedRow', name: 'Chest Supported Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
-  machineRow: { id: 'machineRow', name: 'Machine Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
-  hammerStrengthRow: { id: 'hammerStrengthRow', name: 'Hammer Strength Row', pattern: 'horizontalPull', equipment: ['machine'], muscles: ['back', 'biceps'] },
-  invertedRow: { id: 'invertedRow', name: 'Inverted Row', pattern: 'horizontalPull', equipment: ['bodyweight', 'pullupBar'], muscles: ['back', 'biceps'] },
-  sealRow: { id: 'sealRow', name: 'Seal Row', pattern: 'horizontalPull', equipment: ['dumbbell', 'bench'], muscles: ['back'] },
-
-  // === VERTICAL PUSH ===
-  overheadPress: { id: 'overheadPress', name: 'Overhead Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps'], prKey: 'overheadPress' },
-  seatedOHP: { id: 'seatedOHP', name: 'Seated Overhead Press', pattern: 'verticalPush', equipment: ['barbell', 'bench'], muscles: ['shoulders', 'triceps'] },
-  dbShoulderPress: { id: 'dbShoulderPress', name: 'DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders', 'triceps'] },
-  seatedDbShoulderPress: { id: 'seatedDbShoulderPress', name: 'Seated DB Shoulder Press', pattern: 'verticalPush', equipment: ['dumbbell', 'bench'], muscles: ['shoulders', 'triceps'] },
-  pushPress: { id: 'pushPress', name: 'Push Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'triceps', 'legs'] },
-  arnoldPress: { id: 'arnoldPress', name: 'Arnold Press', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
-  pikePushUp: { id: 'pikePushUp', name: 'Pike Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
-  handstandPushUp: { id: 'handstandPushUp', name: 'Handstand Push-Up', pattern: 'verticalPush', equipment: ['bodyweight'], muscles: ['shoulders', 'triceps'] },
-  machineShoulderPress: { id: 'machineShoulderPress', name: 'Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
-  smithShoulderPress: { id: 'smithShoulderPress', name: 'Smith Machine Shoulder Press', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders', 'triceps'] },
-  landminePress: { id: 'landminePress', name: 'Landmine Press', pattern: 'verticalPush', equipment: ['barbell'], muscles: ['shoulders', 'chest'] },
-  lateralRaise: { id: 'lateralRaise', name: 'Lateral Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
-  cableLateralRaise: { id: 'cableLateralRaise', name: 'Cable Lateral Raise', pattern: 'verticalPush', equipment: ['cable'], muscles: ['shoulders'] },
-  machineLateralRaise: { id: 'machineLateralRaise', name: 'Machine Lateral Raise', pattern: 'verticalPush', equipment: ['machine'], muscles: ['shoulders'] },
-  frontRaise: { id: 'frontRaise', name: 'Front Raise', pattern: 'verticalPush', equipment: ['dumbbell'], muscles: ['shoulders'] },
-
-  // === VERTICAL PULL ===
-  pullUp: { id: 'pullUp', name: 'Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'], prKey: 'weightedPullUp' },
-  chinUp: { id: 'chinUp', name: 'Chin-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
-  neutralGripPullUp: { id: 'neutralGripPullUp', name: 'Neutral Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
-  wideGripPullUp: { id: 'wideGripPullUp', name: 'Wide Grip Pull-Up', pattern: 'verticalPull', equipment: ['pullupBar'], muscles: ['back', 'biceps'] },
-  latPulldown: { id: 'latPulldown', name: 'Lat Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
-  closeGripPulldown: { id: 'closeGripPulldown', name: 'Close Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back', 'biceps'] },
-  wideGripPulldown: { id: 'wideGripPulldown', name: 'Wide Grip Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
-  straightArmPulldown: { id: 'straightArmPulldown', name: 'Straight Arm Pulldown', pattern: 'verticalPull', equipment: ['cable'], muscles: ['back'] },
-  assistedPullUp: { id: 'assistedPullUp', name: 'Assisted Pull-Up', pattern: 'verticalPull', equipment: ['machine', 'bands'], muscles: ['back', 'biceps'] },
-  machinePullover: { id: 'machinePullover', name: 'Machine Pullover', pattern: 'verticalPull', equipment: ['machine'], muscles: ['back', 'chest'] },
-
-  // === CARRY ===
-  farmerCarry: { id: 'farmerCarry', name: "Farmer's Carry", pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'core', 'traps'] },
-  suitcaseCarry: { id: 'suitcaseCarry', name: 'Suitcase Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['core', 'grip'] },
-  overheadCarry: { id: 'overheadCarry', name: 'Overhead Carry', pattern: 'carry', equipment: ['dumbbell', 'kettlebell'], muscles: ['shoulders', 'core'] },
-  rackCarry: { id: 'rackCarry', name: 'Rack Carry', pattern: 'carry', equipment: ['kettlebell'], muscles: ['core', 'shoulders'] },
-  ruckMarch: { id: 'ruckMarch', name: 'Ruck March', pattern: 'carry', equipment: ['none'], muscles: ['legs', 'core', 'back'] },
-  sandbagCarry: { id: 'sandbagCarry', name: 'Sandbag Carry', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
-  trapBarCarry: { id: 'trapBarCarry', name: 'Trap Bar Carry', pattern: 'carry', equipment: ['trapBar'], muscles: ['grip', 'traps', 'core'] },
-  yoke_walk: { id: 'yoke_walk', name: 'Yoke Walk', pattern: 'carry', equipment: ['none'], muscles: ['full body'] },
-
-  // === CORE ===
-  plank: { id: 'plank', name: 'Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  sidePlank: { id: 'sidePlank', name: 'Side Plank', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'obliques'] },
-  deadBug: { id: 'deadBug', name: 'Dead Bug', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  birdDog: { id: 'birdDog', name: 'Bird Dog', pattern: 'core', equipment: ['bodyweight'], muscles: ['core', 'back'] },
-  pallofPress: { id: 'pallofPress', name: 'Pallof Press', pattern: 'core', equipment: ['cable', 'bands'], muscles: ['core', 'obliques'] },
-  hangingLegRaise: { id: 'hangingLegRaise', name: 'Hanging Leg Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
-  hangingKneeRaise: { id: 'hangingKneeRaise', name: 'Hanging Knee Raise', pattern: 'core', equipment: ['pullupBar'], muscles: ['core'] },
-  abWheel: { id: 'abWheel', name: 'Ab Wheel Rollout', pattern: 'core', equipment: ['none'], muscles: ['core'] },
-  cableCrunch: { id: 'cableCrunch', name: 'Cable Crunch', pattern: 'core', equipment: ['cable'], muscles: ['core'] },
-  cableWoodchop: { id: 'cableWoodchop', name: 'Cable Woodchop', pattern: 'core', equipment: ['cable'], muscles: ['core', 'obliques'] },
-  russianTwist: { id: 'russianTwist', name: 'Russian Twist', pattern: 'core', equipment: ['bodyweight', 'dumbbell'], muscles: ['core', 'obliques'] },
-  legRaise: { id: 'legRaise', name: 'Leg Raise', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  sitUp: { id: 'sitUp', name: 'Sit-Up', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  crunch: { id: 'crunch', name: 'Crunch', pattern: 'core', equipment: ['bodyweight'], muscles: ['core'] },
-  machineCrunch: { id: 'machineCrunch', name: 'Machine Crunch', pattern: 'core', equipment: ['machine'], muscles: ['core'] },
-  declineSitUp: { id: 'declineSitUp', name: 'Decline Sit-Up', pattern: 'core', equipment: ['bench'], muscles: ['core'] },
-
-  // === ACCESSORIES - REAR DELTS ===
-  facePull: { id: 'facePull', name: 'Face Pull', pattern: 'accessory', equipment: ['cable', 'bands'], muscles: ['rear delts', 'rotator cuff'] },
-  rearDeltFly: { id: 'rearDeltFly', name: 'Rear Delt Fly', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['rear delts'] },
-  reversePecDeck: { id: 'reversePecDeck', name: 'Reverse Pec Deck', pattern: 'accessory', equipment: ['machine'], muscles: ['rear delts'] },
-  cableRearDeltFly: { id: 'cableRearDeltFly', name: 'Cable Rear Delt Fly', pattern: 'accessory', equipment: ['cable'], muscles: ['rear delts'] },
-
-  // === ACCESSORIES - BICEPS ===
-  barbellCurl: { id: 'barbellCurl', name: 'Barbell Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
-  ezBarCurl: { id: 'ezBarCurl', name: 'EZ Bar Curl', pattern: 'accessory', equipment: ['barbell'], muscles: ['biceps'] },
-  dumbbellCurl: { id: 'dumbbellCurl', name: 'Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
-  hammerCurl: { id: 'hammerCurl', name: 'Hammer Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps', 'forearms'] },
-  inclineCurl: { id: 'inclineCurl', name: 'Incline Dumbbell Curl', pattern: 'accessory', equipment: ['dumbbell', 'bench'], muscles: ['biceps'] },
-  preacherCurl: { id: 'preacherCurl', name: 'Preacher Curl', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['biceps'] },
-  machinePreacherCurl: { id: 'machinePreacherCurl', name: 'Machine Preacher Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['biceps'] },
-  cableCurl: { id: 'cableCurl', name: 'Cable Curl', pattern: 'accessory', equipment: ['cable'], muscles: ['biceps'] },
-  concentrationCurl: { id: 'concentrationCurl', name: 'Concentration Curl', pattern: 'accessory', equipment: ['dumbbell'], muscles: ['biceps'] },
-  spiderCurl: { id: 'spiderCurl', name: 'Spider Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['biceps'] },
-
-  // === ACCESSORIES - TRICEPS ===
-  tricepPushdown: { id: 'tricepPushdown', name: 'Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
-  ropeTriPushdown: { id: 'ropeTriPushdown', name: 'Rope Tricep Pushdown', pattern: 'accessory', equipment: ['cable'], muscles: ['triceps'] },
-  overheadTricepExtension: { id: 'overheadTricepExtension', name: 'Overhead Tricep Extension', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
-  skullCrusher: { id: 'skullCrusher', name: 'Skull Crusher', pattern: 'accessory', equipment: ['barbell', 'dumbbell'], muscles: ['triceps'] },
-  tricepKickback: { id: 'tricepKickback', name: 'Tricep Kickback', pattern: 'accessory', equipment: ['dumbbell', 'cable'], muscles: ['triceps'] },
-  machineTricepDip: { id: 'machineTricepDip', name: 'Machine Tricep Dip', pattern: 'accessory', equipment: ['machine'], muscles: ['triceps'] },
-  benchDip: { id: 'benchDip', name: 'Bench Dip', pattern: 'accessory', equipment: ['bench'], muscles: ['triceps'] },
-
-  // === ACCESSORIES - FOREARMS/GRIP ===
-  wristCurl: { id: 'wristCurl', name: 'Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
-  reverseWristCurl: { id: 'reverseWristCurl', name: 'Reverse Wrist Curl', pattern: 'accessory', equipment: ['dumbbell', 'barbell'], muscles: ['forearms'] },
-  farmerHold: { id: 'farmerHold', name: 'Farmer Hold', pattern: 'accessory', equipment: ['dumbbell', 'kettlebell'], muscles: ['grip', 'forearms'] },
-  deadHang: { id: 'deadHang', name: 'Dead Hang', pattern: 'accessory', equipment: ['pullupBar'], muscles: ['grip', 'shoulders'] },
-  plateHold: { id: 'plateHold', name: 'Plate Pinch Hold', pattern: 'accessory', equipment: ['none'], muscles: ['grip'] },
-
-  // === ACCESSORIES - CALVES ===
-  standingCalfRaise: { id: 'standingCalfRaise', name: 'Standing Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
-  seatedCalfRaise: { id: 'seatedCalfRaise', name: 'Seated Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
-  legPressCalfRaise: { id: 'legPressCalfRaise', name: 'Leg Press Calf Raise', pattern: 'accessory', equipment: ['machine'], muscles: ['calves'] },
-  singleLegCalfRaise: { id: 'singleLegCalfRaise', name: 'Single Leg Calf Raise', pattern: 'accessory', equipment: ['bodyweight'], muscles: ['calves'] },
-
-  // === MACHINES - LEGS ===
-  legExtension: { id: 'legExtension', name: 'Leg Extension', pattern: 'accessory', equipment: ['machine'], muscles: ['quads'] },
-  legCurl: { id: 'legCurl', name: 'Lying Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
-  seatedLegCurl: { id: 'seatedLegCurl', name: 'Seated Leg Curl', pattern: 'accessory', equipment: ['machine'], muscles: ['hamstrings'] },
-  hipAbductor: { id: 'hipAbductor', name: 'Hip Abductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['glutes', 'abductors'] },
-  hipAdductor: { id: 'hipAdductor', name: 'Hip Adductor Machine', pattern: 'accessory', equipment: ['machine'], muscles: ['adductors'] },
-
-  // === MACHINES - UPPER BODY ===
-  chestPressMachine: { id: 'chestPressMachine', name: 'Chest Press Machine', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps', 'shoulders'] },
-  converging_chest_press: { id: 'converging_chest_press', name: 'Converging Chest Press', pattern: 'horizontalPush', equipment: ['machine'], muscles: ['chest', 'triceps'] },
-
-  // === CARDIO ===
-  run: { id: 'run', name: 'Run', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  treadmill: { id: 'treadmill', name: 'Treadmill', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  hike: { id: 'hike', name: 'Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  ruckHike: { id: 'ruckHike', name: 'Ruck Hike', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  bike: { id: 'bike', name: 'Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  assaultBike: { id: 'assaultBike', name: 'Assault Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  spinBike: { id: 'spinBike', name: 'Spin Bike', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  rowErg: { id: 'rowErg', name: 'Row Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  skiErg: { id: 'skiErg', name: 'Ski Erg', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  swim: { id: 'swim', name: 'Swim', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  stairClimber: { id: 'stairClimber', name: 'Stair Climber', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  elliptical: { id: 'elliptical', name: 'Elliptical', pattern: 'cardio', equipment: ['cardioMachine'], isCardio: true },
-  jumpRope: { id: 'jumpRope', name: 'Jump Rope', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  battleRopes: { id: 'battleRopes', name: 'Battle Ropes', pattern: 'cardio', equipment: ['none'], isCardio: true },
-  boxJumps: { id: 'boxJumps', name: 'Box Jumps', pattern: 'cardio', equipment: ['box'], isCardio: true },
-  burpees: { id: 'burpees', name: 'Burpees', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
-  mountainClimbers: { id: 'mountainClimbers', name: 'Mountain Climbers', pattern: 'cardio', equipment: ['bodyweight'], isCardio: true },
-
-  // === MOBILITY ===
-  pigeonPose: { id: 'pigeonPose', name: 'Pigeon Pose', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  worldsGreatestStretch: { id: 'worldsGreatestStretch', name: "World's Greatest Stretch", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  catCow: { id: 'catCow', name: 'Cat-Cow', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  thoracicRotation: { id: 'thoracicRotation', name: 'Thoracic Rotation', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  hipFlexorStretch: { id: 'hipFlexorStretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  couch_stretch: { id: 'couch_stretch', name: 'Couch Stretch', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  downwardDog: { id: 'downwardDog', name: 'Downward Dog', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  childsPose: { id: 'childsPose', name: "Child's Pose", pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  ankleCircles: { id: 'ankleCircles', name: 'Ankle Circles', pattern: 'mobility', equipment: ['bodyweight'], isMobility: true },
-  shoulderDislocates: { id: 'shoulderDislocates', name: 'Shoulder Dislocates', pattern: 'mobility', equipment: ['bands'], isMobility: true },
-  foamRoll: { id: 'foamRoll', name: 'Foam Rolling', pattern: 'mobility', equipment: ['none'], isMobility: true },
-  lacrosseBall: { id: 'lacrosseBall', name: 'Lacrosse Ball Release', pattern: 'mobility', equipment: ['none'], isMobility: true },
-};
-
-// ============== UNIVERSAL DETOUR BLOCKS ==============
-// These can be applied to ANY program
-const UNIVERSAL_DETOURS = {
-  specialty: [
-    {
-      id: 'strength_emphasis',
-      name: 'Strength Emphasis',
-      icon: '💪',
-      type: 'specialty',
-      category: 'strength',
-      duration: { min: 4, max: 6, unit: 'weeks' },
-      description: 'Focus on building maximal strength',
-      when_to_use: ['Strength numbers dropped >10%', 'Pre-expedition strength peak', 'Coming off long aerobic focus'],
-      sacrifice: ['Aerobic capacity may decline slightly', 'Muscular endurance reduced'],
-      exit_criteria: ['Hit new PR on main lifts', 'Completed planned weeks', 'Strength tests improved'],
-      weeklyTemplate: [
-        { day: 1, session: 'Heavy Lower', type: 'strength', duration: 75 },
-        { day: 2, session: 'Zone 2 (Maintenance)', type: 'cardio', duration: 40 },
-        { day: 3, session: 'Heavy Upper', type: 'strength', duration: 70 },
-        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Power + Accessories', type: 'strength', duration: 60 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'running_emphasis',
-      name: 'Running Emphasis',
-      icon: '🏃',
-      type: 'specialty',
-      category: 'cardio',
-      duration: { min: 4, max: 8, unit: 'weeks' },
-      description: 'Improve running performance and aerobic capacity',
-      when_to_use: ['5-mile time regressed', 'Running-heavy event coming', 'AeT/AnT gap too wide'],
-      sacrifice: ['Strength gains will plateau', 'Muscle mass may decrease'],
-      exit_criteria: ['Run test improved', 'AeT pace improved by 30+ sec/mile', 'Event completed'],
-      weeklyTemplate: [
-        { day: 1, session: 'Tempo Run', type: 'cardio', duration: 50 },
-        { day: 2, session: 'Strength (Maintenance)', type: 'strength', duration: 45 },
-        { day: 3, session: 'Easy Run', type: 'cardio', duration: 45 },
-        { day: 4, session: 'Intervals', type: 'cardio', duration: 55 },
-        { day: 5, session: 'Easy Run + Strides', type: 'cardio', duration: 40 },
-        { day: 6, session: 'Long Run', type: 'long_effort', duration: 90 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'me_peak',
-      name: 'Muscular Endurance Peak',
-      icon: '⛰️',
-      type: 'specialty',
-      category: 'endurance',
-      duration: { min: 3, max: 5, unit: 'weeks' },
-      description: 'Peak loaded carrying capacity',
-      when_to_use: ['Event requiring sustained load', 'Pre-expedition ME peak', 'Testing max capacity'],
-      sacrifice: ['Max strength will decrease', 'Power output reduced', 'Need extra recovery'],
-      exit_criteria: ['ME test improved', 'Completed target ruck weight/distance', 'Event date reached'],
-      weeklyTemplate: [
-        { day: 1, session: 'Gym ME Circuit', type: 'muscular_endurance', duration: 70 },
-        { day: 2, session: 'Zone 2', type: 'cardio', duration: 45 },
-        { day: 3, session: 'Outdoor Loaded Carry', type: 'muscular_endurance', duration: 90 },
-        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Light Strength', type: 'strength', duration: 40 },
-        { day: 6, session: 'Peak ME Session', type: 'muscular_endurance', duration: 120 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'hypertrophy',
-      name: 'Hypertrophy Block',
-      icon: '🏋️',
-      type: 'specialty',
-      category: 'strength',
-      duration: { min: 4, max: 8, unit: 'weeks' },
-      description: 'Build muscle mass and work capacity',
-      when_to_use: ['Need more muscle mass', 'Building base before strength', 'After extended cut'],
-      sacrifice: ['Max strength temporarily lower', 'Cardio capacity may drop', 'Higher calorie needs'],
-      exit_criteria: ['Gained target weight', 'All lifts show rep improvements', 'Work capacity increased'],
-      weeklyTemplate: [
-        { day: 1, session: 'Upper Hypertrophy', type: 'strength', duration: 60 },
-        { day: 2, session: 'Lower Hypertrophy', type: 'strength', duration: 60 },
-        { day: 3, session: 'Cardio', type: 'cardio', duration: 40 },
-        { day: 4, session: 'Push Focus', type: 'strength', duration: 55 },
-        { day: 5, session: 'Pull Focus', type: 'strength', duration: 55 },
-        { day: 6, session: 'Legs + Cardio', type: 'strength', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'power_speed',
-      name: 'Power & Speed',
-      icon: '⚡',
-      type: 'specialty',
-      category: 'performance',
-      duration: { min: 3, max: 6, unit: 'weeks' },
-      description: 'Develop explosive power and speed',
-      when_to_use: ['Pre-competition peaking', 'Converting strength to power', 'Speed improvement needed'],
-      sacrifice: ['Endurance capacity drops', 'Muscle mass may not increase', 'Higher CNS fatigue'],
-      exit_criteria: ['Vertical jump improved', 'Sprint times faster', 'Power output tests improved'],
-      weeklyTemplate: [
-        { day: 1, session: 'Lower Power', type: 'strength', duration: 50 },
-        { day: 2, session: 'Sprint Intervals', type: 'cardio', duration: 40 },
-        { day: 3, session: 'Upper Power', type: 'strength', duration: 50 },
-        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Plyometrics + Agility', type: 'strength', duration: 45 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'grip_forearm',
-      name: 'Grip & Forearm Focus',
-      icon: '🤚',
-      type: 'specialty',
-      category: 'strength',
-      duration: { min: 3, max: 6, unit: 'weeks' },
-      description: 'Build crushing grip strength and forearm endurance',
-      when_to_use: ['Grip limiting deadlift', 'Climbing goals', 'Tactical/rescue applications'],
-      sacrifice: ['Upper body volume reduced', 'May affect pulling exercises short-term'],
-      exit_criteria: ['Grip tests improved 15%+', 'Dead hang time doubled', 'No longer limiting main lifts'],
-      weeklyTemplate: [
-        { day: 1, session: 'Heavy Pulls + Grip', type: 'strength', duration: 60 },
-        { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
-        { day: 3, session: 'Forearm Hypertrophy', type: 'strength', duration: 45 },
-        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Grip Endurance + Carries', type: 'strength', duration: 55 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'core_stability',
-      name: 'Core & Stability',
-      icon: '🎯',
-      type: 'specialty',
-      category: 'strength',
-      duration: { min: 3, max: 5, unit: 'weeks' },
-      description: 'Build trunk stability and anti-rotation strength',
-      when_to_use: ['Core limiting compound lifts', 'Back pain history', 'Pre-heavy lifting cycle'],
-      sacrifice: ['Main lift progression slowed', 'Less overall volume'],
-      exit_criteria: ['Plank tests improved', 'Core no longer limiting factor', 'Back feels stronger'],
-      weeklyTemplate: [
-        { day: 1, session: 'Anti-Extension + Lower', type: 'strength', duration: 55 },
-        { day: 2, session: 'Cardio', type: 'cardio', duration: 40 },
-        { day: 3, session: 'Anti-Rotation + Upper', type: 'strength', duration: 55 },
-        { day: 4, session: 'Mobility + Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Loaded Carries + Full Body', type: 'strength', duration: 50 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 45 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'mobility_flexibility',
-      name: 'Mobility & Flexibility',
-      icon: '🧘',
-      type: 'specialty',
-      category: 'recovery',
-      duration: { min: 2, max: 4, unit: 'weeks' },
-      description: 'Improve range of motion and movement quality',
-      when_to_use: ['ROM limiting lifts', 'Feeling stiff/immobile', 'After injury recovery'],
-      sacrifice: ['Strength gains paused', 'Less training volume overall'],
-      exit_criteria: ['Target ROM achieved', 'Movement quality improved', 'No compensation patterns'],
-      weeklyTemplate: [
-        { day: 1, session: 'Lower Body Mobility + Light Strength', type: 'strength', duration: 50 },
-        { day: 2, session: 'Yoga/Stretch Flow', type: 'recovery', duration: 45 },
-        { day: 3, session: 'Upper Body Mobility + Light Strength', type: 'strength', duration: 50 },
-        { day: 4, session: 'Active Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Full Body Movement', type: 'strength', duration: 45 },
-        { day: 6, session: 'Long Stretch Session', type: 'recovery', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'conditioning_gpp',
-      name: 'Conditioning/GPP',
-      icon: '🔥',
-      type: 'specialty',
-      category: 'cardio',
-      duration: { min: 3, max: 6, unit: 'weeks' },
-      description: 'Build general physical preparedness and work capacity',
-      when_to_use: ['Work capacity is limiting', 'Pre-season conditioning', 'Base building phase'],
-      sacrifice: ['Max strength maintenance only', 'Specific skills not trained'],
-      exit_criteria: ['Conditioning tests improved', 'Recovery between sets faster', 'Can handle more volume'],
-      weeklyTemplate: [
-        { day: 1, session: 'Circuit Training', type: 'muscular_endurance', duration: 50 },
-        { day: 2, session: 'Intervals', type: 'cardio', duration: 45 },
-        { day: 3, session: 'Strength Maintenance', type: 'strength', duration: 45 },
-        { day: 4, session: 'Easy Cardio', type: 'cardio', duration: 40 },
-        { day: 5, session: 'Mixed Modal', type: 'muscular_endurance', duration: 55 },
-        { day: 6, session: 'Long Slow Distance', type: 'cardio', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'swimming_focus',
-      name: 'Swimming Focus',
-      icon: '🏊',
-      type: 'specialty',
-      category: 'cardio',
-      duration: { min: 4, max: 8, unit: 'weeks' },
-      description: 'Improve swimming technique and water fitness',
-      when_to_use: ['Swim test coming up', 'Triathlon prep', 'Cross-training variety'],
-      sacrifice: ['Running volume reduced', 'Strength maintenance only'],
-      exit_criteria: ['Swim test improved', 'Technique comfort achieved', 'Target distance/pace met'],
-      weeklyTemplate: [
-        { day: 1, session: 'Technique Swim', type: 'cardio', duration: 45 },
-        { day: 2, session: 'Strength Maintenance', type: 'strength', duration: 40 },
-        { day: 3, session: 'Interval Swim', type: 'cardio', duration: 50 },
-        { day: 4, session: 'Recovery', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Easy Swim + Drills', type: 'cardio', duration: 40 },
-        { day: 6, session: 'Long Swim', type: 'cardio', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
+    if (avgSleep < 6.5) {
+      factors.push({
+        id: 'sleep_duration',
+        category: 'recovery',
+        severity: avgSleep < 6 ? 'high' : 'medium',
+        icon: '😴',
+        title: 'Sleep Duration',
+        metric: `${avgSleep.toFixed(1)} hrs avg`,
+        target: '7+ hrs',
+        insight: `Averaging ${avgSleep.toFixed(1)} hours. Sleep is the #1 recovery factor.`,
+        action: 'Prioritize 7+ hours nightly. This alone could unlock gains.'
+      });
     }
-  ],
-  life: [
-    {
-      id: 'post_injury',
-      name: 'Post-Injury Return',
-      icon: '🩹',
-      type: 'life',
-      category: 'recovery',
-      duration: { min: 2, max: 8, unit: 'weeks' },
-      description: 'Gradual return to training after injury',
-      when_to_use: ['Returning from injury', 'Medical clearance received', 'Pain-free in daily activities'],
-      exit_criteria: ['Pain-free under load', 'Passed movement screens', 'Back to baseline strength'],
-      weeklyTemplate: [
-        { day: 1, session: 'Movement Assessment', type: 'strength', duration: 45 },
-        { day: 2, session: 'Easy Cardio', type: 'cardio', duration: 30 },
-        { day: 3, session: 'Rehab + Light Strength', type: 'strength', duration: 40 },
-        { day: 4, session: 'Rest or Mobility', type: 'recovery', duration: 20 },
-        { day: 5, session: 'Progressive Load Test', type: 'strength', duration: 45 },
-        { day: 6, session: 'Easy Movement', type: 'cardio', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'mental_reset',
-      name: 'Mental Reset',
-      icon: '🧘',
-      type: 'life',
-      category: 'recovery',
-      duration: { min: 1, max: 3, unit: 'weeks' },
-      description: 'Recovery from burnout and motivation loss',
-      when_to_use: ['Burnout symptoms', 'Zero motivation', 'Life stress overwhelming'],
-      exit_criteria: ['Feel excited to train again', 'Energy levels restored', 'Sleep quality improved'],
-      weeklyTemplate: [
-        { day: 1, session: 'Optional Movement', type: 'recovery', duration: 30 },
-        { day: 2, session: 'Optional Movement', type: 'recovery', duration: 30 },
-        { day: 3, session: 'Optional Movement', type: 'recovery', duration: 30 },
-        { day: 4, session: 'Optional Movement', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Optional Movement', type: 'recovery', duration: 30 },
-        { day: 6, session: 'Outdoor Activity', type: 'recovery', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'field_maintenance',
-      name: 'Field/Travel Maintenance',
-      icon: '🎒',
-      type: 'life',
-      category: 'situational',
-      duration: { min: 1, max: 52, unit: 'weeks' },
-      description: 'Maintain fitness with limited equipment',
-      when_to_use: ['Deployed/traveling', 'No gym access', 'Limited equipment'],
-      exit_criteria: ['Back to normal gym access', 'Trip/deployment ended', 'Equipment available again'],
-      weeklyTemplate: [
-        { day: 1, session: 'Bodyweight Strength', type: 'strength', duration: 40 },
-        { day: 2, session: 'Run or Ruck', type: 'cardio', duration: 45 },
-        { day: 3, session: 'Hotel Room Circuit', type: 'strength', duration: 30 },
-        { day: 4, session: 'Easy Movement', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Bodyweight + Core', type: 'strength', duration: 40 },
-        { day: 6, session: 'Long Cardio', type: 'cardio', duration: 60 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'pre_event_taper',
-      name: 'Pre-Event Taper',
-      icon: '🎯',
-      type: 'life',
-      category: 'performance',
-      duration: { min: 1, max: 3, unit: 'weeks' },
-      description: 'Peak performance for upcoming event',
-      when_to_use: ['1-3 weeks before major event', 'Need to peak performance', 'Competition prep'],
-      exit_criteria: ['Event completed', 'Feel fresh and ready', 'Taper period complete'],
-      weeklyTemplate: [
-        { day: 1, session: 'Reduced Volume Strength', type: 'strength', duration: 40 },
-        { day: 2, session: 'Light Cardio', type: 'cardio', duration: 30 },
-        { day: 3, session: 'Event-Specific Practice', type: 'strength', duration: 45 },
-        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
-        { day: 5, session: 'Activation Session', type: 'strength', duration: 30 },
-        { day: 6, session: 'Easy Movement', type: 'recovery', duration: 20 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'deload_week',
-      name: 'Deload Week',
-      icon: '😌',
-      type: 'life',
-      category: 'recovery',
-      duration: { min: 1, max: 1, unit: 'weeks' },
-      description: 'Planned recovery week to reduce fatigue',
-      when_to_use: ['After 3-4 hard weeks', 'Feeling run down', 'Performance declining'],
-      exit_criteria: ['Feel refreshed', 'Week completed', 'Ready for hard training'],
-      weeklyTemplate: [
-        { day: 1, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
-        { day: 2, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
-        { day: 3, session: 'Mobility Focus', type: 'recovery', duration: 30 },
-        { day: 4, session: 'Light Strength (50%)', type: 'strength', duration: 35 },
-        { day: 5, session: 'Easy Zone 2', type: 'cardio', duration: 30 },
-        { day: 6, session: 'Light Activity', type: 'recovery', duration: 45 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'sick_return',
-      name: 'Return from Illness',
-      icon: '🤒',
-      type: 'life',
-      category: 'recovery',
-      duration: { min: 1, max: 2, unit: 'weeks' },
-      description: 'Gradual return after being sick',
-      when_to_use: ['Recovering from illness', 'Post-flu/cold', 'Energy still low'],
-      exit_criteria: ['Energy back to normal', 'No symptoms for 3+ days', 'Can complete easy workout'],
-      weeklyTemplate: [
-        { day: 1, session: 'Walk Only', type: 'cardio', duration: 20 },
-        { day: 2, session: 'Light Movement', type: 'recovery', duration: 25 },
-        { day: 3, session: 'Easy Cardio', type: 'cardio', duration: 30 },
-        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
-        { day: 5, session: 'Light Strength', type: 'strength', duration: 30 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 35 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'busy_schedule',
-      name: 'Busy Schedule Mode',
+    if (avgSleepQuality < 3) {
+      factors.push({
+        id: 'sleep_quality',
+        category: 'recovery',
+        severity: 'medium',
+        icon: '🛏️',
+        title: 'Sleep Quality',
+        metric: `${avgSleepQuality.toFixed(1)}/5 avg`,
+        target: '4+/5',
+        insight: 'Poor sleep quality limits recovery even with adequate hours.',
+        action: 'Address sleep hygiene: dark room, consistent schedule, no screens before bed.'
+      });
+    }
+  }
+
+  // 2. TRAINING CONSISTENCY
+  const recentLogs = workoutLogs.filter(l => new Date(l.date) >= thirtyDaysAgo && l.completed);
+  const workoutsPerWeek = (recentLogs.length / 4.3).toFixed(1);
+  const skippedDays = workoutLogs.filter(l => new Date(l.date) >= thirtyDaysAgo && !l.completed).length;
+
+  if (parseFloat(workoutsPerWeek) < 4) {
+    factors.push({
+      id: 'consistency',
+      category: 'training',
+      severity: parseFloat(workoutsPerWeek) < 3 ? 'high' : 'medium',
       icon: '📅',
-      type: 'life',
-      category: 'situational',
-      duration: { min: 1, max: 8, unit: 'weeks' },
-      description: 'Maintain fitness with minimal time investment',
-      when_to_use: ['Work deadline crunch', 'Family obligations', 'Limited training time'],
-      exit_criteria: ['Schedule freed up', 'Can return to normal training', 'Busy period ended'],
-      weeklyTemplate: [
-        { day: 1, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
-        { day: 2, session: 'Rest or Walk', type: 'recovery', duration: 20 },
-        { day: 3, session: 'Intervals (20 min)', type: 'cardio', duration: 20 },
-        { day: 4, session: 'Rest', type: 'recovery', duration: 0 },
-        { day: 5, session: 'Full Body (30 min)', type: 'strength', duration: 30 },
-        { day: 6, session: 'Easy Cardio', type: 'cardio', duration: 25 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'weight_cut',
-      name: 'Weight Cut Protocol',
-      icon: '⚖️',
-      type: 'life',
-      category: 'performance',
-      duration: { min: 2, max: 8, unit: 'weeks' },
-      description: 'Preserve muscle while cutting weight',
-      when_to_use: ['Making weight for competition', 'Planned fat loss phase', 'Pre-selection cut'],
-      exit_criteria: ['Target weight reached', 'Competition completed', 'Cut phase ended'],
-      weeklyTemplate: [
-        { day: 1, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
-        { day: 2, session: 'LISS Cardio', type: 'cardio', duration: 40 },
-        { day: 3, session: 'Full Body Maintenance', type: 'strength', duration: 40 },
-        { day: 4, session: 'Light Cardio or Rest', type: 'recovery', duration: 30 },
-        { day: 5, session: 'Heavy Strength (Low Volume)', type: 'strength', duration: 45 },
-        { day: 6, session: 'LISS Cardio', type: 'cardio', duration: 45 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
-    },
-    {
-      id: 'new_parent',
-      name: 'New Parent Mode',
-      icon: '👶',
-      type: 'life',
-      category: 'situational',
-      duration: { min: 4, max: 24, unit: 'weeks' },
-      description: 'Flexible training for sleep-deprived new parents',
-      when_to_use: ['New baby at home', 'Sleep deprived', 'Unpredictable schedule'],
-      exit_criteria: ['Sleep improving', 'Schedule more predictable', 'Ready for more structure'],
-      weeklyTemplate: [
-        { day: 1, session: 'When Possible - Strength', type: 'strength', duration: 30 },
-        { day: 2, session: 'When Possible - Walk', type: 'cardio', duration: 20 },
-        { day: 3, session: 'Rest as Needed', type: 'recovery', duration: 0 },
-        { day: 4, session: 'When Possible - Strength', type: 'strength', duration: 30 },
-        { day: 5, session: 'Rest as Needed', type: 'recovery', duration: 0 },
-        { day: 6, session: 'When Possible - Any Activity', type: 'cardio', duration: 30 },
-        { day: 7, session: 'Rest', type: 'recovery', duration: 0 }
-      ]
+      title: 'Training Consistency',
+      metric: `${workoutsPerWeek} sessions/week`,
+      target: '5-6 sessions/week',
+      insight: 'Consistency beats intensity. You may be leaving gains on the table.',
+      action: 'Aim for 5-6 sessions/week. Even short sessions count.'
+    });
+  }
+
+  // 3. BENCHMARK STALENESS
+  const benchmarkChecks = [
+    { key: 'fiveMile', name: '5-Mile Run', months: 2 },
+    { key: 'aetDrift', name: 'AeT Drift Test', months: 2 },
+    { key: 'strengthTest', name: 'Strength Test', months: 3 },
+  ];
+
+  benchmarkChecks.forEach(({ key, name, months }) => {
+    const results = benchmarkResults[key] || [];
+    const lastTest = results[results.length - 1];
+    if (lastTest) {
+      const testDate = new Date(lastTest.date);
+      const daysSince = Math.floor((now - testDate) / (1000 * 60 * 60 * 24));
+      if (daysSince > months * 30) {
+        factors.push({
+          id: `stale_${key}`,
+          category: 'testing',
+          severity: 'low',
+          icon: '🧪',
+          title: `${name} Overdue`,
+          metric: `${daysSince} days ago`,
+          target: `Every ${months} months`,
+          insight: `Last tested ${Math.floor(daysSince / 30)} months ago. Time to retest.`,
+          action: `Schedule a ${name} to track progress.`
+        });
+      }
     }
-  ]
-};
+  });
 
-// ============== PROGRESSION MODELS ==============
-const PROGRESSION_MODELS = {
-  custom: {
-    id: 'custom',
-    name: 'Custom',
-    description: 'Manually set intensity/volume for each exercise',
-    icon: '✏️',
-    generateWeeks: (weeks) => {
-      return Array.from({ length: weeks }, (_, i) => ({
-        week: i + 1,
-        intensity: null, // User sets manually
-        sets: null,
-        reps: null,
-        rpe: null,
-        isCustom: true,
-      }));
-    },
-  },
-  linear: {
-    id: 'linear',
-    name: 'Linear Periodization',
-    description: 'Gradually increase intensity while maintaining volume',
-    icon: '📈',
-    // Note: reps/sets come from the track, this model only adjusts intensity
-    generateWeeks: (weeks, startIntensity = 70) => {
-      const endIntensity = Math.min(startIntensity + 20, 95); // Cap at 95%
-      const increment = (endIntensity - startIntensity) / Math.max(weeks - 1, 1);
-      return Array.from({ length: weeks }, (_, i) => {
-        const isDeload = (i + 1) % 4 === 0;
-        return {
-          week: i + 1,
-          intensity: isDeload ? Math.round(startIntensity * 0.85) : Math.round(startIntensity + (increment * i)),
-          // Don't set reps/sets - let track provide them
-          // Only reduce sets on deload
-          setsMultiplier: isDeload ? 0.5 : 1,
-          rpeAdjust: isDeload ? -2 : 0,
-          isDeload,
-        };
+  // 4. AEROBIC BASE (if we have AeT drift data)
+  const aetResults = benchmarkResults.aetDrift || [];
+  if (aetResults.length > 0) {
+    const lastDrift = aetResults[aetResults.length - 1];
+    const drift = parseFloat(lastDrift.drift);
+    if (drift > 5) {
+      factors.push({
+        id: 'aerobic_base',
+        category: 'fitness',
+        severity: drift > 10 ? 'high' : 'medium',
+        icon: '❤️',
+        title: 'Aerobic Base',
+        metric: `${drift.toFixed(1)}% drift`,
+        target: '<5% drift',
+        insight: 'High cardiac drift indicates weak aerobic base. This limits all endurance work.',
+        action: 'More Zone 2. Less intensity until drift improves.'
       });
-    },
-  },
-  undulatingDaily: {
-    id: 'undulatingDaily',
-    name: 'Daily Undulating (DUP)',
-    description: 'Vary intensity and volume each training day',
-    icon: '🌊',
-    dayPatterns: [
-      { name: 'Strength', sets: 5, reps: '3-5', intensity: 85, rpe: 8 },
-      { name: 'Hypertrophy', sets: 4, reps: '8-12', intensity: 70, rpe: 7 },
-      { name: 'Power', sets: 4, reps: '2-3', intensity: 75, rpe: 7, note: 'Explosive' },
-    ],
-    // Note: DUP varies intensity within each training day, but still applies week-level adjustments
-    generateWeeks: (weeks, startIntensity = 70) => {
-      return Array.from({ length: weeks }, (_, i) => {
-        const isDeload = (i + 1) % 4 === 0;
-        return {
-          week: i + 1,
-          pattern: 'DUP',
-          focus: isDeload ? 'Deload' : 'Daily Undulating',
-          intensity: isDeload ? Math.round(startIntensity * 0.8) : startIntensity,
-          setsMultiplier: isDeload ? 0.6 : 1,
-          rpeAdjust: isDeload ? -2 : 0,
-          isDeload,
-        };
-      });
-    },
-  },
-  undulatingWeekly: {
-    id: 'undulatingWeekly',
-    name: 'Weekly Undulating',
-    description: 'Vary intensity each week (Volume → Intensity → Peak → Deload)',
-    icon: '📊',
-    // Note: Uses track's reps, adjusts intensity by focus
-    generateWeeks: (weeks, startIntensity = 70) => {
-      const pattern = [
-        { focus: 'Volume', intensityAdjust: -5, setsMultiplier: 1, rpeAdjust: -1 },
-        { focus: 'Intensity', intensityAdjust: 5, setsMultiplier: 1, rpeAdjust: 0 },
-        { focus: 'Peak', intensityAdjust: 10, setsMultiplier: 1.25, rpeAdjust: 1 },
-        { focus: 'Deload', intensityAdjust: -15, setsMultiplier: 0.5, rpeAdjust: -2, isDeload: true },
-      ];
-      return Array.from({ length: weeks }, (_, i) => {
-        const p = pattern[i % pattern.length];
-        return {
-          week: i + 1,
-          focus: p.focus,
-          intensity: Math.round(startIntensity + p.intensityAdjust),
-          setsMultiplier: p.setsMultiplier,
-          rpeAdjust: p.rpeAdjust,
-          isDeload: p.isDeload || false,
-        };
-      });
-    },
-  },
-  block: {
-    id: 'block',
-    name: 'Block Periodization',
-    description: 'Accumulation → Transmutation → Realization phases',
-    icon: '🧱',
-    // Note: Uses track's reps, adjusts intensity by block phase
-    generateWeeks: (weeks, startIntensity = 70) => {
-      const accumWeeks = Math.ceil(weeks * 0.4);
-      const transWeeks = Math.ceil(weeks * 0.35);
+    }
+  }
 
-      return Array.from({ length: weeks }, (_, i) => {
-        if (i < accumWeeks) {
-          return { week: i + 1, phase: 'Accumulation', focus: 'Volume', intensity: startIntensity + (i * 2), setsMultiplier: 1.2, rpeAdjust: -1 };
-        } else if (i < accumWeeks + transWeeks) {
-          return { week: i + 1, phase: 'Transmutation', focus: 'Intensity', intensity: startIntensity + 10 + ((i - accumWeeks) * 3), setsMultiplier: 1, rpeAdjust: 0 };
-        } else {
-          const realIdx = i - accumWeeks - transWeeks;
-          return { week: i + 1, phase: 'Realization', focus: 'Peak', intensity: startIntensity + 20 + (realIdx * 2), setsMultiplier: 0.75, rpeAdjust: 1 };
+  // 5. STRENGTH BALANCE (check if any PR is lagging)
+  const prs = athleteProfile.prs || {};
+  const prEntries = Object.entries(prs).filter(([k, v]) => v?.value);
+  if (prEntries.length >= 3) {
+    // Check for stale PRs (no improvement in 3+ months)
+    prEntries.forEach(([key, data]) => {
+      if (data.date) {
+        const prDate = new Date(data.date);
+        const daysSince = Math.floor((now - prDate) / (1000 * 60 * 60 * 24));
+        if (daysSince > 90) {
+          const prName = {
+            trapBarDeadlift: 'Trap Bar Deadlift',
+            backSquat: 'Back Squat',
+            benchPress: 'Bench Press',
+            overheadPress: 'Overhead Press',
+            weightedPullUp: 'Weighted Pull-Up',
+          }[key] || key;
+          factors.push({
+            id: `stale_pr_${key}`,
+            category: 'strength',
+            severity: 'low',
+            icon: '🏋️',
+            title: `${prName} Plateau`,
+            metric: `${data.value} lbs (${Math.floor(daysSince / 30)}mo ago)`,
+            target: 'Progressive overload',
+            insight: `No PR improvement in ${Math.floor(daysSince / 30)} months.`,
+            action: 'Consider a strength emphasis block or technique work.'
+          });
         }
+      }
+    });
+  }
+
+  // 6. READINESS TREND
+  if (recentReadiness.length >= 14) {
+    const firstHalf = recentReadiness.slice(0, Math.floor(recentReadiness.length / 2));
+    const secondHalf = recentReadiness.slice(Math.floor(recentReadiness.length / 2));
+    const avgFirst = firstHalf.reduce((s, l) => s + (l.score || 50), 0) / firstHalf.length;
+    const avgSecond = secondHalf.reduce((s, l) => s + (l.score || 50), 0) / secondHalf.length;
+
+    if (avgSecond < avgFirst - 10) {
+      factors.push({
+        id: 'readiness_declining',
+        category: 'recovery',
+        severity: 'medium',
+        icon: '📉',
+        title: 'Readiness Declining',
+        metric: `${avgSecond.toFixed(0)} avg (was ${avgFirst.toFixed(0)})`,
+        target: 'Stable or improving',
+        insight: 'Your readiness scores are trending down. Fatigue accumulating.',
+        action: 'Consider a deload week or extra recovery day.'
       });
-    },
-  },
-  maintenance: {
-    id: 'maintenance',
-    name: 'Maintenance',
-    description: 'Preserve fitness with reduced volume',
-    icon: '⚖️',
-    // Note: Uses track's reps but at reduced volume
-    generateWeeks: (weeks, startIntensity = 70) => {
-      return Array.from({ length: weeks }, (_, i) => ({
-        week: i + 1,
-        intensity: startIntensity,
-        setsMultiplier: 0.5, // Half the sets
-        rpeAdjust: -1,
-        note: 'Maintenance',
-      }));
-    },
-  },
-  conjugate: {
-    id: 'conjugate',
-    name: 'Conjugate/Westside',
-    description: 'Max Effort & Dynamic Effort waves with weekly variation',
-    icon: '🔀',
-    // Note: Conjugate uses track's base, with intensity waves
-    generateWeeks: (weeks, startIntensity = 70) => {
-      return Array.from({ length: weeks }, (_, i) => {
-        const isDeload = (i + 1) % 4 === 0;
-        const waveIntensity = [0, 5, 10, -10]; // Wave pattern relative to start
-        return {
-          week: i + 1,
-          pattern: 'Conjugate',
-          focus: isDeload ? 'Deload' : `Wave ${(i % 3) + 1}`,
-          intensity: startIntensity + waveIntensity[i % 4],
-          setsMultiplier: isDeload ? 0.5 : 1,
-          rpeAdjust: isDeload ? -2 : (i % 3), // RPE increases through wave
-          isDeload,
-        };
+    }
+  }
+
+  // Sort by severity
+  const severityOrder = { high: 0, medium: 1, low: 2 };
+  factors.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+  return factors;
+};
+
+// ============== PROGRESSION LOGIC WITH MEMORY ==============
+const analyzeProgressionOpportunities = (workoutLogs, athleteProfile) => {
+  const opportunities = [];
+  const now = new Date();
+  const sixWeeksAgo = new Date(now);
+  sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42);
+
+  // Get all logs from the last 6 weeks with exercise data
+  const recentLogs = workoutLogs.filter(l =>
+    new Date(l.date) >= sixWeeksAgo &&
+    l.completed &&
+    l.exerciseData?.length > 0
+  );
+
+  if (recentLogs.length < 3) return opportunities;
+
+  // Build exercise history map: { exerciseName: [{ date, weight, rpe, sets, reps }] }
+  const exerciseHistory = {};
+
+  recentLogs.forEach(log => {
+    log.exerciseData?.forEach(ex => {
+      if (!ex.completed) return;
+
+      const key = ex.swappedTo || ex.name;
+      if (!exerciseHistory[key]) exerciseHistory[key] = [];
+
+      // Get actual performance from set data if available
+      const setData = ex.setData || [];
+      const completedSets = setData.filter(s => s.completed);
+
+      if (completedSets.length > 0) {
+        // Use actual logged data
+        const avgWeight = completedSets
+          .filter(s => s.actualWeight)
+          .reduce((sum, s, _, arr) => sum + s.actualWeight / arr.length, 0);
+        const avgRpe = completedSets
+          .filter(s => s.rpe)
+          .reduce((sum, s, _, arr) => sum + s.rpe / arr.length, 0);
+
+        if (avgWeight > 0) {
+          exerciseHistory[key].push({
+            date: log.date,
+            weight: avgWeight,
+            rpe: avgRpe || log.rpe || 7,
+            sets: completedSets.length,
+            reps: ex.reps,
+            prKey: ex.prKey
+          });
+        }
+      } else if (ex.weight) {
+        // Fallback to prescribed weight
+        exerciseHistory[key].push({
+          date: log.date,
+          weight: ex.weight,
+          rpe: log.rpe || 7,
+          sets: parseInt(ex.sets) || 3,
+          reps: ex.reps,
+          prKey: ex.prKey
+        });
+      }
+    });
+  });
+
+  // Analyze each exercise for progression opportunities
+  Object.entries(exerciseHistory).forEach(([exerciseName, history]) => {
+    if (history.length < 2) return;
+
+    // Sort by date
+    history.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Get recent sessions (last 3-4)
+    const recent = history.slice(-4);
+    if (recent.length < 2) return;
+
+    // Check for consistent weight with low RPE (ready to progress)
+    const weights = recent.map(h => h.weight);
+    const rpes = recent.map(h => h.rpe);
+    const avgWeight = weights.reduce((a, b) => a + b, 0) / weights.length;
+    const avgRpe = rpes.filter(r => r > 0).reduce((a, b, _, arr) => a + b / arr.length, 0);
+    const weightVariance = Math.max(...weights) - Math.min(...weights);
+    const isConsistent = weightVariance < avgWeight * 0.05; // Less than 5% variance
+
+    // Pattern: Same weight, RPE consistently low = ready to progress
+    if (isConsistent && avgRpe > 0 && avgRpe <= 7 && recent.length >= 3) {
+      const prKey = recent[0].prKey;
+      const currentPR = prKey ? athleteProfile.prs?.[prKey]?.value : null;
+      const percentOfPR = currentPR ? Math.round((avgWeight / currentPR) * 100) : null;
+
+      opportunities.push({
+        type: 'ready_to_progress',
+        priority: 'high',
+        icon: '📈',
+        exercise: exerciseName,
+        message: `${recent.length} sessions at ${Math.round(avgWeight)} lbs, RPE ${avgRpe.toFixed(1)}. Ready to add weight.`,
+        recommendation: `Try ${Math.round(avgWeight * 1.025)} lbs (+2.5%) next session.`,
+        metric: percentOfPR ? `Currently ${percentOfPR}% of 1RM` : null,
+        data: { avgWeight, avgRpe, sessions: recent.length }
       });
-    },
-  },
+    }
+
+    // Pattern: High RPE or declining performance = consider deload
+    if (avgRpe >= 9 && recent.length >= 2) {
+      opportunities.push({
+        type: 'high_fatigue',
+        priority: 'medium',
+        icon: '⚠️',
+        exercise: exerciseName,
+        message: `RPE averaging ${avgRpe.toFixed(1)} - grinding through sets.`,
+        recommendation: 'Consider a 10% deload or extra rest day.',
+        data: { avgWeight, avgRpe, sessions: recent.length }
+      });
+    }
+
+    // Pattern: Weight increasing, RPE stable = good progression
+    if (history.length >= 4) {
+      const firstHalf = history.slice(0, Math.floor(history.length / 2));
+      const secondHalf = history.slice(Math.floor(history.length / 2));
+      const avgFirst = firstHalf.reduce((s, h) => s + h.weight, 0) / firstHalf.length;
+      const avgSecond = secondHalf.reduce((s, h) => s + h.weight, 0) / secondHalf.length;
+      const rpeFirst = firstHalf.filter(h => h.rpe > 0).reduce((s, h, _, a) => s + h.rpe / a.length, 0);
+      const rpeSecond = secondHalf.filter(h => h.rpe > 0).reduce((s, h, _, a) => s + h.rpe / a.length, 0);
+
+      const weightIncrease = ((avgSecond - avgFirst) / avgFirst) * 100;
+
+      if (weightIncrease > 5 && Math.abs(rpeSecond - rpeFirst) < 1) {
+        opportunities.push({
+          type: 'progressing_well',
+          priority: 'low',
+          icon: '✅',
+          exercise: exerciseName,
+          message: `+${weightIncrease.toFixed(0)}% over last ${history.length} sessions with stable effort.`,
+          recommendation: 'Keep current approach - it\'s working.',
+          data: { weightIncrease, avgRpe: rpeSecond }
+        });
+      }
+
+      // Plateau detection
+      if (weightIncrease < 2 && history.length >= 4) {
+        const weekSpan = Math.round((new Date(history[history.length - 1].date) - new Date(history[0].date)) / (7 * 24 * 60 * 60 * 1000));
+        if (weekSpan >= 3) {
+          opportunities.push({
+            type: 'plateau',
+            priority: 'medium',
+            icon: '🔄',
+            exercise: exerciseName,
+            message: `Same weight for ${weekSpan} weeks.`,
+            recommendation: 'Try: rep PR, pause reps, tempo change, or exercise variation.',
+            data: { weekSpan, avgWeight: avgSecond }
+          });
+        }
+      }
+    }
+  });
+
+  // Sort: high priority first, then medium, then low
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  opportunities.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+  // Limit to top actionable items
+  return opportunities.slice(0, 5);
 };
 
-// ============== CARDIO ZONE TEMPLATES ==============
-const CARDIO_ZONES = {
-  zone1: { id: 'zone1', name: 'Zone 1 - Recovery', hrPercent: [50, 60], rpe: [1, 2], description: 'Very easy, full conversation' },
-  zone2: { id: 'zone2', name: 'Zone 2 - Aerobic Base', hrPercent: [60, 70], rpe: [3, 4], description: 'Easy, can hold conversation' },
-  zone3: { id: 'zone3', name: 'Zone 3 - Tempo', hrPercent: [70, 80], rpe: [5, 6], description: 'Comfortably hard, short sentences' },
-  zone4: { id: 'zone4', name: 'Zone 4 - Threshold', hrPercent: [80, 90], rpe: [7, 8], description: 'Hard, few words at a time' },
-  zone5: { id: 'zone5', name: 'Zone 5 - VO2 Max', hrPercent: [90, 100], rpe: [9, 10], description: 'Max effort, no talking' },
-};
+// MOVEMENT_PATTERNS, EQUIPMENT_TYPES, EXERCISE_LIBRARY - imported from ./data
 
-const CARDIO_SESSION_TEMPLATES = {
-  zone2Steady: { id: 'zone2Steady', name: 'Zone 2 Steady State', zone: 'zone2', structure: 'continuous', durationRange: [30, 90] },
-  tempoIntervals: { id: 'tempoIntervals', name: 'Tempo Intervals', zone: 'zone3', structure: 'intervals', workRest: '5:2', durationRange: [30, 50] },
-  thresholdIntervals: { id: 'thresholdIntervals', name: 'Threshold Intervals', zone: 'zone4', structure: 'intervals', workRest: '4:2', durationRange: [35, 50] },
-  longSlow: { id: 'longSlow', name: 'Long Slow Distance', zone: 'zone2', structure: 'continuous', durationRange: [90, 240] },
-  fartlek: { id: 'fartlek', name: 'Fartlek', zone: 'mixed', structure: 'fartlek', durationRange: [30, 60] },
-  hillRepeats: { id: 'hillRepeats', name: 'Hill Repeats', zone: 'zone4', structure: 'intervals', durationRange: [30, 45] },
-};
+// UNIVERSAL_DETOURS - imported from ./data
 
-// ============== MESOCYCLE TEMPLATES ==============
-const MESO_TEMPLATES = {
-  hypertrophy: { id: 'hypertrophy', name: 'Hypertrophy', weeks: 4, icon: '💪', progression: 'linear', defaultSets: 4, defaultReps: '8-12', defaultIntensity: 65 },
-  strength: { id: 'strength', name: 'Strength', weeks: 4, icon: '🏋️', progression: 'linear', defaultSets: 4, defaultReps: '4-6', defaultIntensity: 80 },
-  power: { id: 'power', name: 'Power', weeks: 3, icon: '⚡', progression: 'undulatingDaily', defaultSets: 4, defaultReps: '2-4', defaultIntensity: 75 },
-  peaking: { id: 'peaking', name: 'Peaking', weeks: 2, icon: '🎯', progression: 'block', defaultSets: 3, defaultReps: '1-3', defaultIntensity: 90 },
-  deload: { id: 'deload', name: 'Deload', weeks: 1, icon: '😴', progression: 'maintenance', defaultSets: 2, defaultReps: '6-8', defaultIntensity: 60 },
-  aerobicBase: { id: 'aerobicBase', name: 'Aerobic Base', weeks: 6, icon: '❤️', progression: 'linear', isCardioFocused: true },
-  muscularEndurance: { id: 'muscularEndurance', name: 'Muscular Endurance', weeks: 4, icon: '🔥', progression: 'linear', defaultSets: 3, defaultReps: '15-20', defaultIntensity: 55 },
-};
+// PROGRESSION_MODELS - imported from ./data
+
+// CARDIO_ZONES, CARDIO_SESSION_TEMPLATES, MESO_TEMPLATES - imported from ./data
 
 // Helper to get exercise swaps by movement pattern (uses merged library with custom exercises)
 const getExerciseSwaps = (exerciseId, customExercises = {}) => {
@@ -1692,6 +796,122 @@ const getExerciseSwaps = (exerciseId, customExercises = {}) => {
 // Get merged exercise library (built-in + custom)
 const getMergedExerciseLibrary = (customExercises = {}) => {
   return { ...EXERCISE_LIBRARY, ...customExercises };
+};
+
+// ============== SMART SUBSTITUTION SYSTEM ==============
+// Load adjustment factors when swapping between exercise types
+const SWAP_LOAD_ADJUSTMENTS = {
+  // When going FROM barbell TO other equipment
+  barbell: { dumbbell: 0.40, kettlebell: 0.35, machine: 0.85, cable: 0.70, bodyweight: null },
+  // When going FROM dumbbell TO other equipment (per hand → total)
+  dumbbell: { barbell: 2.2, kettlebell: 0.85, machine: 1.8, cable: 1.5, bodyweight: null },
+  // When going FROM machine TO other equipment
+  machine: { barbell: 0.70, dumbbell: 0.35, kettlebell: 0.30, cable: 0.80, bodyweight: null },
+  // Kettlebell to others
+  kettlebell: { barbell: 2.5, dumbbell: 1.15, machine: 2.2, cable: 1.8, bodyweight: null },
+  // Cable to others
+  cable: { barbell: 1.3, dumbbell: 0.60, machine: 1.2, kettlebell: 0.55, bodyweight: null },
+};
+
+// Get smart substitutions with scoring
+const getSmartSubstitutions = (originalExercise, customExercises = {}, availableEquipment = [], workoutLogs = []) => {
+  const allExercises = { ...EXERCISE_LIBRARY, ...customExercises };
+
+  // Find exercises with same movement pattern
+  const alternatives = Object.values(allExercises)
+    .filter(ex => ex.pattern === originalExercise.pattern && ex.id !== originalExercise.id);
+
+  // Build recently used map from workout history (last 60 days)
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const recentUsage = {};
+
+  workoutLogs
+    .filter(log => new Date(log.date) >= sixtyDaysAgo && log.exerciseData)
+    .forEach(log => {
+      log.exerciseData.forEach(ex => {
+        const name = ex.swappedTo || ex.name;
+        // Find matching exercise ID
+        const matchingEx = Object.values(allExercises).find(e =>
+          e.name === name || e.id === name
+        );
+        if (matchingEx) {
+          recentUsage[matchingEx.id] = (recentUsage[matchingEx.id] || 0) + 1;
+        }
+      });
+    });
+
+  // Score and categorize alternatives
+  const scored = alternatives.map(ex => {
+    let score = 0;
+    const flags = [];
+
+    // Check equipment availability
+    const requiredEquipment = ex.equipment || [];
+    const hasAllEquipment = requiredEquipment.every(eq =>
+      availableEquipment.includes(eq) || eq === 'bodyweight' || eq === 'none'
+    );
+    const missingEquipment = requiredEquipment.filter(eq =>
+      !availableEquipment.includes(eq) && eq !== 'bodyweight' && eq !== 'none'
+    );
+
+    if (hasAllEquipment) {
+      score += 50;
+      flags.push('available');
+    } else {
+      flags.push('missing_equipment');
+    }
+
+    // Bonus for recently used (user is familiar with it)
+    if (recentUsage[ex.id]) {
+      score += Math.min(recentUsage[ex.id] * 10, 30);
+      flags.push('recently_used');
+    }
+
+    // Bonus for having PR tracking (can use percentage-based loading)
+    if (ex.prKey) {
+      score += 15;
+      flags.push('has_pr');
+    }
+
+    // Bonus for similar equipment type (easier load translation)
+    const originalEquip = originalExercise.equipment?.[0];
+    const newEquip = ex.equipment?.[0];
+    if (originalEquip && newEquip && originalEquip === newEquip) {
+      score += 20;
+      flags.push('same_equipment');
+    }
+
+    // Calculate load adjustment factor
+    let loadAdjustment = null;
+    if (originalEquip && newEquip && SWAP_LOAD_ADJUSTMENTS[originalEquip]?.[newEquip]) {
+      loadAdjustment = SWAP_LOAD_ADJUSTMENTS[originalEquip][newEquip];
+    }
+
+    return {
+      ...ex,
+      score,
+      flags,
+      missingEquipment,
+      hasAllEquipment,
+      recentUsageCount: recentUsage[ex.id] || 0,
+      loadAdjustment,
+    };
+  });
+
+  // Sort: available equipment first, then by score
+  scored.sort((a, b) => {
+    if (a.hasAllEquipment && !b.hasAllEquipment) return -1;
+    if (!a.hasAllEquipment && b.hasAllEquipment) return 1;
+    return b.score - a.score;
+  });
+
+  // Group into categories
+  const recentlyUsed = scored.filter(ex => ex.recentUsageCount > 0 && ex.hasAllEquipment).slice(0, 3);
+  const recommended = scored.filter(ex => ex.hasAllEquipment && !recentlyUsed.includes(ex));
+  const unavailable = scored.filter(ex => !ex.hasAllEquipment);
+
+  return { recentlyUsed, recommended, unavailable, all: scored };
 };
 
 // Helper to calculate working weight from 1RM and percentage
@@ -3709,6 +2929,38 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Equipment Section for Smart Substitutions */}
+      <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
+        <h3 className={`font-semibold ${theme.text} mb-2`}>My Gym Equipment</h3>
+        <p className={`text-xs ${theme.textMuted} mb-4`}>Select what's available. Used for smart exercise swaps.</p>
+        <div className="flex flex-wrap gap-2">
+          {['barbell', 'dumbbell', 'kettlebell', 'pullupBar', 'bench', 'cable', 'machine', 'trapBar', 'box', 'bands'].map(eq => {
+            const isSelected = (profile.availableEquipment || []).includes(eq);
+            return (
+              <button
+                key={eq}
+                onClick={() => {
+                  setProfile(prev => {
+                    const current = prev.availableEquipment || [];
+                    const updated = isSelected
+                      ? current.filter(e => e !== eq)
+                      : [...current, eq];
+                    return { ...prev, availableEquipment: updated, lastUpdated: new Date().toISOString() };
+                  });
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isSelected
+                    ? 'bg-blue-500 text-white'
+                    : `${theme.cardAlt} ${theme.text} opacity-60`
+                }`}
+              >
+                {EQUIPMENT_TYPES[eq] || eq}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
@@ -8578,6 +7830,7 @@ export default function App() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useSyncedStorage('trainingHub_hasSeenOnboarding', false, syncStatus, setSyncStatus); // First-time user flag
   const [showOnboarding, setShowOnboarding] = useState(false); // Show onboarding modal
   const [swappingExercise, setSwappingExercise] = useState(null); // { name, pattern } for swap picker
+  const [showAllSwapOptions, setShowAllSwapOptions] = useState(false); // Show unavailable equipment options too
   const [showAddExercise, setShowAddExercise] = useState(false); // Show add custom exercise modal
   const [viewingExerciseHistory, setViewingExerciseHistory] = useState(null); // For exercise history modal
   
@@ -8841,6 +8094,7 @@ export default function App() {
         const prKey = ex.prKey;
         const prValue = prKey ? athleteProfile.prs?.[prKey]?.value : null;
         const workingWeight = ex.percentage && prValue ? calculateWorkingWeight(prValue, ex.percentage) : null;
+        const trackingData = setTrackingData[ex.name] || [];
         return {
           name: ex.name,
           sets: ex.sets,
@@ -8849,12 +8103,19 @@ export default function App() {
           percentage: ex.percentage,
           prKey: ex.prKey,
           completed: exerciseCompletion[ex.name] || false,
-          swappedTo: exerciseSwaps[ex.name] || null
+          swappedTo: exerciseSwaps[ex.name] || null,
+          // Set-level tracking data for progression analysis
+          setData: trackingData.map(s => ({
+            actualWeight: s.actualWeight ? parseFloat(s.actualWeight) : null,
+            rpe: s.rpe ? parseFloat(s.rpe) : null,
+            completed: s.completed
+          }))
         };
       }) || []
     };
     setWorkoutLogs(prev => [...prev.filter(log => !(log.date === newLog.date && log.session === newLog.session && log.programId === newLog.programId)), newLog]);
     setExerciseCompletion({});
+    setSetTrackingData({});
     setWorkoutData({ duration: todayWorkout?.duration || 0, rpe: 5, notes: '', newPRs: {} });
     advanceDay();
   };
@@ -9233,6 +8494,97 @@ export default function App() {
               <ChevronRight className={`${theme.textMuted} group-hover:translate-x-1 transition-transform`} />
             </button>
 
+            {/* Limiting Factors Card */}
+            {(() => {
+              const limitingFactors = analyzeLimitingFactors(workoutLogs, benchmarkResults, readiness, athleteProfile);
+              if (limitingFactors.length === 0) return null;
+              const topFactors = limitingFactors.slice(0, 3);
+              return (
+                <div className={`${theme.card} rounded-2xl p-5`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Target size={18} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
+                      <h3 className={`font-semibold ${theme.text}`}>Limiting Factors</h3>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${topFactors[0]?.severity === 'high' ? 'bg-red-500/20 text-red-500' : topFactors[0]?.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}`}>
+                      {limitingFactors.length} found
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {topFactors.map((factor, idx) => (
+                      <div key={factor.id} className={`p-3 ${theme.cardAlt} rounded-xl`}>
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl">{factor.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`font-medium ${theme.text}`}>{factor.title}</span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${factor.severity === 'high' ? 'bg-red-500/20 text-red-500' : factor.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-gray-500/20 text-gray-400'}`}>
+                                {factor.metric}
+                              </span>
+                            </div>
+                            <p className={`text-sm ${theme.textMuted}`}>{factor.action}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {limitingFactors.length > 3 && (
+                    <p className={`text-xs ${theme.textMuted} text-center mt-3`}>+{limitingFactors.length - 3} more factors identified</p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Progression Insights Card */}
+            {(() => {
+              const progressionOps = analyzeProgressionOpportunities(workoutLogs, athleteProfile);
+              if (progressionOps.length === 0) return null;
+              return (
+                <div className={`${theme.card} rounded-2xl p-5`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp size={18} className={darkMode ? 'text-green-400' : 'text-green-600'} />
+                      <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      progressionOps[0]?.priority === 'high'
+                        ? 'bg-green-500/20 text-green-500'
+                        : progressionOps[0]?.priority === 'medium'
+                          ? 'bg-amber-500/20 text-amber-500'
+                          : 'bg-blue-500/20 text-blue-500'
+                    }`}>
+                      {progressionOps.filter(p => p.priority === 'high').length} ready
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {progressionOps.slice(0, 3).map((op, idx) => (
+                      <div key={idx} className={`p-3 rounded-xl ${theme.cardAlt}`}>
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl">{op.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium ${theme.text} text-sm`}>{op.exercise}</p>
+                            <p className={`text-xs ${theme.textMuted} mt-0.5`}>{op.message}</p>
+                            <p className={`text-xs mt-1 ${
+                              op.priority === 'high'
+                                ? (darkMode ? 'text-green-400' : 'text-green-600')
+                                : op.priority === 'medium'
+                                  ? (darkMode ? 'text-amber-400' : 'text-amber-600')
+                                  : (darkMode ? 'text-blue-400' : 'text-blue-600')
+                            } font-medium`}>
+                              → {op.recommendation}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {progressionOps.length > 3 && (
+                    <p className={`text-xs ${theme.textMuted} text-center mt-3`}>+{progressionOps.length - 3} more insights</p>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Program Status Card */}
             <button onClick={() => setFloatingPane('calendar')} className={`w-full text-left ${theme.card} rounded-2xl p-5 card-hover`}>
               <div className="flex items-center justify-between mb-4">
@@ -9350,14 +8702,21 @@ export default function App() {
               {todayLog?.completed && <div className="mt-4 bg-white/20 rounded-lg p-3 flex items-center gap-2"><CheckCircle2 size={18} /><span>Completed</span></div>}
             </div>
 
-            {/* Readiness Warning */}
-            {readinessScore && readinessScore < 55 && todayWorkout.type !== 'recovery' && (
-              <div className={`p-4 ${darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200'} border rounded-xl`}>
+            {/* Readiness Warning + Auto-Adjustment */}
+            {readinessScore && readinessScore < 70 && todayWorkout.type !== 'recovery' && (
+              <div className={`p-4 ${readinessScore < 40 ? (darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300') : (darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200')} border rounded-xl`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={20} />
-                  <span className={`font-medium ${theme.text}`}>Low Readiness ({readinessScore})</span>
+                  <AlertTriangle className={readinessScore < 40 ? (darkMode ? 'text-red-400' : 'text-red-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')} size={20} />
+                  <span className={`font-medium ${theme.text}`}>{readinessScore < 40 ? 'Low' : 'Moderate'} Readiness ({readinessScore})</span>
                 </div>
                 <p className={`text-sm ${theme.textMuted}`}>{readinessInfo?.recommendation}</p>
+                {todayWorkout?.readinessAdjustment && (
+                  <div className={`mt-2 pt-2 border-t ${theme.border}`}>
+                    <p className={`text-sm font-medium ${readinessScore < 40 ? 'text-red-500' : 'text-amber-500'}`}>
+                      ⚡ Auto-adjusted: {todayWorkout.readinessAdjustment}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -10037,62 +9396,133 @@ export default function App() {
         />
       )}
 
-      {/* Exercise Swap Picker Modal */}
-      {swappingExercise && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className={`${theme.bg} w-full rounded-t-2xl max-h-[80vh] overflow-hidden flex flex-col`}>
-            <div className={`p-4 border-b ${theme.border} flex items-center justify-between`}>
-              <div>
-                <h3 className={`font-bold ${theme.text}`}>Swap Exercise</h3>
+      {/* Smart Exercise Swap Picker Modal */}
+      {swappingExercise && (() => {
+        const originalEx = { ...EXERCISE_LIBRARY, ...customExercises }[swappingExercise.originalId] || { id: swappingExercise.originalId, pattern: swappingExercise.pattern, equipment: [] };
+        const smartSubs = getSmartSubstitutions(originalEx, customExercises, athleteProfile.availableEquipment || [], workoutLogs);
+        const { recentlyUsed, recommended, unavailable } = smartSubs;
+
+        const renderSwapOption = (ex, showLoadHint = true) => (
+          <button
+            key={ex.id}
+            onClick={() => {
+              setExerciseSwaps(prev => ({ ...prev, [swappingExercise.name]: ex.id }));
+              setSwappingExercise(null);
+              setShowAllSwapOptions(false);
+            }}
+            className={`w-full p-4 ${theme.card} rounded-xl text-left ${exerciseSwaps[swappingExercise.name] === ex.id ? 'ring-2 ring-purple-500' : ''} ${!ex.hasAllEquipment ? 'opacity-60' : ''}`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className={`font-medium ${theme.text}`}>{ex.name}</p>
                 <p className={`text-sm ${theme.textMuted}`}>
-                  {MOVEMENT_PATTERNS[swappingExercise.pattern]?.icon} {MOVEMENT_PATTERNS[swappingExercise.pattern]?.name} alternatives
+                  {ex.equipment?.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}
                 </p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {ex.prKey && <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-500 rounded">PR tracking</span>}
+                  {ex.recentUsageCount > 0 && <span className="text-xs px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded">Used {ex.recentUsageCount}x</span>}
+                  {ex.flags?.includes('same_equipment') && <span className="text-xs px-1.5 py-0.5 bg-purple-500/20 text-purple-500 rounded">Same gear</span>}
+                </div>
               </div>
-              <button onClick={() => setSwappingExercise(null)} className={`p-2 rounded-lg ${theme.cardAlt}`}>
-                <X size={24} className={theme.text} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-4 space-y-2">
-              {/* Reset to original option */}
-              {exerciseSwaps[swappingExercise.name] && (
-                <button
-                  onClick={() => {
-                    setExerciseSwaps(prev => {
-                      const updated = { ...prev };
-                      delete updated[swappingExercise.name];
-                      return updated;
-                    });
-                    setSwappingExercise(null);
-                  }}
-                  className={`w-full p-4 rounded-xl border-2 border-dashed ${theme.border} text-left`}
-                >
-                  <p className={`font-medium text-blue-500`}>↩ Reset to original</p>
-                  <p className={`text-sm ${theme.textMuted}`}>{swappingExercise.name}</p>
-                </button>
+              {showLoadHint && ex.loadAdjustment && (
+                <div className={`text-right ${theme.textMuted}`}>
+                  <p className="text-xs">Load adjust</p>
+                  <p className={`text-sm font-mono ${ex.loadAdjustment < 1 ? 'text-amber-500' : 'text-green-500'}`}>
+                    {ex.loadAdjustment < 1 ? '↓' : '↑'}{Math.abs(Math.round((1 - ex.loadAdjustment) * 100))}%
+                  </p>
+                </div>
               )}
-              {/* Alternatives (including custom exercises) */}
-              {Object.values({ ...EXERCISE_LIBRARY, ...customExercises })
-                .filter(ex => ex.pattern === swappingExercise.pattern && ex.id !== swappingExercise.originalId)
-                .map(ex => (
+            </div>
+            {!ex.hasAllEquipment && ex.missingEquipment?.length > 0 && (
+              <p className="text-xs text-red-400 mt-1">Missing: {ex.missingEquipment.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}</p>
+            )}
+          </button>
+        );
+
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => { setSwappingExercise(null); setShowAllSwapOptions(false); }}>
+            <div className={`${theme.bg} w-full rounded-t-2xl max-h-[80vh] overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()}>
+              <div className={`p-4 border-b ${theme.border} flex items-center justify-between`}>
+                <div>
+                  <h3 className={`font-bold ${theme.text}`}>Smart Swap</h3>
+                  <p className={`text-sm ${theme.textMuted}`}>
+                    {MOVEMENT_PATTERNS[swappingExercise.pattern]?.icon} {swappingExercise.name}
+                  </p>
+                </div>
+                <button onClick={() => { setSwappingExercise(null); setShowAllSwapOptions(false); }} className={`p-2 rounded-lg ${theme.cardAlt}`}>
+                  <X size={24} className={theme.text} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto p-4 space-y-4">
+                {/* Reset to original option */}
+                {exerciseSwaps[swappingExercise.name] && (
                   <button
-                    key={ex.id}
                     onClick={() => {
-                      setExerciseSwaps(prev => ({ ...prev, [swappingExercise.name]: ex.id }));
+                      setExerciseSwaps(prev => {
+                        const updated = { ...prev };
+                        delete updated[swappingExercise.name];
+                        return updated;
+                      });
                       setSwappingExercise(null);
+                      setShowAllSwapOptions(false);
                     }}
-                    className={`w-full p-4 ${theme.card} rounded-xl text-left ${exerciseSwaps[swappingExercise.name] === ex.id ? 'ring-2 ring-purple-500' : ''}`}
+                    className={`w-full p-4 rounded-xl border-2 border-dashed ${theme.border} text-left`}
                   >
-                    <p className={`font-medium ${theme.text}`}>{ex.name}</p>
-                    <p className={`text-sm ${theme.textMuted}`}>
-                      {ex.equipment?.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}
-                    </p>
-                    {ex.prKey && <span className="text-xs text-blue-500 mt-1 inline-block">Has PR tracking</span>}
+                    <p className={`font-medium text-blue-500`}>↩ Reset to original</p>
+                    <p className={`text-sm ${theme.textMuted}`}>{swappingExercise.name}</p>
                   </button>
-                ))}
+                )}
+
+                {/* Recently Used Section */}
+                {recentlyUsed.length > 0 && (
+                  <div>
+                    <p className={`text-xs font-semibold ${theme.textMuted} uppercase tracking-wider mb-2`}>⏱ Recently Used</p>
+                    <div className="space-y-2">
+                      {recentlyUsed.map(ex => renderSwapOption(ex))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended Section */}
+                {recommended.length > 0 && (
+                  <div>
+                    <p className={`text-xs font-semibold ${theme.textMuted} uppercase tracking-wider mb-2`}>✓ Available at Your Gym</p>
+                    <div className="space-y-2">
+                      {recommended.slice(0, showAllSwapOptions ? undefined : 6).map(ex => renderSwapOption(ex))}
+                      {recommended.length > 6 && !showAllSwapOptions && (
+                        <button
+                          onClick={() => setShowAllSwapOptions(true)}
+                          className={`w-full p-3 text-center text-sm ${theme.textMuted} ${theme.cardAlt} rounded-xl`}
+                        >
+                          Show {recommended.length - 6} more...
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unavailable Equipment Section */}
+                {unavailable.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowAllSwapOptions(!showAllSwapOptions)}
+                      className={`text-xs font-semibold ${theme.textMuted} uppercase tracking-wider mb-2 flex items-center gap-1`}
+                    >
+                      🚫 Need Different Equipment ({unavailable.length})
+                      <ChevronRight size={12} className={`transition-transform ${showAllSwapOptions ? 'rotate-90' : ''}`} />
+                    </button>
+                    {showAllSwapOptions && (
+                      <div className="space-y-2">
+                        {unavailable.map(ex => renderSwapOption(ex, false))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Floating Pane System - Dashboard Quick Views */}
       {floatingPane && (
