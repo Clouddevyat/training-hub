@@ -3863,11 +3863,52 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
   // Get unique equipment from all exercises
   const EQUIPMENT_OPTIONS = [...new Set(Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).flatMap(e => e.equipment))].sort();
   
+  // Get suggested patterns based on session name/type
+  const getSuggestedPatterns = () => {
+    if (!showExercisePicker) return null;
+    const day = currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx];
+    if (!day) return null;
+    
+    const sessionLower = (day.session || '').toLowerCase();
+    const dayNameLower = (day.dayName || '').toLowerCase();
+    const combined = `${sessionLower} ${dayNameLower}`;
+    
+    // Map session keywords to movement patterns
+    if (combined.includes('push') || combined.includes('chest') || combined.includes('tricep')) {
+      return ['horizontalPush', 'verticalPush'];
+    }
+    if (combined.includes('pull') || combined.includes('back') || combined.includes('bicep')) {
+      return ['horizontalPull', 'verticalPull'];
+    }
+    if (combined.includes('leg') || combined.includes('lower')) {
+      return ['squat', 'hipHinge', 'lunge', 'accessory'];
+    }
+    if (combined.includes('upper')) {
+      return ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'];
+    }
+    if (combined.includes('full body') || combined.includes('total')) {
+      return null; // Show all
+    }
+    return null;
+  };
+  
+  const suggestedPatterns = getSuggestedPatterns();
+  
   const filteredExercises = Object.values(EXERCISE_LIBRARY)
     .filter(e => !e.isCardio && !e.isMobility)
     .filter(e => exerciseFilter === 'all' || e.pattern === exerciseFilter)
     .filter(e => equipmentFilter === 'all' || e.equipment.includes(equipmentFilter))
-    .filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()));
+    .filter(e => e.name.toLowerCase().includes(exerciseSearch.toLowerCase()))
+    .sort((a, b) => {
+      // If we have suggested patterns and filter is 'all', sort suggested first
+      if (suggestedPatterns && exerciseFilter === 'all') {
+        const aMatch = suggestedPatterns.includes(a.pattern);
+        const bMatch = suggestedPatterns.includes(b.pattern);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
   return (
     <div className="p-4">
@@ -4378,7 +4419,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
       {showExercisePicker && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className={`${theme.bg} w-full rounded-t-2xl p-4 max-h-[80vh] overflow-auto`}>
-            <div className="flex items-center justify-between mb-4"><h3 className={`font-bold ${theme.text}`}>Select Exercise</h3><button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); setEquipmentFilter('all'); }}><X size={24} className={theme.text} /></button></div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className={`font-bold ${theme.text}`}>Select Exercise</h3>
+                {suggestedPatterns && (
+                  <p className={`text-xs text-blue-500`}>
+                    ★ Suggested for {currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx]?.session || currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx]?.dayName}
+                  </p>
+                )}
+              </div>
+              <button onClick={() => { setShowExercisePicker(null); setExerciseSearch(''); setExerciseFilter('all'); setEquipmentFilter('all'); }}><X size={24} className={theme.text} /></button>
+            </div>
             <input type="text" placeholder="Search exercises..." value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} className={`w-full p-3 rounded-lg ${theme.input} border mb-3`} />
             
             {/* Movement Pattern Filter */}
@@ -4402,12 +4453,18 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
               {filteredExercises.length === 0 ? (
                 <p className={`text-center py-4 ${theme.textMuted}`}>No exercises match your filters</p>
               ) : (
-                filteredExercises.map(ex => (
-                  <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left`}>
-                    <p className={`font-medium ${theme.text}`}>{ex.name}</p>
-                    <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}</p>
-                  </button>
-                ))
+                filteredExercises.map(ex => {
+                  const isSuggested = suggestedPatterns?.includes(ex.pattern);
+                  return (
+                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left ${isSuggested ? 'border-l-4 border-blue-500' : ''}`}>
+                      <p className={`font-medium ${theme.text}`}>
+                        {isSuggested && <span className="text-blue-500 mr-1">★</span>}
+                        {ex.name}
+                      </p>
+                      <p className={`text-xs ${theme.textMuted}`}>{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.equipment.join(', ')}</p>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
@@ -6959,8 +7016,23 @@ export default function App() {
       <header className={`${theme.header} text-white p-4 sticky top-0 z-50`}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">⛰️</span>
-            <h1 className="text-lg font-bold">Training Hub <span className="text-xs font-normal opacity-50">v2.1</span></h1>
+            {/* Home Button - show when not on dashboard */}
+            {currentView !== 'dashboard' && (
+              <button 
+                onClick={() => setCurrentView('dashboard')} 
+                className="p-2 -ml-2 mr-1 hover:bg-slate-700 rounded-lg"
+                title="Return to Dashboard"
+              >
+                <Home size={20} />
+              </button>
+            )}
+            <button 
+              onClick={() => setCurrentView('dashboard')} 
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <span className="text-2xl">⛰️</span>
+              <h1 className="text-lg font-bold">Training Hub <span className="text-xs font-normal opacity-50">v2.1</span></h1>
+            </button>
           </div>
           <div className="flex items-center gap-2">
             {/* Cloud Sync Status */}
