@@ -6679,7 +6679,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 };
 
 // ============== PROGRAM OVERVIEW VIEW ==============
-const ProgramOverviewView = ({ programId, program, templateData, onClose, onActivate, isActive, theme }) => {
+const ProgramOverviewView = ({ programId, program, templateData, onClose, onActivate, isActive, theme, darkMode }) => {
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [expandedBlock, setExpandedBlock] = useState(null);
 
@@ -10530,6 +10530,7 @@ export default function App() {
           }}
           isActive={programState.currentProgram === viewingProgramId}
           theme={theme}
+          darkMode={darkMode}
         />
       )}
 
