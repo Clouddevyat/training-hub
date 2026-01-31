@@ -72,7 +72,13 @@ const useLocalStorage = (key, initialValue) => {
 
 // ============== UTILITY FUNCTIONS ==============
 const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
-const formatDateShort = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return '-';
+  // Parse YYYY-MM-DD as local date (not UTC) to avoid timezone rollback issues
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // month is 0-indexed
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 // Use local timezone for date key (YYYY-MM-DD format)
 const getTodayKey = () => {
   const now = new Date();
