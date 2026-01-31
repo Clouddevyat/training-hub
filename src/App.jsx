@@ -9,7 +9,9 @@ import {
   TrendingDown, Minus, ArrowRight, Flag, PlayCircle, StopCircle,
   RotateCcw, Info, LineChart, Hammer, Copy, RefreshCw, FileText, Library,
   Cloud, CloudOff, Loader, GitBranch, Key, Fingerprint, LogOut, UserCircle, Sparkles,
-  Check
+  Check, Footprints, MoveHorizontal, ArrowUp, ArrowDown, Briefcase, RotateCw,
+  Crosshair, FlaskConical, Gauge, Hand, Waves, Bike, PersonStanding, Snowflake,
+  TreePine, Smartphone
 } from 'lucide-react';
 import { TemplateUploadView } from './TemplateUpload';
 import { useSyncedStorage, useSyncStatus, loadFromCloud, syncAllToCloud, loadWithSyncCode, getCurrentDeviceId, setSyncCode } from './useCloudSync';
@@ -126,13 +128,131 @@ const getTypeBorder = (type) => ({
   long_effort: 'border-purple-500' 
 }[type] || 'border-gray-500');
 
-const getTypeIcon = (type) => ({ 
-  strength: Dumbbell, 
-  cardio: Activity, 
-  muscular_endurance: Flame, 
-  recovery: Circle, 
-  long_effort: Mountain 
+const getTypeIcon = (type) => ({
+  strength: Dumbbell,
+  cardio: Activity,
+  muscular_endurance: Flame,
+  recovery: Circle,
+  long_effort: Mountain
 }[type] || Circle);
+
+// Icon component helper - replaces emoji icons with Lucide icons
+const ICON_MAP = {
+  // Workout types
+  strength: Dumbbell,
+  cardio: Activity,
+  muscular_endurance: Flame,
+  recovery: Heart,
+  long_effort: Mountain,
+  mobility: PersonStanding,
+  // Categories
+  baseline: BarChart3,
+  aerobic: Activity,
+  mountaineering: Mountain,
+  conditioning: Zap,
+  // Charts
+  overview: BarChart3,
+  readiness: Battery,
+  benchmarks: Target,
+  progress: TrendingUp,
+  // Status
+  building: BarChart3,
+  detraining: TrendingDown,
+  optimal: CheckCircle2,
+  caution: AlertTriangle,
+  danger: AlertTriangle,
+  // Movement patterns
+  hinge: Dumbbell,
+  squat: Footprints,
+  lunge: Footprints,
+  push: MoveHorizontal,
+  pull: Target,
+  vertical_push: ArrowUp,
+  vertical_pull: ArrowDown,
+  carry: Briefcase,
+  rotation: RotateCw,
+  core: Crosshair,
+  // Training tracks
+  hypertrophy: Dumbbell,
+  power: Zap,
+  endurance: Flame,
+  peaking: Target,
+  // Specialty blocks
+  power_speed: Zap,
+  grip_forearm: Hand,
+  core_stability: Target,
+  mobility_flexibility: PersonStanding,
+  conditioning_gpp: Flame,
+  swimming: Waves,
+  climbing: Mountain,
+  cycling: Bike,
+  running: Activity,
+  // Limiting factors
+  sleep_duration: Moon,
+  sleep_quality: Bed,
+  consistency: Calendar,
+  stale_test: FlaskConical,
+  aerobic_base: Heart,
+  strength_plateau: Dumbbell,
+  readiness_declining: TrendingDown,
+  // Progression
+  ready_to_progress: TrendingUp,
+  high_fatigue: AlertTriangle,
+  progressing_well: CheckCircle2,
+  plateau: RefreshCw,
+  // Misc
+  sleep: Moon,
+  soreness: Activity,
+  motivation: Flame,
+  hrv: Heart,
+  notes: FileText,
+  calendar: Calendar,
+  timer: Timer,
+  test: Target,
+  refresh: RefreshCw,
+  trend_up: TrendingUp,
+  trend_down: TrendingDown,
+  sync: RefreshCw,
+  welcome: Mountain,
+  program: Dumbbell,
+  custom: Settings,
+};
+
+const IconComponent = ({ name, size = 20, className = '' }) => {
+  const Icon = ICON_MAP[name];
+  if (!Icon) return null;
+  return <Icon size={size} className={className} />;
+};
+
+// Emoji to Lucide icon mapping for legacy data that still uses emoji strings
+const EMOJI_TO_ICON = {
+  '🏃': Activity, '💓': Heart, '🔥': Flame, '⛰️': Mountain, '🏋️': Dumbbell,
+  '💪': Dumbbell, '🧘': PersonStanding, '😴': Moon, '⚡': Zap, '🎯': Target,
+  '📊': BarChart3, '📈': TrendingUp, '📉': TrendingDown, '🧪': FlaskConical,
+  '❤️': Heart, '🔄': RefreshCw, '⚠️': AlertTriangle, '✅': CheckCircle2,
+  '🤚': Hand, '🏊': Waves, '🚴': Bike, '🧗': Mountain, '❄️': Snowflake,
+  '🌲': TreePine, '⚔️': Target, '🛏️': Bed, '📅': Calendar, '🚨': AlertTriangle,
+  '🦵': Footprints, '🚶': Footprints, '⬆️': ArrowUp, '⬇️': ArrowDown,
+  '🧳': Briefcase, '🏔️': Mountain,
+};
+
+// Helper to render an icon - handles both Icon component references and emoji strings
+const RenderIcon = ({ icon, Icon, size = 20, className = '' }) => {
+  // If Icon is a component reference, render it directly
+  if (Icon && typeof Icon === 'function') {
+    return <Icon size={size} className={className} />;
+  }
+  // If icon is an emoji string, try to convert it
+  if (icon && typeof icon === 'string') {
+    const LucideIcon = EMOJI_TO_ICON[icon];
+    if (LucideIcon) {
+      return <LucideIcon size={size} className={className} />;
+    }
+    // Fallback: return the emoji as text (will be removed as we migrate)
+    return <span className={className}>{icon}</span>;
+  }
+  return null;
+};
 
 // calculateZones, calculateLoadTargets - imported from ./data
 
@@ -275,10 +395,10 @@ const getLoadStatus = (acr, atl, ctl) => {
       label: 'Building Baseline',
       description: 'Not enough training history yet. Keep logging workouts.',
       recommendation: 'Continue training as programmed',
-      icon: '📊'
+      Icon: BarChart3
     };
   }
-  
+
   if (acr < 0.8) {
     return {
       zone: 'detraining',
@@ -286,10 +406,10 @@ const getLoadStatus = (acr, atl, ctl) => {
       label: 'Detraining Risk',
       description: 'Training load dropping. You may be losing fitness.',
       recommendation: 'Increase training volume or intensity if recovered',
-      icon: '📉'
+      Icon: TrendingDown
     };
   }
-  
+
   if (acr <= 1.3) {
     return {
       zone: 'optimal',
@@ -297,10 +417,10 @@ const getLoadStatus = (acr, atl, ctl) => {
       label: 'Optimal Zone',
       description: 'Training load is balanced. Good adaptation stimulus.',
       recommendation: 'Continue as planned. You\'re in the sweet spot.',
-      icon: '✅'
+      Icon: CheckCircle2
     };
   }
-  
+
   if (acr <= 1.5) {
     return {
       zone: 'caution',
@@ -308,17 +428,17 @@ const getLoadStatus = (acr, atl, ctl) => {
       label: 'Caution',
       description: 'Ramping up quickly. Monitor recovery closely.',
       recommendation: 'Consider an easier day soon. Watch for fatigue signs.',
-      icon: '⚠️'
+      Icon: AlertTriangle
     };
   }
-  
+
   return {
     zone: 'danger',
     color: 'red',
     label: 'Overreach Warning',
     description: 'High injury/burnout risk. Acute load far exceeds chronic.',
     recommendation: 'Strongly recommend recovery day. Reduce intensity.',
-    icon: '🚨'
+    Icon: AlertTriangle
   };
 };
 
@@ -498,7 +618,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
         id: 'sleep_duration',
         category: 'recovery',
         severity: avgSleep < 6 ? 'high' : 'medium',
-        icon: '😴',
+        Icon: Moon,
         title: 'Sleep Duration',
         metric: `${avgSleep.toFixed(1)} hrs avg`,
         target: '7+ hrs',
@@ -511,7 +631,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
         id: 'sleep_quality',
         category: 'recovery',
         severity: 'medium',
-        icon: '🛏️',
+        Icon: Bed,
         title: 'Sleep Quality',
         metric: `${avgSleepQuality.toFixed(1)}/5 avg`,
         target: '4+/5',
@@ -531,7 +651,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
       id: 'consistency',
       category: 'training',
       severity: parseFloat(workoutsPerWeek) < 3 ? 'high' : 'medium',
-      icon: '📅',
+      Icon: Calendar,
       title: 'Training Consistency',
       metric: `${workoutsPerWeek} sessions/week`,
       target: '5-6 sessions/week',
@@ -558,7 +678,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
           id: `stale_${key}`,
           category: 'testing',
           severity: 'low',
-          icon: '🧪',
+          Icon: FlaskConical,
           title: `${name} Overdue`,
           metric: `${daysSince} days ago`,
           target: `Every ${months} months`,
@@ -579,7 +699,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
         id: 'aerobic_base',
         category: 'fitness',
         severity: drift > 10 ? 'high' : 'medium',
-        icon: '❤️',
+        Icon: Heart,
         title: 'Aerobic Base',
         metric: `${drift.toFixed(1)}% drift`,
         target: '<5% drift',
@@ -610,7 +730,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
             id: `stale_pr_${key}`,
             category: 'strength',
             severity: 'low',
-            icon: '🏋️',
+            Icon: Dumbbell,
             title: `${prName} Plateau`,
             metric: `${data.value} lbs (${Math.floor(daysSince / 30)}mo ago)`,
             target: 'Progressive overload',
@@ -634,7 +754,7 @@ const analyzeLimitingFactors = (workoutLogs, benchmarkResults, readiness, athlet
         id: 'readiness_declining',
         category: 'recovery',
         severity: 'medium',
-        icon: '📉',
+        Icon: TrendingDown,
         title: 'Readiness Declining',
         metric: `${avgSecond.toFixed(0)} avg (was ${avgFirst.toFixed(0)})`,
         target: 'Stable or improving',
@@ -742,7 +862,7 @@ const analyzeProgressionOpportunities = (workoutLogs, athleteProfile) => {
       opportunities.push({
         type: 'ready_to_progress',
         priority: 'high',
-        icon: '📈',
+        Icon: TrendingUp,
         exercise: exerciseName,
         message: `${recent.length} sessions at ${Math.round(avgWeight)} lbs, RPE ${avgRpe.toFixed(1)}. Ready to add weight.`,
         recommendation: `Try ${Math.round(avgWeight * 1.025)} lbs (+2.5%) next session.`,
@@ -756,7 +876,7 @@ const analyzeProgressionOpportunities = (workoutLogs, athleteProfile) => {
       opportunities.push({
         type: 'high_fatigue',
         priority: 'medium',
-        icon: '⚠️',
+        Icon: AlertTriangle,
         exercise: exerciseName,
         message: `RPE averaging ${avgRpe.toFixed(1)} - grinding through sets.`,
         recommendation: 'Consider a 10% deload or extra rest day.',
@@ -779,7 +899,7 @@ const analyzeProgressionOpportunities = (workoutLogs, athleteProfile) => {
         opportunities.push({
           type: 'progressing_well',
           priority: 'low',
-          icon: '✅',
+          Icon: CheckCircle2,
           exercise: exerciseName,
           message: `+${weightIncrease.toFixed(0)}% over last ${history.length} sessions with stable effort.`,
           recommendation: 'Keep current approach - it\'s working.',
@@ -794,7 +914,7 @@ const analyzeProgressionOpportunities = (workoutLogs, athleteProfile) => {
           opportunities.push({
             type: 'plateau',
             priority: 'medium',
-            icon: '🔄',
+            Icon: RefreshCw,
             exercise: exerciseName,
             message: `Same weight for ${weekSpan} weeks.`,
             recommendation: 'Try: rep PR, pause reps, tempo change, or exercise variation.',
@@ -965,7 +1085,7 @@ const DEFAULT_PROGRAMS = {
     id: 'combatAlpinist',
     name: 'Combat Alpinist',
     description: 'Integrated mountaineering protocol - 40 week periodized program',
-    icon: '⛰️',
+    Icon: Mountain,
     isDefault: true,
     isTemplate: false,
     globalRules: {
@@ -1082,7 +1202,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'hypertrophy',
           name: 'Hypertrophy Block',
-          icon: '🏋️',
+          Icon: Dumbbell,
           type: 'specialty',
           category: 'strength',
           duration: { min: 4, max: 8, unit: 'weeks' },
@@ -1104,7 +1224,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'power_speed',
           name: 'Power & Speed',
-          icon: '⚡',
+          Icon: Zap,
           type: 'specialty',
           category: 'performance',
           duration: { min: 3, max: 6, unit: 'weeks' },
@@ -1126,7 +1246,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'grip_forearm',
           name: 'Grip & Forearm Focus',
-          icon: '🤚',
+          Icon: Hand,
           type: 'specialty',
           category: 'strength',
           duration: { min: 3, max: 6, unit: 'weeks' },
@@ -1148,7 +1268,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'core_stability',
           name: 'Core & Stability',
-          icon: '🎯',
+          Icon: Target,
           type: 'specialty',
           category: 'strength',
           duration: { min: 3, max: 5, unit: 'weeks' },
@@ -1170,7 +1290,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'mobility_flexibility',
           name: 'Mobility & Flexibility',
-          icon: '🧘',
+          Icon: PersonStanding,
           type: 'specialty',
           category: 'recovery',
           duration: { min: 2, max: 4, unit: 'weeks' },
@@ -1192,7 +1312,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'conditioning_gpp',
           name: 'Conditioning/GPP',
-          icon: '🔥',
+          Icon: Flame,
           type: 'specialty',
           category: 'cardio',
           duration: { min: 3, max: 6, unit: 'weeks' },
@@ -1214,7 +1334,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'swimming_focus',
           name: 'Swimming Focus',
-          icon: '🏊',
+          Icon: Waves,
           type: 'specialty',
           category: 'cardio',
           duration: { min: 4, max: 8, unit: 'weeks' },
@@ -1362,7 +1482,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'deload_week',
           name: 'Deload Week',
-          icon: '😌',
+          Icon: Battery,
           type: 'life',
           category: 'recovery',
           duration: { min: 1, max: 1, unit: 'weeks' },
@@ -1383,7 +1503,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'sick_return',
           name: 'Return from Illness',
-          icon: '🤒',
+          Icon: Heart,
           type: 'life',
           category: 'recovery',
           duration: { min: 1, max: 2, unit: 'weeks' },
@@ -1404,7 +1524,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'busy_schedule',
           name: 'Busy Schedule Mode',
-          icon: '📅',
+          Icon: Calendar,
           type: 'life',
           category: 'situational',
           duration: { min: 1, max: 8, unit: 'weeks' },
@@ -1425,7 +1545,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'weight_cut',
           name: 'Weight Cut Protocol',
-          icon: '⚖️',
+          Icon: Scale,
           type: 'life',
           category: 'performance',
           duration: { min: 2, max: 8, unit: 'weeks' },
@@ -1446,7 +1566,7 @@ const DEFAULT_PROGRAMS = {
         {
           id: 'new_parent',
           name: 'New Parent Mode',
-          icon: '👶',
+          Icon: Heart,
           type: 'life',
           category: 'situational',
           duration: { min: 4, max: 24, unit: 'weeks' },
@@ -1980,7 +2100,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
     return (
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className={`text-xl font-bold ${theme.text}`}>{test.icon} {test.name}</h2>
+          <h2 className={`text-xl font-bold ${theme.text} flex items-center gap-2`}><RenderIcon icon={test.icon} Icon={test.Icon} size={24} className={theme.text} /> {test.name}</h2>
           <button onClick={cancelTest} className={`p-2 ${theme.textMuted} hover:${theme.text}`}><X size={24} /></button>
         </div>
 
@@ -2263,7 +2383,9 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           return (
             <div key={test.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">{test.icon}</span>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                  <RenderIcon icon={test.icon} Icon={test.Icon} size={20} className="text-blue-500" />
+                </div>
                 <div>
                   <h4 className={`font-medium ${theme.text}`}>{test.name}</h4>
                   <p className={`text-xs ${theme.textMuted}`}>{results.length} tests completed</p>
@@ -2315,12 +2437,12 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
   // Get tests by category
   const getTestsByCategory = () => {
     const categories = {
-      baseline: { name: 'Baseline', icon: '📊', tests: [] },
-      aerobic: { name: 'Aerobic Fitness', icon: '🫀', tests: [] },
-      mountaineering: { name: 'Mountaineering', icon: '⛰️', tests: [] },
-      strength: { name: 'Strength', icon: '💪', tests: [] },
-      muscular_endurance: { name: 'Muscular Endurance', icon: '🔄', tests: [] },
-      conditioning: { name: 'Work Capacity', icon: '⚡', tests: [] },
+      baseline: { name: 'Baseline', iconName: 'baseline', Icon: BarChart3, tests: [] },
+      aerobic: { name: 'Aerobic Fitness', iconName: 'aerobic', Icon: Activity, tests: [] },
+      mountaineering: { name: 'Mountaineering', iconName: 'mountaineering', Icon: Mountain, tests: [] },
+      strength: { name: 'Strength', iconName: 'strength', Icon: Dumbbell, tests: [] },
+      muscular_endurance: { name: 'Muscular Endurance', iconName: 'muscular_endurance', Icon: Flame, tests: [] },
+      conditioning: { name: 'Work Capacity', iconName: 'conditioning', Icon: Zap, tests: [] },
     };
     
     Object.values(BENCHMARK_TESTS).forEach(test => {
@@ -2378,21 +2500,26 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
       )}
 
       {/* Tests by category */}
-      {getTestsByCategory().map(([catId, category]) => (
+      {getTestsByCategory().map(([catId, category]) => {
+        const CategoryIcon = category.Icon;
+        return (
         <div key={catId} className="space-y-3">
           <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase flex items-center gap-2`}>
-            <span>{category.icon}</span> {category.name}
+            <CategoryIcon size={16} /> {category.name}
           </h3>
-          
+
           {category.tests.map(test => {
             const lastResult = getLastResult(test.id);
             const resultCount = benchmarkResults[test.id]?.length || 0;
             const isDue = isTestDue(test.id);
-            
+            const TestIcon = ICON_MAP[test.category] || Target;
+
             return (
               <div key={test.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${isDue ? (darkMode ? 'ring-1 ring-amber-500/50' : 'ring-1 ring-amber-300') : ''}`}>
                 <div className="flex items-start gap-4">
-                  <span className="text-3xl">{test.icon}</span>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                    <TestIcon size={24} className={theme.textMuted} />
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className={`font-semibold ${theme.text}`}>{test.name}</h3>
@@ -2443,7 +2570,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
             );
           })}
         </div>
-      ))}
+      );})}
     </div>
   );
 };
@@ -2716,10 +2843,10 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
   }, [athleteProfile.history]);
 
   const chartOptions = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'readiness', label: 'Readiness', icon: '🔋' },
-    { id: 'benchmarks', label: 'Benchmarks', icon: '🎯' },
-    { id: 'strength', label: 'Strength', icon: '💪' },
+    { id: 'overview', label: 'Overview', Icon: BarChart3 },
+    { id: 'readiness', label: 'Readiness', Icon: Activity },
+    { id: 'benchmarks', label: 'Benchmarks', Icon: Target },
+    { id: 'strength', label: 'Strength', Icon: Dumbbell },
   ];
 
   return (
@@ -2740,20 +2867,23 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
 
       {/* Chart Type Selector */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {chartOptions.map(opt => (
-          <button
-            key={opt.id}
-            onClick={() => setActiveChart(opt.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              activeChart === opt.id 
-                ? 'bg-blue-500 text-white' 
-                : `${theme.cardAlt} ${theme.text}`
-            }`}
-          >
-            <span>{opt.icon}</span>
-            <span>{opt.label}</span>
-          </button>
-        ))}
+        {chartOptions.map(opt => {
+          const OptIcon = opt.Icon;
+          return (
+            <button
+              key={opt.id}
+              onClick={() => setActiveChart(opt.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                activeChart === opt.id
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  : `${theme.cardAlt} ${theme.text} hover:opacity-80`
+              }`}
+            >
+              <OptIcon size={16} />
+              <span>{opt.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Overview */}
@@ -3444,13 +3574,22 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
     onSetDataChange?.(exercise.name, newSetData);
   };
 
-  // Get pattern icon
+  // Get pattern icon - returns Lucide icon component
   const getPatternIcon = (p) => {
-    const icons = {
-      hinge: '🏋️', squat: '🦵', lunge: '🚶', push: '💪', pull: '🎯',
-      vertical_push: '⬆️', vertical_pull: '⬇️', carry: '🧳', rotation: '🔄', core: '🎯'
+    const iconMap = {
+      hinge: Dumbbell,
+      squat: Footprints,
+      lunge: Footprints,
+      push: MoveHorizontal,
+      pull: Target,
+      vertical_push: ArrowUp,
+      vertical_pull: ArrowDown,
+      carry: Briefcase,
+      rotation: RotateCw,
+      core: Crosshair
     };
-    return icons[p] || '💪';
+    const Icon = iconMap[p] || Dumbbell;
+    return <Icon size={18} className={theme.textMuted} />;
   };
 
   return (
@@ -3917,35 +4056,35 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
 
   const steps = [
     {
-      icon: '⛰️',
+      Icon: Mountain,
       title: 'Welcome to Training Hub',
       subtitle: 'Your complete training companion',
       content: 'Built for serious athletes who demand precision periodization, intelligent load management, and field-ready reliability.',
       features: ['40-week periodized programs', 'Smart load tracking', 'Works offline'],
     },
     {
-      icon: '📊',
+      Icon: Gauge,
       title: 'Daily Readiness',
       subtitle: 'Train smarter, not just harder',
       content: 'Check in each morning to track sleep, energy, and recovery. The app adjusts recommendations based on your readiness score.',
       features: ['Sleep & HRV tracking', 'Auto-adjusted intensity', 'Injury prevention'],
     },
     {
-      icon: '🏋️',
+      Icon: Dumbbell,
       title: 'Program Builder',
       subtitle: 'Create or customize programs',
       content: 'Build mesocycles and macrocycles with intelligent periodization. Choose from multiple progression models and training splits.',
       features: ['Phase-based periodization', 'Exercise swapping', '150+ exercises'],
     },
     {
-      icon: '📈',
+      Icon: TrendingUp,
       title: 'Track Progress',
       subtitle: 'Data-driven gains',
       content: 'Log every workout with set-by-set tracking. Monitor training load, spot trends, and see when to push or recover.',
       features: ['PR tracking', 'Load analytics (ATL/CTL)', 'Progress insights'],
     },
     {
-      icon: '🧪',
+      Icon: FlaskConical,
       title: 'Benchmark Tests',
       subtitle: 'Know where you stand',
       content: '14 specialized tests from 5-mile runs to grip endurance. Establish baselines and track improvements over time.',
@@ -3973,7 +4112,9 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
 
         {/* Content */}
         <div className="px-6 py-8 text-center">
-          <div className="text-6xl mb-4">{currentStep.icon}</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+            <currentStep.Icon size={36} className="text-white" />
+          </div>
           <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>{currentStep.title}</h2>
           <p className="text-blue-400 font-medium mb-4">{currentStep.subtitle}</p>
           <p className={`${theme.textMuted} mb-6`}>{currentStep.content}</p>
@@ -4198,13 +4339,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
   const [showWeekOverride, setShowWeekOverride] = useState(null); // { phaseIdx, weekNum }
   const [showConditionalEditor, setShowConditionalEditor] = useState(null); // { dayIdx, exIdx }
 
-  const ICONS = ['🏋️', '💪', '🏃', '⛰️', '🔥', '⚡', '🎯', '🧗', '🚴', '🏊', '❄️', '🌲'];
+  const SESSION_TYPE_ICONS = { strength: Dumbbell, cardio: Heart, muscular_endurance: Flame, mobility: PersonStanding, recovery: Moon };
   const SESSION_TYPES = [
-    { id: 'strength', name: 'Strength', icon: '🏋️' },
-    { id: 'cardio', name: 'Cardio', icon: '❤️' },
-    { id: 'muscular_endurance', name: 'Muscular Endurance', icon: '🔥' },
-    { id: 'mobility', name: 'Mobility', icon: '🧘' },
-    { id: 'recovery', name: 'Recovery/Off', icon: '😴' },
+    { id: 'strength', name: 'Strength', Icon: Dumbbell },
+    { id: 'cardio', name: 'Cardio', Icon: Heart },
+    { id: 'muscular_endurance', name: 'Muscular Endurance', Icon: Flame },
+    { id: 'mobility', name: 'Mobility', Icon: PersonStanding },
+    { id: 'recovery', name: 'Recovery/Off', Icon: Moon },
   ];
   
   const WARMUP_TEMPLATES = [
@@ -4229,7 +4370,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     hypertrophy: {
       id: 'hypertrophy',
       name: 'Hypertrophy',
-      icon: '💪',
+      Icon: Dumbbell,
       description: 'Build muscle mass with moderate weight, higher reps',
       baseReps: '8-12',
       baseSets: 4,
@@ -4241,7 +4382,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     strength: {
       id: 'strength',
       name: 'Strength',
-      icon: '🏋️',
+      Icon: Scale,
       description: 'Build maximal strength with heavy weight, lower reps',
       baseReps: '4-6',
       baseSets: 4,
@@ -4253,7 +4394,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     power: {
       id: 'power',
       name: 'Power',
-      icon: '⚡',
+      Icon: Zap,
       description: 'Explosive strength with moderate weight, low reps',
       baseReps: '2-4',
       baseSets: 5,
@@ -4265,7 +4406,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     endurance: {
       id: 'endurance',
       name: 'Muscular Endurance',
-      icon: '🔥',
+      Icon: Flame,
       description: 'Build work capacity with lighter weight, high reps',
       baseReps: '15-20',
       baseSets: 3,
@@ -4277,7 +4418,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     peaking: {
       id: 'peaking',
       name: 'Peaking',
-      icon: '🎯',
+      Icon: Target,
       description: 'Peak strength for competition with very heavy singles/doubles',
       baseReps: '1-3',
       baseSets: 5,
@@ -4290,10 +4431,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 
   // Training Split Templates
   const SPLIT_TEMPLATES = [
-    { 
-      id: 'ppl', 
-      name: 'Push/Pull/Legs', 
-      icon: '💪',
+    {
+      id: 'ppl',
+      name: 'Push/Pull/Legs',
+      Icon: Dumbbell,
       description: '6 days: Push, Pull, Legs, Push, Pull, Legs, Rest',
       days: [
         { dayName: 'Push A', session: 'Chest, Shoulders, Triceps', type: 'strength', warmup: 'upper' },
@@ -4305,10 +4446,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
         { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
       ]
     },
-    { 
-      id: 'upper_lower', 
-      name: 'Upper/Lower', 
-      icon: '🔄',
+    {
+      id: 'upper_lower',
+      name: 'Upper/Lower',
+      Icon: RefreshCw,
       description: '4 days: Upper, Lower, Rest, Upper, Lower, Rest, Rest',
       days: [
         { dayName: 'Upper A', session: 'Chest, Back, Shoulders, Arms', type: 'strength', warmup: 'upper' },
@@ -4320,10 +4461,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
         { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
       ]
     },
-    { 
-      id: 'full_body', 
-      name: 'Full Body 3x', 
-      icon: '🏋️',
+    {
+      id: 'full_body',
+      name: 'Full Body 3x',
+      Icon: Scale,
       description: '3 days: Full Body, Rest, Full Body, Rest, Full Body, Rest, Rest',
       days: [
         { dayName: 'Full Body A', session: 'Squat, Press, Pull', type: 'strength', warmup: 'full' },
@@ -4335,10 +4476,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
         { dayName: 'Rest', session: '', type: 'recovery', warmup: 'none' },
       ]
     },
-    { 
-      id: 'tactical', 
-      name: 'Tactical/Hybrid', 
-      icon: '⚔️',
+    {
+      id: 'tactical',
+      name: 'Tactical/Hybrid',
+      Icon: Mountain,
       description: '5 days: Strength, Cardio, Strength, Cardio, Strength, Ruck, Rest',
       days: [
         { dayName: 'Strength A', session: 'Lower Body Focus', type: 'strength', warmup: 'lower' },
@@ -5093,11 +5234,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   <div key={prog.id} className={`${theme.card} rounded-xl p-4 border ${theme.border}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{prog.icon}</span>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
+                          <RenderIcon icon={prog.icon} Icon={prog.Icon} size={20} className="text-purple-500" />
+                        </div>
                         <div>
                           <p className={`font-medium ${theme.text}`}>{prog.name}</p>
                           <p className={`text-xs ${theme.textMuted}`}>
-                            {prog.phases?.length || 0} phase{prog.phases?.length !== 1 ? 's' : ''} • 
+                            {prog.phases?.length || 0} phase{prog.phases?.length !== 1 ? 's' : ''} •
                             {prog.phases?.reduce((sum, p) => sum + (p.weeks?.[1] - p.weeks?.[0] + 1 || 0), 0) || 0} weeks
                           </p>
                         </div>
@@ -5271,11 +5414,14 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   {phase.blockInfo?.description && (
                     <p className={`text-xs ${theme.textMuted} mt-1 italic`}>{phase.blockInfo.description}</p>
                   )}
-                  {phase.track && TRAINING_TRACKS[phase.track] && (
-                    <p className={`text-xs ${theme.textMuted} mt-1`}>
-                      {TRAINING_TRACKS[phase.track].icon} {TRAINING_TRACKS[phase.track].name}: {TRAINING_TRACKS[phase.track].baseReps} @ {TRAINING_TRACKS[phase.track].baseIntensity}%
-                    </p>
-                  )}
+                  {phase.track && TRAINING_TRACKS[phase.track] && (() => {
+                    const TrackIcon = TRAINING_TRACKS[phase.track].Icon;
+                    return (
+                      <p className={`text-xs ${theme.textMuted} mt-1 flex items-center gap-1`}>
+                        {TrackIcon && <TrackIcon size={14} />}{TRAINING_TRACKS[phase.track].name}: {TRAINING_TRACKS[phase.track].baseReps} @ {TRAINING_TRACKS[phase.track].baseIntensity}%
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium shadow-md">
@@ -5305,7 +5451,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                     className={`p-2 rounded-lg text-left border-2 ${newPhaseTrack === track.id ? `border-${track.color}-500 bg-${track.color}-500/20` : `border-transparent ${theme.cardAlt}`}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{track.icon}</span>
+                      {track.Icon && <track.Icon size={18} className={theme.textMuted} />}
                       <span className={`text-sm font-medium ${theme.text}`}>{track.name}</span>
                     </div>
                   </button>
@@ -5338,7 +5484,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                             : theme.chip
                       }`}
                     >
-                      <span className="text-lg mr-2">{model.icon}</span>
+                      {model.Icon && <model.Icon size={18} className="mr-2" />}
                       <span className="text-sm font-medium">{model.name}</span>
                       {!isCompatible && (
                         <span className="absolute top-1 right-1 text-xs text-red-400">✗</span>
@@ -5470,16 +5616,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           <p className={`text-sm ${theme.textMuted}`}>Build Week 1 template. Exercises auto-propagate to all {currentPhase.weeks} weeks with {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'} progression.</p>
 
           {/* Track & Periodization Info Banner */}
-          {currentPhase.weeklyProgression?.[0] && (
+          {currentPhase.weeklyProgression?.[0] && (() => {
+            const TrackIcon = currentPhase.track && TRAINING_TRACKS[currentPhase.track]?.Icon;
+            const ProgressionIcon = PROGRESSION_MODELS[currentPhase.progression]?.Icon;
+            return (
             <div className={`${theme.cardAlt} rounded-lg p-3 border-l-4 border-blue-500`}>
               <div className="flex items-center gap-2 mb-2">
                 {currentPhase.track && TRAINING_TRACKS[currentPhase.track] && (
-                  <span className={`text-xs px-2 py-1 rounded-full bg-${TRAINING_TRACKS[currentPhase.track].color}-500/20 text-${TRAINING_TRACKS[currentPhase.track].color}-400 font-medium`}>
-                    {TRAINING_TRACKS[currentPhase.track].icon} {TRAINING_TRACKS[currentPhase.track].name}
+                  <span className={`text-xs px-2 py-1 rounded-full bg-${TRAINING_TRACKS[currentPhase.track].color}-500/20 text-${TRAINING_TRACKS[currentPhase.track].color}-400 font-medium flex items-center gap-1`}>
+                    {TrackIcon && <TrackIcon size={12} />} {TRAINING_TRACKS[currentPhase.track].name}
                   </span>
                 )}
-                <span className={`text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium`}>
-                  {PROGRESSION_MODELS[currentPhase.progression]?.icon} {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'}
+                <span className={`text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1`}>
+                  {ProgressionIcon && <ProgressionIcon size={12} />} {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'}
                 </span>
               </div>
               <p className={`text-xs font-medium ${theme.text} mb-1`}>Week 1 Defaults</p>
@@ -5502,7 +5651,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               </div>
               <p className={`text-xs ${theme.textMuted} mt-1 italic`}>New exercises use these defaults. Weeks auto-progress per model.</p>
             </div>
-          )}
+          );})()}
           {currentPhase.weeklyTemplate.map((day, dayIdx) => (
             <div key={day.day} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between mb-3">
@@ -5531,7 +5680,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                     </button>
                   )}
                 </div>
-                <select value={day.type} onChange={(e) => updateDay(dayIdx, { type: e.target.value, session: SESSION_TYPES.find(s => s.id === e.target.value)?.name || '' })} className={`p-2 rounded-lg ${theme.input} text-sm`}>{SESSION_TYPES.map(t => (<option key={t.id} value={t.id}>{t.icon} {t.name}</option>))}</select>
+                <select value={day.type} onChange={(e) => updateDay(dayIdx, { type: e.target.value, session: SESSION_TYPES.find(s => s.id === e.target.value)?.name || '' })} className={`p-2 rounded-lg ${theme.input} text-sm`}>{SESSION_TYPES.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}</select>
               </div>
               {/* DUP/Conjugate Day Info Banner */}
               {(day.dupType || day.conjugateType) && day.type === 'strength' && (
@@ -5901,7 +6050,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   className={`w-full p-4 ${theme.cardAlt} rounded-xl text-left hover:border-blue-500 border-2 border-transparent`}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl">{split.icon}</span>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                      {split.Icon && <split.Icon size={20} className="text-blue-500" />}
+                    </div>
                     <div>
                       <p className={`font-bold ${theme.text}`}>{split.name}</p>
                       <p className={`text-xs ${theme.textMuted}`}>{split.description}</p>
@@ -6022,8 +6173,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                       <div className="flex items-center justify-between mb-2">
                         <p className={`text-xs ${theme.textMuted}`}>Week {weekData.weekInPhase} of {weekData.phase.weeks} in {weekData.phase.name}</p>
                         {weekData.track && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full bg-${weekData.track.color}-500/20 text-${weekData.track.color}-400`}>
-                            {weekData.track.icon} {weekData.track.name}
+                          <span className={`text-xs px-2 py-0.5 rounded-full bg-${weekData.track.color}-500/20 text-${weekData.track.color}-400 flex items-center gap-1`}>
+                            <RenderIcon icon={weekData.track.icon} Icon={weekData.track.Icon} size={12} /> {weekData.track.name}
                           </span>
                         )}
                       </div>
@@ -6315,7 +6466,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                           className={`w-full p-2 rounded-lg ${theme.input} text-sm`}
                         >
                           {SESSION_TYPES.map(t => (
-                            <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
+                            <option key={t.id} value={t.id}>{t.name}</option>
                           ))}
                         </select>
                       </div>
@@ -6521,7 +6672,9 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
         {/* Header */}
         <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{program.icon}</span>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+              <RenderIcon icon={program.icon} Icon={program.Icon} size={24} className="text-blue-500" />
+            </div>
             <div>
               <h2 className={`font-bold text-lg ${theme.text}`}>{program.name}</h2>
               {program.isTemplate && (
@@ -6854,7 +7007,9 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{block.icon}</span>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
+                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-orange-500" />
+                        </div>
                         <div>
                           <p className={`font-semibold ${theme.text}`}>{block.name}</p>
                           <p className={`text-sm ${theme.textMuted}`}>
@@ -6929,7 +7084,9 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{block.icon}</span>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
+                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-green-500" />
+                        </div>
                         <div>
                           <p className={`font-semibold ${theme.text}`}>{block.name}</p>
                           <p className={`text-sm ${theme.textMuted}`}>
@@ -8359,12 +8516,14 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
             {/* Features Preview */}
             <div className="grid grid-cols-3 gap-3 mt-6">
               {[
-                { icon: '📊', label: 'Track Progress' },
-                { icon: '💪', label: 'Custom Programs' },
-                { icon: '🔄', label: 'Cloud Sync' },
+                { Icon: BarChart3, label: 'Track Progress' },
+                { Icon: Dumbbell, label: 'Custom Programs' },
+                { Icon: RefreshCw, label: 'Cloud Sync' },
               ].map((feature, i) => (
                 <div key={i} className="glass-dark rounded-2xl p-4 text-center">
-                  <div className="text-2xl mb-1">{feature.icon}</div>
+                  <div className="flex justify-center mb-1">
+                    <feature.Icon size={24} className="text-blue-400" />
+                  </div>
                   <p className="text-xs text-blue-300/70">{feature.label}</p>
                 </div>
               ))}
@@ -9218,7 +9377,16 @@ export default function App() {
                     {topFactors.map((factor, idx) => (
                       <div key={factor.id} className={`p-3 ${theme.cardAlt} rounded-xl`}>
                         <div className="flex items-start gap-3">
-                          <span className="text-xl">{factor.icon}</span>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            factor.severity === 'high' ? (darkMode ? 'bg-red-500/20' : 'bg-red-100') :
+                            factor.severity === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
+                            (darkMode ? 'bg-blue-500/20' : 'bg-blue-100')
+                          }`}>
+                            <RenderIcon icon={factor.icon} Icon={factor.Icon} size={18} className={
+                              factor.severity === 'high' ? 'text-red-500' :
+                              factor.severity === 'medium' ? 'text-amber-500' : 'text-blue-500'
+                            } />
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className={`font-medium ${theme.text}`}>{factor.title}</span>
@@ -9264,7 +9432,16 @@ export default function App() {
                     {progressionOps.slice(0, 3).map((op, idx) => (
                       <div key={idx} className={`p-3 rounded-xl ${theme.cardAlt}`}>
                         <div className="flex items-start gap-3">
-                          <span className="text-xl">{op.icon}</span>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            op.priority === 'high' ? (darkMode ? 'bg-green-500/20' : 'bg-green-100') :
+                            op.priority === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
+                            (darkMode ? 'bg-blue-500/20' : 'bg-blue-100')
+                          }`}>
+                            <RenderIcon icon={op.icon} Icon={op.Icon} size={18} className={
+                              op.priority === 'high' ? 'text-green-500' :
+                              op.priority === 'medium' ? 'text-amber-500' : 'text-blue-500'
+                            } />
+                          </div>
                           <div className="flex-1 min-w-0">
                             <p className={`font-medium ${theme.text} text-sm`}>{op.exercise}</p>
                             <p className={`text-xs ${theme.textMuted} mt-0.5`}>{op.message}</p>
@@ -9305,7 +9482,9 @@ export default function App() {
                       Detour
                     </button>
                   )}
-                  <span className="text-4xl">{program?.icon}</span>
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                    <RenderIcon icon={program?.icon} Icon={program?.Icon} size={28} className="text-blue-500" />
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2">
@@ -9907,12 +10086,12 @@ export default function App() {
                       )}
                       <div className="relative p-4">
                         <div className="flex items-center gap-4">
-                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
                             isActive
                               ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
                               : darkMode ? 'bg-gray-800' : 'bg-gray-100'
                           }`}>
-                            {data.program?.icon || '📋'}
+                            <RenderIcon icon={data.program?.icon} Icon={data.program?.Icon} size={24} className={isActive ? 'text-cyan-500' : theme.textMuted} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -9966,7 +10145,9 @@ export default function App() {
               {Object.values({ ...DEFAULT_PROGRAMS, ...customPrograms }).map(prog => (
                 <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <span className="text-3xl">{prog.icon}</span>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                      <RenderIcon icon={prog.icon} Icon={prog.Icon} size={24} className="text-blue-500" />
+                    </div>
                     <div className="flex-1">
                       <p className={`font-semibold ${theme.text}`}>{prog.name}</p>
                       <p className={`text-sm ${theme.textMuted} mt-1`}>{prog.description}</p>
