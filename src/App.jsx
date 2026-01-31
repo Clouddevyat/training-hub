@@ -22,6 +22,15 @@ import {
   EXERCISE_LIBRARY as TEMPLATE_EXERCISE_LIBRARY
 } from './TemplateEngine';
 
+// Import high-altitude themed visualization components
+import {
+  ReadinessGauge,
+  TrainingLoadCard,
+  LoadZoneMeter,
+  HRZoneViz,
+  ReadinessHeatmap
+} from './components';
+
 // Import extracted data modules
 import {
   MOVEMENT_PATTERNS,
@@ -3148,8 +3157,25 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
             >
               <Minus size={24} />
             </button>
-            <div className="text-center">
-              <span className={`text-5xl font-bold ${theme.text}`}>{weight || '0'}</span>
+            <div className="text-center flex items-baseline justify-center">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={weight === '' ? '' : weight}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setWeightState('');
+                  } else {
+                    const num = parseFloat(val);
+                    if (!isNaN(num) && num >= 0) {
+                      setWeightState(num);
+                    }
+                  }
+                }}
+                placeholder="0"
+                className={`text-5xl font-bold ${theme.text} bg-transparent text-center w-28 outline-none focus:ring-2 focus:ring-red-500/50 rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+              />
               <span className={`text-xl ${theme.textMuted} ml-1`}>lb</span>
             </div>
             <button
@@ -3949,16 +3975,16 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
 };
 
 // ============== HR ZONE & LOAD DISPLAYS ==============
+// HRZoneDisplay - Uses new HRZoneViz component in compact mode for workout view
 const HRZoneDisplay = ({ hrZone, profile, theme, darkMode }) => {
-  const zones = calculateZones(profile.benchmarks?.maxHR?.value, profile.benchmarks?.aerobicThresholdHR?.value, profile.benchmarks?.anaerobicThresholdHR?.value);
-  if (!zones || !hrZone) return null;
-  const zone = zones[hrZone];
-  if (!zone) return null;
   return (
-    <div className={`p-3 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg flex items-center justify-between`}>
-      <div><p className={`text-xs font-medium ${darkMode ? 'text-green-400' : 'text-green-600'} uppercase`}>Target HR</p><p className={`font-medium ${theme.text}`}>{zone.name}</p></div>
-      <div className="text-right"><span className={`text-xl font-bold font-mono ${theme.text}`}>{zone.min}-{zone.max}</span><span className={`text-sm ${theme.textMuted} ml-1`}>bpm</span></div>
-    </div>
+    <HRZoneViz
+      targetZone={hrZone}
+      profile={profile}
+      theme={theme}
+      darkMode={darkMode}
+      compact={true}
+    />
   );
 };
 
@@ -8724,7 +8750,12 @@ export default function App() {
   const ctl = calculateCTL(workoutLogs);
   const acr = calculateACR(workoutLogs);
   const loadStatus = getLoadStatus(acr, atl, ctl);
-  
+
+  // Load history for sparkline visualizations (last 14 days for compact view)
+  const loadHistory = useMemo(() => getLoadHistory(workoutLogs, 14), [workoutLogs]);
+  const atlHistory = useMemo(() => loadHistory.map(h => h.atl), [loadHistory]);
+  const ctlHistory = useMemo(() => loadHistory.map(h => h.ctl), [loadHistory]);
+
   // Load-adjusted readiness (combines subjective + objective)
   const adjustedReadinessScore = readinessScore ? calculateLoadAdjustedReadiness(readinessScore, acr, loadStatus) : null;
   const adjustedReadinessInfo = adjustedReadinessScore ? getReadinessLabel(adjustedReadinessScore) : null;
@@ -8957,78 +8988,54 @@ export default function App() {
               </div>
             )}
 
+            {/* Readiness Section - High Altitude Theme */}
             {!todayReadiness && (
-              <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/30 border-amber-600/50' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
-                <div className={`p-3 rounded-xl ${darkMode ? 'bg-amber-500/20' : 'bg-amber-200/50'}`}>
-                  <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
+              <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-br from-cyan-900/30 via-gray-800/50 to-blue-900/30 border-cyan-600/30' : 'bg-gradient-to-br from-cyan-50 via-white to-blue-50 border-cyan-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
+                <div className={`p-3 rounded-xl ${darkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'}`}>
+                  <Mountain className={darkMode ? 'text-cyan-400' : 'text-cyan-600'} size={24} />
                 </div>
                 <div className="text-left flex-1">
-                  <p className={`font-semibold ${theme.text}`}>Complete Readiness Check</p>
-                  <p className={`text-sm ${theme.textMuted}`}>Log how you feel to optimize training</p>
+                  <p className={`font-semibold ${theme.text}`}>Begin Altitude Check</p>
+                  <p className={`text-sm ${theme.textMuted}`}>Assess readiness before ascending</p>
                 </div>
                 <ChevronRight className={`${theme.textMuted}`} />
               </button>
             )}
             {todayReadiness && (
-              <button onClick={() => setFloatingPane('readiness')} className={`w-full ${theme.card} rounded-2xl p-5 flex items-center justify-between card-hover text-left`}>
-                <div>
-                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Today's Readiness</p>
-                  <p className={`text-3xl font-bold ${getReadinessColor(adjustedReadinessScore || readinessScore)}`}>
-                    {adjustedReadinessScore || readinessScore}
-                    <span className="text-base font-medium ml-2 opacity-80">{adjustedReadinessInfo?.text || readinessInfo?.text}</span>
-                  </p>
-                  {adjustedReadinessScore && adjustedReadinessScore !== readinessScore && (
-                    <p className={`text-xs ${theme.textMuted} mt-1`}>Base: {readinessScore} (adjusted for load)</p>
-                  )}
+              <button onClick={() => setFloatingPane('readiness')} className={`w-full ${theme.card} rounded-2xl p-5 card-hover`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Altitude Status</p>
+                  <div className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={14} className={theme.textMuted} /></div>
                 </div>
-                <div className={`p-3 ${theme.cardAlt} rounded-xl`}><Edit3 size={18} className={theme.textMuted} /></div>
+                <div className="flex justify-center">
+                  <ReadinessGauge
+                    score={adjustedReadinessScore || readinessScore}
+                    readinessData={todayReadiness}
+                    theme={theme}
+                    darkMode={darkMode}
+                    size="medium"
+                  />
+                </div>
+                {adjustedReadinessScore && adjustedReadinessScore !== readinessScore && (
+                  <p className={`text-xs ${theme.textMuted} text-center mt-2`}>Base: {readinessScore} (load adjusted)</p>
+                )}
               </button>
             )}
-            
-            {/* Training Load Card */}
-            <div className={`${theme.card} rounded-2xl p-5 border-l-4 ${
-              loadStatus.color === 'red' ? 'border-red-500' :
-              loadStatus.color === 'orange' ? 'border-orange-500' :
-              loadStatus.color === 'yellow' ? 'border-yellow-500' :
-              loadStatus.color === 'green' ? 'border-green-500' :
-              'border-blue-500'
-            }`}>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Training Load</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-2xl">{loadStatus.icon}</span>
-                    <span className={`font-bold text-lg ${
-                      loadStatus.color === 'red' ? 'text-red-500' :
-                      loadStatus.color === 'orange' ? 'text-orange-500' :
-                      loadStatus.color === 'yellow' ? 'text-yellow-500' :
-                      loadStatus.color === 'green' ? 'text-green-500' :
-                      'text-blue-500'
-                    }`}>{loadStatus.label}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-3xl font-bold font-mono ${
-                    loadStatus.color === 'red' ? 'text-red-500' :
-                    loadStatus.color === 'orange' ? 'text-orange-500' :
-                    loadStatus.color === 'green' ? 'text-green-500' :
-                    theme.text
-                  }`}>{acr}</p>
-                  <p className={`text-xs ${theme.textMuted} uppercase tracking-wider`}>ACR</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className={`p-3 ${theme.cardAlt} rounded-xl text-center`}>
-                  <p className={`text-xl font-bold font-mono ${theme.text}`}>{atl}</p>
-                  <p className={`text-xs ${theme.textMuted}`}>Acute (7d)</p>
-                </div>
-                <div className={`p-3 ${theme.cardAlt} rounded-xl text-center`}>
-                  <p className={`text-xl font-bold font-mono ${theme.text}`}>{ctl}</p>
-                  <p className={`text-xs ${theme.textMuted}`}>Chronic (28d)</p>
-                </div>
-              </div>
-              <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
-            </div>
+
+            {/* Training Load Card - High Altitude Theme */}
+            <TrainingLoadCard
+              atl={atl}
+              ctl={ctl}
+              acr={acr}
+              atlHistory={atlHistory}
+              ctlHistory={ctlHistory}
+              loadStatus={loadStatus.zone}
+              theme={theme}
+              darkMode={darkMode}
+            />
+
+            {/* Load Zone Meter */}
+            <LoadZoneMeter acr={acr} theme={theme} darkMode={darkMode} />
 
             {/* Charts Quick Link */}
             <button onClick={() => setFloatingPane('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
@@ -9491,21 +9498,17 @@ export default function App() {
               ) : <p className={theme.textMuted}>No data yet</p>}
             </div>
 
-            {/* Readiness Trend */}
+            {/* Readiness Heatmap - High Altitude Theme */}
             {readiness.logs?.length > 0 && (
-              <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
-                <h3 className={`font-semibold ${theme.text} mb-4`}>Readiness (Last 14 Days)</h3>
-                <div className="flex items-end justify-between h-20 gap-1">
-                  {[...readiness.logs].slice(-14).map((day, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className={`w-full rounded-t ${day.score >= 70 ? 'bg-green-500' : day.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ height: `${(day.score / 100) * 100}%`, minHeight: '4px' }} />
-                    </div>
-                  ))}
-                </div>
-                <div className={`flex justify-between text-xs ${theme.textMuted} mt-2`}>
-                  <span>14 days ago</span><span>Today</span>
-                </div>
-              </div>
+              <ReadinessHeatmap
+                readinessHistory={readiness.logs?.reduce((acc, log) => {
+                  if (log.date) acc[log.date] = { score: log.score };
+                  return acc;
+                }, {}) || {}}
+                weeks={6}
+                theme={theme}
+                darkMode={darkMode}
+              />
             )}
 
             {/* PR History */}
