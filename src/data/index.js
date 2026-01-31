@@ -4,7 +4,7 @@
 export { MOVEMENT_PATTERNS, EQUIPMENT_TYPES } from './movementPatterns';
 
 // Exercise library
-export { EXERCISE_LIBRARY, EQUIPMENT_OPTIONS } from './exercises';
+export { EXERCISE_LIBRARY, EQUIPMENT_OPTIONS, EXERCISE_CATEGORIES, PHASE_CATEGORY_RECOMMENDATIONS } from './exercises';
 
 // Athlete profile and benchmark tests
 export {
