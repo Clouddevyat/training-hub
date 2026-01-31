@@ -7722,6 +7722,9 @@ export default function App() {
   const [syncCodeInput, setSyncCodeInput] = useState('');
   const [showSyncCodeSetup, setShowSyncCodeSetup] = useState(false);
   const [syncCodeLoading, setSyncCodeLoading] = useState(false);
+
+  // Floating pane system - opens dashboard items as overlays instead of full views
+  const [floatingPane, setFloatingPane] = useState(null); // 'workout', 'readiness', 'charts', 'calendar', 'load', 'week'
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -8170,7 +8173,7 @@ export default function App() {
             )}
 
             {!todayReadiness && (
-              <button onClick={() => setCurrentView('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/30 border-amber-600/50' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
+              <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-r from-amber-900/40 to-amber-800/30 border-amber-600/50' : 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
                 <div className={`p-3 rounded-xl ${darkMode ? 'bg-amber-500/20' : 'bg-amber-200/50'}`}>
                   <Battery className={darkMode ? 'text-amber-400' : 'text-amber-600'} size={24} />
                 </div>
@@ -8182,7 +8185,7 @@ export default function App() {
               </button>
             )}
             {todayReadiness && (
-              <div className={`${theme.card} rounded-2xl p-5 flex items-center justify-between card-hover`}>
+              <button onClick={() => setFloatingPane('readiness')} className={`w-full ${theme.card} rounded-2xl p-5 flex items-center justify-between card-hover text-left`}>
                 <div>
                   <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Today's Readiness</p>
                   <p className={`text-3xl font-bold ${getReadinessColor(adjustedReadinessScore || readinessScore)}`}>
@@ -8193,8 +8196,8 @@ export default function App() {
                     <p className={`text-xs ${theme.textMuted} mt-1`}>Base: {readinessScore} (adjusted for load)</p>
                   )}
                 </div>
-                <button onClick={() => setCurrentView('readiness')} className={`p-3 ${theme.cardAlt} rounded-xl hover:scale-105 transition-transform`}><Edit3 size={18} className={theme.textMuted} /></button>
-              </div>
+                <div className={`p-3 ${theme.cardAlt} rounded-xl`}><Edit3 size={18} className={theme.textMuted} /></div>
+              </button>
             )}
             
             {/* Training Load Card */}
@@ -8243,7 +8246,7 @@ export default function App() {
             </div>
 
             {/* Charts Quick Link */}
-            <button onClick={() => setCurrentView('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
+            <button onClick={() => setFloatingPane('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 group-hover:scale-110 transition-transform">
                   <LineChart size={22} className="text-blue-500" />
@@ -8257,7 +8260,7 @@ export default function App() {
             </button>
 
             {/* Program Status Card */}
-            <div className={`${theme.card} rounded-2xl p-5`}>
+            <button onClick={() => setFloatingPane('calendar')} className={`w-full text-left ${theme.card} rounded-2xl p-5 card-hover`}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>{program?.name}</p>
@@ -8266,7 +8269,7 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   {hasDetours && !activeDetour && (
                     <button
-                      onClick={() => setShowDetourPicker(true)}
+                      onClick={(e) => { e.stopPropagation(); setShowDetourPicker(true); }}
                       className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"
                     >
                       Detour
@@ -8288,11 +8291,11 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            </div>
+            </button>
 
             {/* Today's Workout Card */}
             {todayWorkout && (
-              <button onClick={() => setCurrentView('workout')} className={`w-full text-left rounded-2xl p-5 border-l-4 ${getTypeBorder(todayWorkout.type)} ${theme.card} card-hover group`}>
+              <button onClick={() => setFloatingPane('workout')} className={`w-full text-left rounded-2xl p-5 border-l-4 ${getTypeBorder(todayWorkout.type)} ${theme.card} card-hover group`}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className={`text-xs ${theme.textMuted} uppercase tracking-wider font-medium`}>Day {programState.currentDay}</p>
@@ -9012,6 +9015,152 @@ export default function App() {
                     {ex.prKey && <span className="text-xs text-blue-500 mt-1 inline-block">Has PR tracking</span>}
                   </button>
                 ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Pane System - Dashboard Quick Views */}
+      {floatingPane && (
+        <div
+          className="fixed inset-0 z-50 modal-backdrop animate-fadeIn"
+          onClick={() => setFloatingPane(null)}
+        >
+          <div
+            className={`absolute bottom-0 left-0 right-0 ${theme.modal} rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col animate-slideInUp shadow-2xl`}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className={`w-10 h-1 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-slate-300'}`} />
+            </div>
+
+            {/* Pane Header */}
+            <div className={`px-5 pb-3 flex items-center justify-between border-b ${theme.border}`}>
+              <h2 className={`text-lg font-bold ${theme.text}`}>
+                {floatingPane === 'workout' && "Today's Workout"}
+                {floatingPane === 'readiness' && 'Readiness Check'}
+                {floatingPane === 'charts' && 'Charts & Trends'}
+                {floatingPane === 'calendar' && 'Calendar'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setCurrentView(floatingPane); setFloatingPane(null); }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg ${theme.cardAlt} ${theme.text}`}
+                >
+                  Full View
+                </button>
+                <button
+                  onClick={() => setFloatingPane(null)}
+                  className={`p-2 rounded-xl ${theme.cardAlt}`}
+                >
+                  <X size={20} className={theme.text} />
+                </button>
+              </div>
+            </div>
+
+            {/* Pane Content */}
+            <div className="flex-1 overflow-auto">
+              {/* Workout Pane */}
+              {floatingPane === 'workout' && todayWorkout && (
+                <div className="p-5 space-y-4">
+                  <div className={`p-4 rounded-2xl ${theme.cardAlt}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold text-white ${getTypeColor(todayWorkout.type, darkMode)}`}>
+                        {todayWorkout.type.replace('_', ' ')}
+                      </span>
+                      <span className={`text-sm ${theme.textMuted}`}>{todayWorkout.duration} min</span>
+                    </div>
+                    <h3 className={`text-xl font-bold ${theme.text}`}>{todayWorkout.session}</h3>
+                    {todayLog?.completed && (
+                      <div className="flex items-center gap-2 mt-2 text-green-500">
+                        <CheckCircle2 size={18} />
+                        <span className="font-medium">Completed</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Exercises */}
+                  {todayWorkout.prescription?.exercises && (
+                    <div className="space-y-2">
+                      <p className={`text-xs font-semibold ${theme.textMuted} uppercase tracking-wider`}>Exercises</p>
+                      {todayWorkout.prescription.exercises.map((ex, idx) => (
+                        <div key={idx} className={`p-4 ${theme.card} rounded-xl`}>
+                          <p className={`font-medium ${theme.text}`}>{ex.name}</p>
+                          <p className={`text-sm ${theme.textMuted}`}>
+                            {ex.sets} × {ex.reps} @ {ex.intensity}% {ex.rpe && `RPE ${ex.rpe}`}
+                          </p>
+                          {ex.notes && <p className={`text-xs ${theme.textSubtle} mt-1 italic`}>{ex.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Cardio Details */}
+                  {todayWorkout.type === 'aerobic' && todayWorkout.prescription?.cardio && (
+                    <div className={`p-4 ${theme.card} rounded-xl`}>
+                      <p className={`font-medium ${theme.text}`}>{todayWorkout.prescription.cardio.activity}</p>
+                      <p className={`text-sm ${theme.textMuted}`}>
+                        {todayWorkout.prescription.cardio.duration} min • {todayWorkout.prescription.cardio.zone}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Start Workout Button */}
+                  {!todayLog?.completed && (
+                    <button
+                      onClick={() => { setCurrentView('workout'); setFloatingPane(null); }}
+                      className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-transform"
+                    >
+                      Start Workout
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Readiness Pane */}
+              {floatingPane === 'readiness' && (
+                <div className="p-5">
+                  <ReadinessCheckView
+                    readiness={readiness}
+                    setReadiness={setReadiness}
+                    athleteProfile={athleteProfile}
+                    theme={theme}
+                    darkMode={darkMode}
+                  />
+                </div>
+              )}
+
+              {/* Charts Pane */}
+              {floatingPane === 'charts' && (
+                <div className="p-5">
+                  <TrendsChartsView
+                    readiness={readiness}
+                    workoutLogs={workoutLogs}
+                    athleteProfile={athleteProfile}
+                    programState={programState}
+                    theme={theme}
+                    darkMode={darkMode}
+                  />
+                </div>
+              )}
+
+              {/* Calendar Pane */}
+              {floatingPane === 'calendar' && (
+                <div className="p-5">
+                  <CalendarView
+                    programState={programState}
+                    setProgramState={setProgramState}
+                    workoutLogs={workoutLogs}
+                    phase={phase}
+                    program={program}
+                    theme={theme}
+                    darkMode={darkMode}
+                    setCurrentView={(view) => { setCurrentView(view); setFloatingPane(null); }}
+                    readiness={readiness}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
