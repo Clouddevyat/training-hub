@@ -27,6 +27,7 @@ import {
   MOVEMENT_PATTERNS,
   EQUIPMENT_TYPES,
   EXERCISE_LIBRARY,
+  PHASE_CATEGORY_RECOMMENDATIONS,
   DEFAULT_ATHLETE_PROFILE,
   DEFAULT_READINESS,
   PR_DISPLAY_NAMES,
@@ -4520,65 +4521,69 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
   // Get unique equipment from all exercises
   const EQUIPMENT_OPTIONS = [...new Set(Object.values(EXERCISE_LIBRARY).filter(e => !e.isCardio && !e.isMobility).flatMap(e => e.equipment))].sort();
   
-  // Get suggested patterns and muscles based on session name/type
+  // Get suggested patterns, muscles, and categories based on session name/type and block phase
   const getSuggestedPatternsAndMuscles = () => {
-    if (!showExercisePicker) return { patterns: null, muscles: null };
+    if (!showExercisePicker) return { patterns: null, muscles: null, categories: null };
     const day = currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx];
-    if (!day) return { patterns: null, muscles: null };
+    if (!day) return { patterns: null, muscles: null, categories: null };
 
     const sessionLower = (day.session || '').toLowerCase();
     const dayNameLower = (day.dayName || '').toLowerCase();
     const combined = `${sessionLower} ${dayNameLower}`;
 
+    // Get recommended categories based on block phase type (accumulation/transmutation/realization)
+    const blockId = currentPhase?.blockId;
+    const recommendedCategories = blockId ? PHASE_CATEGORY_RECOMMENDATIONS[blockId] : null;
+
     // Map session keywords to movement patterns and muscles
     // Push movements (chest, shoulders, triceps)
     if (combined.includes('push') || combined.includes('chest') || combined.includes('tricep') || combined.includes('press')) {
-      return { patterns: ['horizontalPush', 'verticalPush', 'accessory'], muscles: ['chest', 'shoulders', 'triceps'] };
+      return { patterns: ['horizontalPush', 'verticalPush', 'accessory'], muscles: ['chest', 'shoulders', 'triceps'], categories: recommendedCategories };
     }
     // Pull movements (back, biceps, rear delts)
     if (combined.includes('pull') || combined.includes('back') || combined.includes('bicep') || combined.includes('row')) {
-      return { patterns: ['horizontalPull', 'verticalPull', 'accessory'], muscles: ['back', 'biceps', 'rear delts'] };
+      return { patterns: ['horizontalPull', 'verticalPull', 'accessory'], muscles: ['back', 'biceps', 'rear delts'], categories: recommendedCategories };
     }
     // Lower body
     if (combined.includes('leg') || combined.includes('lower') || combined.includes('quad') || combined.includes('ham') || combined.includes('glute')) {
-      return { patterns: ['squat', 'hipHinge', 'lunge', 'accessory'], muscles: ['quads', 'hamstrings', 'glutes', 'calves'] };
+      return { patterns: ['squat', 'hipHinge', 'lunge', 'accessory'], muscles: ['quads', 'hamstrings', 'glutes', 'calves'], categories: recommendedCategories };
     }
     // Upper body (both push and pull)
     if (combined.includes('upper')) {
-      return { patterns: ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull', 'accessory'], muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'] };
+      return { patterns: ['horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull', 'accessory'], muscles: ['chest', 'back', 'shoulders', 'biceps', 'triceps'], categories: recommendedCategories };
     }
     // Full body
     if (combined.includes('full body') || combined.includes('total') || combined.includes('full-body')) {
-      return { patterns: null, muscles: null }; // Show all
+      return { patterns: null, muscles: null, categories: recommendedCategories }; // Show all
     }
     // Power/explosive
     if (combined.includes('power') || combined.includes('explosive') || combined.includes('plyometric')) {
-      return { patterns: ['squat', 'hipHinge', 'carry', 'accessory'], muscles: ['glutes', 'quads', 'hamstrings', 'core'] };
+      return { patterns: ['squat', 'hipHinge', 'carry', 'accessory'], muscles: ['glutes', 'quads', 'hamstrings', 'core'], categories: recommendedCategories };
     }
     // Shoulder focus
     if (combined.includes('shoulder') || combined.includes('delt')) {
-      return { patterns: ['verticalPush', 'horizontalPull', 'accessory'], muscles: ['shoulders', 'rear delts', 'traps'] };
+      return { patterns: ['verticalPush', 'horizontalPull', 'accessory'], muscles: ['shoulders', 'rear delts', 'traps'], categories: recommendedCategories };
     }
     // Core/Abs
     if (combined.includes('core') || combined.includes('ab')) {
-      return { patterns: ['core', 'accessory', 'carry'], muscles: ['core', 'obliques'] };
+      return { patterns: ['core', 'accessory', 'carry'], muscles: ['core', 'obliques'], categories: recommendedCategories };
     }
     // Arms focus
     if (combined.includes('arm')) {
-      return { patterns: ['accessory', 'horizontalPush', 'horizontalPull'], muscles: ['biceps', 'triceps', 'forearms'] };
+      return { patterns: ['accessory', 'horizontalPush', 'horizontalPull'], muscles: ['biceps', 'triceps', 'forearms'], categories: recommendedCategories };
     }
     // Strength (default compound movements)
     if (combined.includes('strength')) {
-      return { patterns: ['squat', 'hipHinge', 'horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'], muscles: null };
+      return { patterns: ['squat', 'hipHinge', 'horizontalPush', 'verticalPush', 'horizontalPull', 'verticalPull'], muscles: null, categories: recommendedCategories };
     }
     // ME/Circuits
     if (combined.includes('circuit') || combined.includes('me ') || combined.includes('muscular endurance')) {
-      return { patterns: ['squat', 'hipHinge', 'lunge', 'horizontalPush', 'horizontalPull', 'carry'], muscles: null };
+      return { patterns: ['squat', 'hipHinge', 'lunge', 'horizontalPush', 'horizontalPull', 'carry'], muscles: null, categories: recommendedCategories };
     }
-    return { patterns: null, muscles: null };
+    return { patterns: null, muscles: null, categories: recommendedCategories };
   };
 
-  const { patterns: suggestedPatterns, muscles: suggestedMuscles } = getSuggestedPatternsAndMuscles();
+  const { patterns: suggestedPatterns, muscles: suggestedMuscles, categories: suggestedCategories } = getSuggestedPatternsAndMuscles();
 
   // Merge built-in and custom exercises
   const allExercisesForPicker = { ...EXERCISE_LIBRARY, ...customPrograms };
@@ -4607,6 +4612,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           const bMuscleMatch = b.muscles?.some(m => suggestedMuscles.includes(m));
           if (aMuscleMatch) aScore += 1;
           if (bMuscleMatch) bScore += 1;
+        }
+        // Category match for block periodization phases (competition lifts first in Realization, etc.)
+        if (suggestedCategories) {
+          const aCatIdx = suggestedCategories.indexOf(a.category);
+          const bCatIdx = suggestedCategories.indexOf(b.category);
+          // Lower index = higher priority (competition is first for realization)
+          if (aCatIdx !== -1 && bCatIdx === -1) aScore += 3;
+          else if (bCatIdx !== -1 && aCatIdx === -1) bScore += 3;
+          else if (aCatIdx !== -1 && bCatIdx !== -1) {
+            // Both have recommended categories - prefer earlier in list
+            if (aCatIdx < bCatIdx) aScore += 1;
+            else if (bCatIdx < aCatIdx) bScore += 1;
+          }
         }
         if (aScore !== bScore) return bScore - aScore;
       }
@@ -5408,12 +5426,21 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               ) : (
                 filteredExercises.map(ex => {
                   const isSuggested = suggestedPatterns?.includes(ex.pattern) || (suggestedMuscles && ex.muscles?.some(m => suggestedMuscles.includes(m)));
+                  const isRecommendedCategory = suggestedCategories && suggestedCategories.includes(ex.category);
+                  const categoryPriority = suggestedCategories?.indexOf(ex.category);
+                  const isTopCategory = categoryPriority === 0; // First in recommended list (e.g., competition in Realization)
                   return (
-                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left hover:bg-gray-700/50 ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
-                      <p className={`font-medium ${theme.text}`}>
-                        {isSuggested && <span className="text-blue-400 mr-1">★</span>}
-                        {ex.name}
+                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left hover:bg-gray-700/50 ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${isTopCategory ? 'border-l-4 border-yellow-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
+                      <p className={`font-medium ${theme.text} flex items-center gap-1`}>
+                        {isSuggested && !isTopCategory && <span className="text-blue-400">★</span>}
+                        {isTopCategory && <span className="text-yellow-400">★</span>}
+                        <span>{ex.name}</span>
                         {ex.isCustom && <span className="ml-2 text-xs text-green-400">(Custom)</span>}
+                        {isTopCategory && currentPhase?.blockId && (
+                          <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                            {ex.category === 'competition' ? '🏆 Competition' : ex.category === 'gpp' ? '🔧 GPP' : ex.category}
+                          </span>
+                        )}
                       </p>
                       <p className="text-sm text-gray-400">{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
                     </button>
