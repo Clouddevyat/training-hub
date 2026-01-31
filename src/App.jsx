@@ -73,7 +73,14 @@ const useLocalStorage = (key, initialValue) => {
 // ============== UTILITY FUNCTIONS ==============
 const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 const formatDateShort = (date) => date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
-const getTodayKey = () => new Date().toISOString().split('T')[0];
+// Use local timezone for date key (YYYY-MM-DD format)
+const getTodayKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const getTypeColor = (type, dark) => {
   const colors = { 
