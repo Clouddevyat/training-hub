@@ -1358,6 +1358,22 @@ const UNIVERSAL_DETOURS = {
 
 // ============== PROGRESSION MODELS ==============
 const PROGRESSION_MODELS = {
+  custom: {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Manually set intensity/volume for each exercise',
+    icon: '✏️',
+    generateWeeks: (weeks) => {
+      return Array.from({ length: weeks }, (_, i) => ({
+        week: i + 1,
+        intensity: null, // User sets manually
+        sets: null,
+        reps: null,
+        rpe: null,
+        isCustom: true,
+      }));
+    },
+  },
   linear: {
     id: 'linear',
     name: 'Linear Periodization',
@@ -3956,7 +3972,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
   const [showSwapPicker, setShowSwapPicker] = useState(null);
   const [newPhaseName, setNewPhaseName] = useState('');
   const [newPhaseWeeks, setNewPhaseWeeks] = useState(4);
-  const [newPhaseProgression, setNewPhaseProgression] = useState('linear');
+  const [newPhaseProgression, setNewPhaseProgression] = useState('custom');
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [exerciseFilter, setExerciseFilter] = useState('all');
   // NEW: Edit mode state
@@ -4429,7 +4445,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
 
   const addExercise = (dayIdx, groupId = null) => {
     const day = currentPhase.weeklyTemplate[dayIdx];
-    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: 3, reps: '8-10', isAmrap: false, intensity: 70, rpe: 7, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null, conditional: null }] });
+    // Get defaults from the phase's periodization model (week 1)
+    const weekOneProgression = currentPhase.weeklyProgression?.[0] || {};
+    const isCustom = weekOneProgression.isCustom || currentPhase.progression === 'custom';
+
+    // Use periodization defaults or fallback to generic defaults
+    const defaultSets = isCustom ? 3 : (weekOneProgression.sets || 3);
+    const defaultReps = isCustom ? '8-10' : (weekOneProgression.reps || '8-10');
+    const defaultIntensity = isCustom ? 70 : (weekOneProgression.intensity || 70);
+    const defaultRpe = isCustom ? 7 : (weekOneProgression.rpe || 7);
+
+    updateDay(dayIdx, { exercises: [...(day.exercises || []), { id: `ex_${Date.now()}`, exerciseId: null, name: '', sets: defaultSets, reps: defaultReps, isAmrap: false, intensity: defaultIntensity, rpe: defaultRpe, rest: '90', tempo: '', notes: '', groupId: groupId, groupType: null, conditional: null }] });
   };
 
   // Create a new superset/circuit group
@@ -4895,6 +4921,36 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
           })()}
           
           <p className={`text-sm ${theme.textMuted}`}>Build Week 1 template. Exercises auto-propagate to all {currentPhase.weeks} weeks with {PROGRESSION_MODELS[currentPhase.progression].name} progression.</p>
+
+          {/* Periodization Info Banner */}
+          {currentPhase.progression !== 'custom' && currentPhase.weeklyProgression?.[0] && (
+            <div className={`${theme.cardAlt} rounded-lg p-3 border-l-4 border-blue-500`}>
+              <p className={`text-xs font-medium ${theme.text} mb-1`}>
+                {PROGRESSION_MODELS[currentPhase.progression].icon} Week 1 Prescription ({PROGRESSION_MODELS[currentPhase.progression].name})
+              </p>
+              <div className="flex flex-wrap gap-3 text-xs">
+                {currentPhase.weeklyProgression[0].sets && (
+                  <span className={theme.textMuted}>Sets: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].sets}</span></span>
+                )}
+                {currentPhase.weeklyProgression[0].reps && (
+                  <span className={theme.textMuted}>Reps: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].reps}</span></span>
+                )}
+                {currentPhase.weeklyProgression[0].intensity && (
+                  <span className={theme.textMuted}>Intensity: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].intensity}%</span></span>
+                )}
+                {currentPhase.weeklyProgression[0].rpe && (
+                  <span className={theme.textMuted}>RPE: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].rpe}</span></span>
+                )}
+                {currentPhase.weeklyProgression[0].focus && (
+                  <span className={theme.textMuted}>Focus: <span className="text-purple-500 font-medium">{currentPhase.weeklyProgression[0].focus}</span></span>
+                )}
+                {currentPhase.weeklyProgression[0].phase && (
+                  <span className={theme.textMuted}>Phase: <span className="text-purple-500 font-medium">{currentPhase.weeklyProgression[0].phase}</span></span>
+                )}
+              </div>
+              <p className={`text-xs ${theme.textMuted} mt-1 italic`}>New exercises will use these defaults. Subsequent weeks auto-adjust per model.</p>
+            </div>
+          )}
           {currentPhase.weeklyTemplate.map((day, dayIdx) => (
             <div key={day.day} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center justify-between mb-3">
