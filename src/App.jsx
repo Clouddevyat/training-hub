@@ -5411,15 +5411,30 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                     {/* Progression Info */}
                     <div className={`${theme.cardAlt} rounded-lg p-3`}>
                       <p className={`text-xs ${theme.textMuted} mb-1`}>Week {weekData.weekInPhase} of {weekData.phase.weeks} in {weekData.phase.name}</p>
-                      <div className="flex gap-4 text-sm">
+                      <div className="flex flex-wrap gap-4 text-sm">
                         {weekData.progression.intensity && (
-                          <span className={theme.text}>Intensity: {weekData.progression.intensity}%</span>
+                          <span className={theme.text}>Intensity: <span className="text-blue-400">{weekData.progression.intensity}%</span></span>
                         )}
                         {weekData.progression.sets && (
-                          <span className={theme.text}>Sets: {weekData.progression.sets}</span>
+                          <span className={theme.text}>Sets: <span className="text-blue-400">{weekData.progression.sets}</span></span>
                         )}
                         {weekData.progression.reps && (
-                          <span className={theme.text}>Reps: {weekData.progression.reps}</span>
+                          <span className={theme.text}>Reps: <span className="text-blue-400">{weekData.progression.reps}</span></span>
+                        )}
+                        {weekData.progression.rpe && (
+                          <span className={theme.text}>RPE: <span className="text-blue-400">{weekData.progression.rpe}</span></span>
+                        )}
+                        {weekData.progression.focus && (
+                          <span className={theme.text}>Focus: <span className="text-purple-400">{weekData.progression.focus}</span></span>
+                        )}
+                        {weekData.progression.phase && (
+                          <span className={theme.text}>Block: <span className="text-purple-400">{weekData.progression.phase}</span></span>
+                        )}
+                        {weekData.progression.isDeload && (
+                          <span className="text-green-400 font-medium">🔄 Deload Week</span>
+                        )}
+                        {weekData.progression.isCustom && (
+                          <span className={theme.textMuted}>Custom (values set per exercise)</span>
                         )}
                       </div>
                     </div>
@@ -5451,7 +5466,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, athleteProfile,
                             {day.adjustedExercises.map((ex, exIdx) => (
                               <div key={exIdx} className={`${theme.cardAlt} rounded p-2 text-sm`}>
                                 <div className="flex justify-between">
-                                  <span className={theme.text}>{ex.name}</span>
+                                  <span className={theme.text}>{EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name || 'Exercise'}</span>
                                   <span className={theme.textMuted}>{ex.adjustedSets}×{ex.adjustedReps} @ {ex.adjustedIntensity}%</span>
                                 </div>
                                 {(ex.tempo || ex.rest || ex.notes) && (
