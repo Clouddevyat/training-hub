@@ -216,13 +216,11 @@ body {
 @keyframes loginBoxFadeOut {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: translateY(0);
   }
   100% {
     opacity: 0;
-    transform: translateY(20px) scale(0.98);
-    filter: blur(4px);
+    transform: translateY(10px);
   }
 }
 
@@ -230,16 +228,12 @@ body {
 @keyframes brandingHoldFade {
   0% {
     opacity: 1;
-    transform: scale(1);
   }
-  50% {
+  60% {
     opacity: 1;
-    transform: scale(1.03);
   }
   100% {
     opacity: 0;
-    transform: scale(1.08);
-    filter: blur(4px);
   }
 }
 
@@ -254,12 +248,12 @@ body {
 }
 
 .animate-login-exit {
-  animation: loginBoxFadeOut 0.8s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  animation: loginBoxFadeOut 0.6s ease-out forwards;
 }
 
 .animate-branding-exit {
-  animation: brandingHoldFade 1.4s cubic-bezier(0.4, 0, 0.6, 1) forwards;
-  animation-delay: 0.5s;
+  animation: brandingHoldFade 1.2s ease-out forwards;
+  animation-delay: 0.4s;
 }
 
 .animate-app-enter {
