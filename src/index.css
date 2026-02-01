@@ -214,6 +214,63 @@ body {
   opacity: 0;
 }
 
+/* Login box fade out - used during transition to main app */
+@keyframes loginBoxFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+}
+
+/* Branding hold and fade - stays visible then fades */
+@keyframes brandingHoldFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+/* Main app fade in from transition */
+@keyframes appFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-login-exit {
+  animation: loginBoxFadeOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-branding-exit {
+  animation: brandingHoldFade 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.3s;
+}
+
+.animate-app-enter {
+  animation: appFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Instant display - no animation delay for returning users */
+.animate-instant {
+  opacity: 1 !important;
+  animation: none !important;
+}
+
 /* ==================== MODERN UI SYSTEM ==================== */
 
 /* Glassmorphism effects - Meridian Cairn */

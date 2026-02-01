@@ -7914,6 +7914,14 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
   const [syncCode, setSyncCode] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Mark as initialized after first render to enable animations only on initial load
+  useEffect(() => {
+    const timer = setTimeout(() => setHasInitialized(true), 1600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLinkAccount = async () => {
     if (!syncCode.trim()) {
@@ -7922,9 +7930,11 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
     }
     setIsAuthenticating(true);
     setError('');
+    setIsTransitioning(true);
     const result = await onLinkAccount(syncCode.trim());
     if (!result.success) {
       setError(result.error || 'Could not find data with this sync code');
+      setIsTransitioning(false);
     }
     setIsAuthenticating(false);
   };
@@ -7936,9 +7946,11 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
     }
     setIsAuthenticating(true);
     setError('');
+    setIsTransitioning(true);
     const result = await onCreateProfile(name.trim(), useBiometric && biometricAvailable);
     if (!result.success) {
       setError(result.error || 'Failed to create profile');
+      setIsTransitioning(false);
     }
     setIsAuthenticating(false);
   };
@@ -7946,13 +7958,20 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
   const handleBiometricLogin = async () => {
     setIsAuthenticating(true);
     setError('');
+    setIsTransitioning(true);
     const result = await onLogin();
     if (!result.success) {
       setError(result.error || 'Authentication failed');
+      setIsTransitioning(false);
       // Fall back to showing options
       setStep('welcome');
     }
     setIsAuthenticating(false);
+  };
+
+  const handleContinueAsUser = async () => {
+    setIsTransitioning(true);
+    await onLogin();
   };
 
   if (isLoading) {
@@ -7975,20 +7994,20 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        {/* Logo & Branding - Dramatic Reveal */}
-        <div className="text-center mb-10">
-          <CairnIcon size={100} className="mx-auto mb-6 animate-logo-reveal" />
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-warm-white tracking-[0.15em] uppercase animate-title-slide">
+        {/* Logo & Branding - Dramatic Reveal (stays during transition) */}
+        <div className={`text-center mb-10 ${isTransitioning ? 'animate-branding-exit' : ''}`}>
+          <CairnIcon size={100} className={`mx-auto mb-6 ${hasInitialized ? '' : 'animate-logo-reveal'}`} />
+          <h1 className={`text-4xl sm:text-5xl md:text-6xl font-light text-warm-white tracking-[0.15em] uppercase ${hasInitialized ? '' : 'animate-title-slide'}`}>
             Meridian <span className="text-amber-400 font-normal">Cairn</span>
           </h1>
-          <p className="text-slate-300 text-sm sm:text-base font-mono tracking-[0.3em] uppercase mt-4 animate-subtitle-fade">
+          <p className={`text-slate-300 text-sm sm:text-base font-mono tracking-[0.3em] uppercase mt-4 ${hasInitialized ? '' : 'animate-subtitle-fade'}`}>
             Training Systems
           </p>
         </div>
 
         {/* Welcome Back - Returning User */}
         {step === 'welcome-back' && savedProfile && (
-          <div className="w-full max-w-sm space-y-6 animate-dramatic-fade">
+          <div className={`w-full max-w-sm space-y-6 ${isTransitioning ? 'animate-login-exit' : hasInitialized ? '' : 'animate-dramatic-fade'}`}>
             <div className="glass-dark rounded-3xl p-8 text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
                 <span className="text-3xl text-white font-semibold">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
@@ -7999,7 +8018,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               {savedProfile.hasBiometric && biometricAvailable ? (
                 <button
                   onClick={handleBiometricLogin}
-                  disabled={isAuthenticating}
+                  disabled={isAuthenticating || isTransitioning}
                   className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {isAuthenticating ? (
@@ -8013,8 +8032,9 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 </button>
               ) : (
                 <button
-                  onClick={() => onLogin()}
-                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all"
+                  onClick={handleContinueAsUser}
+                  disabled={isTransitioning}
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all disabled:opacity-50"
                 >
                   Continue as {savedProfile.name}
                 </button>
@@ -8027,7 +8047,8 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
             <button
               onClick={() => setStep('welcome')}
-              className="w-full py-3 text-amber-300/70 hover:text-white transition-colors text-sm"
+              disabled={isTransitioning}
+              className="w-full py-3 text-amber-300/70 hover:text-white transition-colors text-sm disabled:opacity-50"
             >
               Not {savedProfile.name}? Switch profile
             </button>
@@ -8036,7 +8057,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Welcome - New User */}
         {step === 'welcome' && (
-          <div className="w-full max-w-sm space-y-4 animate-dramatic-fade">
+          <div className={`w-full max-w-sm space-y-4 ${isTransitioning ? 'animate-login-exit' : ''}`}>
             <div className="glass-dark rounded-3xl p-8">
               <h2 className="text-2xl font-bold text-warm-white mb-2 text-center">Get Started</h2>
               <p className="text-amber-300/70 text-center mb-6">Create your profile to begin training</p>
@@ -8096,7 +8117,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Create Profile */}
         {step === 'create' && (
-          <div className="w-full max-w-sm animate-dramatic-fade">
+          <div className={`w-full max-w-sm ${isTransitioning ? 'animate-login-exit' : ''}`}>
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
@@ -8166,7 +8187,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Link Existing Account */}
         {step === 'link' && (
-          <div className="w-full max-w-sm animate-dramatic-fade">
+          <div className={`w-full max-w-sm ${isTransitioning ? 'animate-login-exit' : ''}`}>
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
@@ -8712,7 +8733,7 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen ${theme.bg}`}>
+    <div className={`min-h-screen ${theme.bg} animate-app-enter`}>
       {/* Onboarding Flow for First-Time Users */}
       {showOnboarding && (
         <OnboardingFlow
