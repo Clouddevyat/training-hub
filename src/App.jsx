@@ -8751,7 +8751,10 @@ export default function App() {
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <CairnIcon size={28} />
-              <h1 className="text-lg font-light tracking-wider uppercase">Meridian <span className="text-amber-400 font-normal">Cairn</span></h1>
+              <div className="flex flex-col leading-tight">
+                <h1 className="text-lg font-light tracking-wider uppercase">Meridian <span className="text-amber-400 font-normal">Cairn</span></h1>
+                <span className="text-[10px] text-slate-400 font-mono tracking-[0.2em] uppercase">Training Systems</span>
+              </div>
             </button>
           </div>
           <div className="flex items-center gap-1">
