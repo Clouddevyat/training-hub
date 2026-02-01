@@ -7978,17 +7978,12 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
         {/* Logo & Branding - Dramatic Reveal */}
         <div className="text-center mb-10">
           <CairnIcon size={100} className="mx-auto mb-6 animate-logo-reveal" />
-          <div className="animate-title-slide animate-glow-pulse">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-warm-white tracking-[0.2em] uppercase">
-              Meridian
-            </h1>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-normal text-amber-400 tracking-[0.2em] uppercase -mt-1">
-              Cairn
-            </h1>
-          </div>
-          <div className="mt-4 animate-subtitle-fade">
-            <p className="text-slate-400 text-xs sm:text-sm font-mono tracking-[0.3em] uppercase">Training Systems</p>
-          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-warm-white tracking-[0.15em] uppercase animate-title-slide">
+            Meridian <span className="text-amber-400 font-normal">Cairn</span>
+          </h1>
+          <p className="text-slate-400 text-xs sm:text-sm font-mono tracking-[0.3em] uppercase mt-4 animate-subtitle-fade">
+            Training Systems
+          </p>
         </div>
 
         {/* Welcome Back - Returning User */}
