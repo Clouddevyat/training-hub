@@ -151,7 +151,7 @@ export const PROGRESSION_MODELS = {
         id: 'dup_hypertrophy',
         name: 'Hypertrophy',
         shortName: 'HYP',
-        color: 'purple',
+        color: 'sage',
         sets: 4,
         reps: '8-12',
         intensity: 70,

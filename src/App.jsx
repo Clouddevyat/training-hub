@@ -138,6 +138,41 @@ const getTypeIcon = (type) => ({
   long_effort: Mountain
 }[type] || Circle);
 
+// Cairn Icon - Stacked stones logo for Meridian Cairn branding
+const CairnIcon = ({ size = 40, className = '' }) => {
+  const scale = size / 40;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      fill="none"
+      className={className}
+    >
+      {/* Top stone - small */}
+      <rect
+        x="15" y="4" width="10" height="8" rx="2"
+        fill="#6B7A8A"
+      />
+      {/* Middle stone - amber accent */}
+      <rect
+        x="12" y="14" width="16" height="8" rx="2"
+        fill="#C4883A"
+      />
+      {/* Bottom stone - large */}
+      <rect
+        x="9" y="24" width="22" height="10" rx="2"
+        fill="#6B7A8A"
+      />
+      {/* Base line */}
+      <rect
+        x="5" y="36" width="30" height="2" rx="1"
+        fill="#B4C0CC"
+      />
+    </svg>
+  );
+};
+
 // Icon component helper - replaces emoji icons with Lucide icons
 const ICON_MAP = {
   // Workout types
@@ -1737,7 +1772,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
             )}
 
             {test.calculateRate && testData.verticalFeet && testData.duration && (
-              <div className={`p-4 ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-lg`}>
+              <div className={`p-4 ${darkMode ? 'bg-sage-900/30' : 'bg-sage-50'} rounded-lg`}>
                 <p className={`text-sm ${theme.textMuted}`}>Calculated Rate</p>
                 <p className={`text-2xl font-bold ${theme.text}`}>{test.calculateRate(testData)} ft/hr</p>
                 <p className={`text-xs ${theme.textMuted} mt-1`}>
@@ -2350,7 +2385,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
               onClick={() => setActiveChart(opt.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                 activeChart === opt.id
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
                   : `${theme.cardAlt} ${theme.text} hover:opacity-80`
               }`}
             >
@@ -3149,7 +3184,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
           </div>
 
           {exercise.progressionNote && (
-            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-sage-400' : 'text-purple-600'} mb-2`}>
+            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-sage-400' : 'text-sage-600'} mb-2`}>
               <TrendingUp size={12} /><span>{exercise.progressionNote}</span>
             </div>
           )}
@@ -3595,7 +3630,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
 
         {/* Content */}
         <div className="px-6 py-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500 to-sage-500 flex items-center justify-center">
             <currentStep.Icon size={36} className="text-white" />
           </div>
           <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>{currentStep.title}</h2>
@@ -3697,7 +3732,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
         : 'border-amber-500'
     }`}>
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
+        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-sage-600'} />
         <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
       </div>
       <div className="space-y-3">
@@ -3891,7 +3926,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
       baseIntensity: 67,
       intensityRange: [65, 75],
       baseRpe: 7,
-      color: 'purple',
+      color: 'sage',
     },
     strength: {
       id: 'strength',
@@ -4741,7 +4776,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           </button>
           <button onClick={() => { setProgramType('macro'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500`}>
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-purple-100'}`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-sage-100'}`}>
                 <Calendar size={24} className="text-sage-500" />
               </div>
               <div><p className={`font-bold ${theme.text}`}>New Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div>
@@ -4758,7 +4793,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   <div key={prog.id} className={`${theme.card} rounded-xl p-4 border ${theme.border}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-purple-100'}`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-sage-100'}`}>
                           <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={20} className="text-sage-500" />
                         </div>
                         <div>
@@ -5056,7 +5091,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               )}
 
               {newPhaseProgression === 'conjugate' && (
-                <div className={`mt-2 p-2 rounded-lg bg-sage-600/10 border border-purple-500/30`}>
+                <div className={`mt-2 p-2 rounded-lg bg-sage-600/10 border border-sage-500/30`}>
                   <p className={`text-xs text-sage-400 font-medium mb-1`}>🔀 Conjugate Structure</p>
                   <div className="flex flex-wrap gap-1">
                     {PROGRESSION_MODELS.conjugate.dayTypes.map(dt => (
@@ -5282,7 +5317,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                         const isInGroup = ex.groupId;
                         const isFirstInGroup = isInGroup && (exIdx === 0 || day.exercises[exIdx - 1]?.groupId !== ex.groupId);
                         const isLastInGroup = isInGroup && (exIdx === day.exercises.length - 1 || day.exercises[exIdx + 1]?.groupId !== ex.groupId);
-                        const groupColor = ex.groupType === 'superset' ? 'border-l-orange-500' : ex.groupType === 'circuit' ? 'border-l-purple-500' : '';
+                        const groupColor = ex.groupType === 'superset' ? 'border-l-orange-500' : ex.groupType === 'circuit' ? 'border-l-sage-500' : '';
                         
                         return (
                           <div key={ex.id} className={`${theme.cardAlt} rounded-lg p-3 ${isInGroup ? `border-l-4 ${groupColor}` : ''} ${isInGroup && !isLastInGroup ? 'mb-0 rounded-b-none' : ''} ${isInGroup && !isFirstInGroup ? 'mt-0 rounded-t-none border-t border-dashed' : ''}`}>
@@ -5405,7 +5440,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                             {isLastInGroup && (
                               <button 
                                 onClick={() => addToGroup(dayIdx, ex.groupId, ex.groupType)}
-                                className={`w-full mt-2 py-1 text-xs border border-dashed rounded ${ex.groupType === 'superset' ? 'border-orange-500/50 text-amber-500' : 'border-purple-500/50 text-sage-500'}`}
+                                className={`w-full mt-2 py-1 text-xs border border-dashed rounded ${ex.groupType === 'superset' ? 'border-orange-500/50 text-amber-500' : 'border-sage-500/50 text-sage-500'}`}
                               >
                                 + Add to {ex.groupType}
                               </button>
@@ -5501,7 +5536,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               <span className={`text-sm font-medium ${theme.text} self-center mr-1`}>Muscles:</span>
               <button onClick={() => setMuscleFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${muscleFilter === 'all' ? 'bg-sage-600 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>All</button>
               {suggestedMuscles && suggestedMuscles.map(muscle => (
-                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-sage-600 text-white' : 'bg-sage-600/30 text-purple-300 hover:bg-sage-600/40'}`}>★ {muscle}</button>
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-sage-600 text-white' : 'bg-sage-600/30 text-sage-300 hover:bg-sage-600/40'}`}>★ {muscle}</button>
               ))}
               {MUSCLE_FILTER_OPTIONS.filter(m => !suggestedMuscles?.includes(m)).slice(0, 12).map(muscle => (
                 <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-sage-600 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>{muscle}</button>
@@ -6174,7 +6209,7 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
       cardio: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-amber-400',
       conditioning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-amber-400',
       threshold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-warning',
-      long_effort: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-sage-400',
+      long_effort: 'bg-sage-100 text-sage-700 dark:bg-sage-900/30 dark:text-sage-400',
       recovery: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-sage-400',
       rest: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
       muscular_endurance: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-amber-400'
@@ -6202,7 +6237,7 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
             <div>
               <h2 className={`font-bold text-lg ${theme.text}`}>{program.name}</h2>
               {program.isTemplate && (
-                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-sage-400 text-xs rounded-full">Template</span>
+                <span className="px-2 py-0.5 bg-sage-100 dark:bg-sage-900/30 text-sage-600 dark:text-sage-400 text-xs rounded-full">Template</span>
               )}
             </div>
           </div>
@@ -6472,7 +6507,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
     strength: 'bg-critical/20 text-critical border-red-500',
     cardio: 'bg-amber-500/20 text-amber-500 border-amber-500',
     endurance: 'bg-amber-500/20 text-amber-500 border-orange-500',
-    performance: 'bg-sage-600/20 text-sage-500 border-purple-500',
+    performance: 'bg-sage-600/20 text-sage-500 border-sage-500',
     recovery: 'bg-nominal/20 text-nominal border-green-500',
     situational: 'bg-warning/20 text-warning border-yellow-500',
   };
@@ -7071,7 +7106,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
                 ? (darkMode ? 'bg-green-900/50' : 'bg-green-100')
                 : (darkMode ? 'bg-red-900/50' : 'bg-red-100')
               : timerType === 'emom' && mode === 'running'
-              ? (darkMode ? 'bg-purple-900/50' : 'bg-purple-100')
+              ? (darkMode ? 'bg-sage-900/50' : 'bg-sage-100')
               : timerType === 'amrap' && mode === 'running'
               ? (darkMode ? 'bg-orange-900/50' : 'bg-orange-100')
               : theme.cardAlt
@@ -7082,7 +7117,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               </div>
             )}
             {timerType === 'emom' && mode === 'running' && (
-              <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-sage-400' : 'text-purple-600'}`}>
+              <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-sage-400' : 'text-sage-600'}`}>
                 ⚡ EMOM — Minute {Math.floor(seconds / emomConfig.minuteLength) + 1}/{emomConfig.totalMinutes}
               </div>
             )}
@@ -7286,8 +7321,8 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
       strength: darkMode ? 'bg-red-900/60 border-red-700' : 'bg-red-100 border-red-300',
       aerobic: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
       cardio: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
-      long_aerobic: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
-      long_effort: darkMode ? 'bg-purple-900/60 border-purple-700' : 'bg-purple-100 border-purple-300',
+      long_aerobic: darkMode ? 'bg-sage-900/60 border-sage-700' : 'bg-sage-100 border-sage-300',
+      long_effort: darkMode ? 'bg-sage-900/60 border-sage-700' : 'bg-sage-100 border-sage-300',
       muscular_endurance: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
       threshold: darkMode ? 'bg-amber-900/60 border-amber-700' : 'bg-amber-100 border-amber-300',
       recovery: darkMode ? 'bg-green-900/60 border-green-700' : 'bg-green-100 border-green-300',
@@ -7922,9 +7957,9 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-near-black via-slate-800 to-near-black flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">⛰️</div>
+          <CairnIcon size={64} className="mx-auto mb-4 animate-pulse" />
           <Loader className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
         </div>
       </div>
@@ -7932,36 +7967,36 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-near-black via-slate-800 to-near-black flex flex-col">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-sage-600/20 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-sage-600/10 rounded-full blur-3xl" />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         {/* Logo & Branding */}
         <div className="text-center mb-8 animate-fadeIn">
-          <div className="text-7xl mb-4">⛰️</div>
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Training Hub</h1>
-          <p className="text-amber-300/80 text-lg">Your Personal Training Companion</p>
+          <CairnIcon size={80} className="mx-auto mb-4" />
+          <h1 className="text-4xl font-bold text-warm-white mb-2 tracking-tight">Training Hub</h1>
+          <p className="text-amber-400/80 text-lg font-light tracking-wide">Your Personal Training Companion</p>
         </div>
 
         {/* Welcome Back - Returning User */}
         {step === 'welcome-back' && savedProfile && (
           <div className="w-full max-w-sm space-y-6 animate-fadeInUp">
             <div className="glass-dark rounded-3xl p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                <span className="text-3xl">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
+                <span className="text-3xl text-white font-semibold">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1">Welcome back!</h2>
+              <h2 className="text-2xl font-bold text-warm-white mb-1">Welcome back!</h2>
               <p className="text-amber-300/70 mb-6">{savedProfile.name}</p>
 
               {savedProfile.hasBiometric && biometricAvailable ? (
                 <button
                   onClick={handleBiometricLogin}
                   disabled={isAuthenticating}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {isAuthenticating ? (
                     <Loader className="w-6 h-6 animate-spin" />
@@ -7975,7 +8010,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               ) : (
                 <button
                   onClick={() => onLogin()}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all"
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all"
                 >
                   Continue as {savedProfile.name}
                 </button>
@@ -7999,12 +8034,12 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
         {step === 'welcome' && (
           <div className="w-full max-w-sm space-y-4 animate-fadeInUp">
             <div className="glass-dark rounded-3xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-2 text-center">Get Started</h2>
+              <h2 className="text-2xl font-bold text-warm-white mb-2 text-center">Get Started</h2>
               <p className="text-amber-300/70 text-center mb-6">Create your profile to begin training</p>
 
               <button
                 onClick={() => setStep('create')}
-                className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 mb-3"
+                className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 mb-3"
               >
                 <Sparkles size={20} />
                 Create Profile
@@ -8066,7 +8101,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 <ChevronLeft size={20} /> Back
               </button>
 
-              <h2 className="text-2xl font-bold text-white mb-6">Create Profile</h2>
+              <h2 className="text-2xl font-bold text-warm-white mb-6">Create Profile</h2>
 
               <div className="space-y-4">
                 <div>
@@ -8076,7 +8111,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
-                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     autoFocus
                   />
                 </div>
@@ -8106,7 +8141,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 <button
                   onClick={handleCreateProfile}
                   disabled={isAuthenticating || !name.trim()}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isAuthenticating ? (
                     <>
@@ -8137,10 +8172,10 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               </button>
 
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="w-16 h-16 bg-gradient-to-br from-sage-500 to-sage-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sage-500/30">
                   <Cloud size={32} className="text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Link Account</h2>
+                <h2 className="text-2xl font-bold text-warm-white mb-2">Link Account</h2>
                 <p className="text-amber-300/70 text-sm">Enter your sync code to access your existing data on this device</p>
               </div>
 
@@ -8152,7 +8187,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                     value={syncCode}
                     onChange={(e) => setSyncCode(e.target.value)}
                     placeholder="e.g., john@email.com or my-sync-code"
-                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     autoFocus
                   />
                 </div>
@@ -8168,7 +8203,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 <button
                   onClick={handleLinkAccount}
                   disabled={isAuthenticating || !syncCode.trim()}
-                  className="w-full py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-gradient-to-r from-sage-500 to-sage-600 text-white font-semibold rounded-2xl shadow-lg shadow-sage-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isAuthenticating ? (
                     <>
@@ -8617,7 +8652,7 @@ export default function App() {
     modal: darkMode ? 'bg-slate-800/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl shadow-2xl',
     modalBackdrop: 'modal-backdrop',
     glass: darkMode ? 'glass-dark' : 'glass-light',
-    gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
+    gradient: 'bg-gradient-to-r from-amber-500 to-amber-600',
     gradientText: 'gradient-text',
     btnDisabled: darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-400',
     // New high-contrast button styles for dark mode
@@ -8719,7 +8754,7 @@ export default function App() {
             {/* Profile indicator */}
             {profile && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10">
-                <div className="w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold">
+                <div className="w-5 h-5 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center text-[10px] font-bold">
                   {profile.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <span className="text-xs hidden sm:inline opacity-80">{profile.name?.split(' ')[0]}</span>
@@ -8757,13 +8792,13 @@ export default function App() {
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: Home, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
                 { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-nominal/20', text: 'text-nominal', ring: 'ring-green-500/50', hover: 'hover:bg-nominal/10' },
-                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-sage-600/20', text: 'text-sage-500', ring: 'ring-purple-500/50', hover: 'hover:bg-sage-600/10' },
+                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-sage-600/20', text: 'text-sage-500', ring: 'ring-sage-500/50', hover: 'hover:bg-sage-600/10' },
                 { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-orange-500/50', hover: 'hover:bg-amber-500/10' },
                 { id: 'charts', label: 'Charts', icon: LineChart, bg: 'bg-cyan-500/20', text: 'text-cyan-500', ring: 'ring-cyan-500/50', hover: 'hover:bg-cyan-500/10' },
                 { id: 'profile', label: 'Profile', icon: User, bg: 'bg-pink-500/20', text: 'text-pink-500', ring: 'ring-pink-500/50', hover: 'hover:bg-pink-500/10' },
                 { id: 'benchmarks', label: 'Benchmarks', icon: Flag, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
                 { id: 'log', label: 'Workout Log', icon: FileText, bg: 'bg-emerald-500/20', text: 'text-emerald-500', ring: 'ring-emerald-500/50', hover: 'hover:bg-emerald-500/10' },
-                { id: 'progress', label: 'Progress', icon: BarChart3, bg: 'bg-indigo-500/20', text: 'text-indigo-500', ring: 'ring-indigo-500/50', hover: 'hover:bg-indigo-500/10' },
+                { id: 'progress', label: 'Progress', icon: BarChart3, bg: 'bg-sage-500/20', text: 'text-sage-500', ring: 'ring-sage-500/50', hover: 'hover:bg-sage-500/10' },
                 { id: 'programs', label: 'Programs', icon: Dumbbell, bg: 'bg-rose-500/20', text: 'text-rose-500', ring: 'ring-rose-500/50', hover: 'hover:bg-rose-500/10' },
                 { id: 'settings', label: 'Settings', icon: Settings, bg: 'bg-slate-500/20', text: 'text-slate-400', ring: 'ring-slate-500/50', hover: 'hover:bg-slate-500/10' }
               ].map(({ id, label, icon: Icon, bg, text, ring, hover }) => (
@@ -8820,7 +8855,7 @@ export default function App() {
 
             {/* Readiness Section - High Altitude Theme */}
             {!todayReadiness && (
-              <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-br from-cyan-900/30 via-gray-800/50 to-blue-900/30 border-cyan-600/30' : 'bg-gradient-to-br from-cyan-50 via-white to-blue-50 border-cyan-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
+              <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-br from-slate-800/50 via-slate-900/50 to-slate-800/50 border-amber-500/30' : 'bg-gradient-to-br from-slate-50 via-white to-amber-50 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
                 <div className={`p-3 rounded-xl ${darkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'}`}>
                   <Mountain className={darkMode ? 'text-cyan-400' : 'text-cyan-600'} size={24} />
                 </div>
@@ -8870,7 +8905,7 @@ export default function App() {
             {/* Charts Quick Link */}
             <button onClick={() => setFloatingPane('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 group-hover:scale-110 transition-transform">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-sage-500/20 group-hover:scale-110 transition-transform">
                   <LineChart size={22} className="text-amber-500" />
                 </div>
                 <div className="text-left">
@@ -8890,7 +8925,7 @@ export default function App() {
                 <div className={`${theme.card} rounded-2xl p-5`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Target size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
+                      <Target size={18} className={darkMode ? 'text-sage-400' : 'text-sage-600'} />
                       <h3 className={`font-semibold ${theme.text}`}>Limiting Factors</h3>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${topFactors[0]?.severity === 'high' ? 'bg-critical/20 text-critical' : topFactors[0]?.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-amber-500/20 text-amber-500'}`}>
@@ -9001,7 +9036,7 @@ export default function App() {
                   {hasDetours && !activeDetour && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setShowDetourPicker(true); }}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"
+                      className="px-4 py-2 bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 text-white text-xs font-semibold rounded-xl shadow-lg shadow-sage-500/30 hover:scale-105 transition-all"
                     >
                       Detour
                     </button>
@@ -9071,7 +9106,7 @@ export default function App() {
                     return (
                       <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                         isCurrent
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 shadow-sm'
+                          ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-cyan-500/30 shadow-sm'
                           : theme.cardAlt
                       }`}>
                         {/* Waypoint marker */}
@@ -9391,7 +9426,7 @@ export default function App() {
                 </div>
                 <h3 className={`font-semibold ${theme.text} mb-2`}>No Sessions Logged</h3>
                 <p className={`text-sm ${theme.textMuted} mb-4`}>Complete your first workout to start tracking progress</p>
-                <button onClick={() => setCurrentView('workout')} className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-cyan-500/20">
+                <button onClick={() => setCurrentView('workout')} className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-amber-500/20">
                   Start Training
                 </button>
               </div>
@@ -9400,10 +9435,10 @@ export default function App() {
                 {[...workoutLogs].reverse().slice(0, 50).map((log) => {
                   const typeConfig = {
                     strength: { gradient: 'from-red-500/10', border: 'border-red-500', icon: Dumbbell, iconColor: 'text-critical' },
-                    cardio: { gradient: 'from-blue-500/10', border: 'border-amber-500', icon: Activity, iconColor: 'text-amber-500' },
+                    cardio: { gradient: 'from-info/10', border: 'border-info', icon: Activity, iconColor: 'text-info' },
                     muscular_endurance: { gradient: 'from-orange-500/10', border: 'border-orange-500', icon: Flame, iconColor: 'text-amber-500' },
                     recovery: { gradient: 'from-green-500/10', border: 'border-green-500', icon: Heart, iconColor: 'text-nominal' },
-                    long_effort: { gradient: 'from-purple-500/10', border: 'border-purple-500', icon: Mountain, iconColor: 'text-sage-500' },
+                    long_effort: { gradient: 'from-sage-500/10', border: 'border-sage-500', icon: Mountain, iconColor: 'text-sage-500' },
                   };
                   const config = typeConfig[log.type] || typeConfig.cardio;
                   const TypeIcon = config.icon;
@@ -9600,19 +9635,19 @@ export default function App() {
                       key={id}
                       className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                         isActive
-                          ? 'ring-2 ring-cyan-500 shadow-lg shadow-cyan-500/20'
+                          ? 'ring-2 ring-cyan-500 shadow-lg shadow-amber-500/20'
                           : `${theme.card} hover:shadow-md`
                       }`}
                     >
                       {/* Gradient background for active */}
                       {isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-sage-500/10" />
                       )}
                       <div className="relative p-4">
                         <div className="flex items-center gap-4">
                           <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
                             isActive
-                              ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
+                              ? 'bg-gradient-to-br from-amber-500/20 to-sage-500/20'
                               : darkMode ? 'bg-slate-800' : 'bg-slate-100'
                           }`}>
                             <RenderIcon icon={data.program?.icon} Icon={data.program?.Icon} size={24} className={isActive ? 'text-cyan-500' : theme.textMuted} />
@@ -9648,7 +9683,7 @@ export default function App() {
                               <CheckCircle2 size={16} /> Active
                             </div>
                           ) : (
-                            <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-cyan-500/20">
+                            <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-amber-500/20">
                               Start Program
                             </button>
                           )}
@@ -9723,7 +9758,7 @@ export default function App() {
               <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
                 <h3 className={`font-semibold ${theme.text} mb-4`}>Account</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-xl font-bold text-white">{profile.name?.charAt(0)?.toUpperCase() || '?'}</span>
                   </div>
                   <div>
@@ -10061,7 +10096,7 @@ export default function App() {
               setSwappingExercise(null);
               setShowAllSwapOptions(false);
             }}
-            className={`w-full p-4 ${theme.card} rounded-xl text-left ${exerciseSwaps[swappingExercise.name] === ex.id ? 'ring-2 ring-purple-500' : ''} ${!ex.hasAllEquipment ? 'opacity-60' : ''}`}
+            className={`w-full p-4 ${theme.card} rounded-xl text-left ${exerciseSwaps[swappingExercise.name] === ex.id ? 'ring-2 ring-sage-500' : ''} ${!ex.hasAllEquipment ? 'opacity-60' : ''}`}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -10278,7 +10313,7 @@ export default function App() {
                   {!todayLog?.completed && (
                     <button
                       onClick={() => { setCurrentView('workout'); setFloatingPane(null); }}
-                      className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] transition-transform"
+                      className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] transition-transform"
                     >
                       Start Workout
                     </button>
@@ -10352,8 +10387,8 @@ export default function App() {
                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 relative ${
                   primary
                     ? `${isActive
-                        ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600'
-                        : 'bg-gradient-to-br from-cyan-500 to-blue-600'
+                        ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-sage-600'
+                        : 'bg-gradient-to-br from-amber-500 to-amber-600'
                       } text-white shadow-lg shadow-cyan-500/40 -mt-5 px-5 py-3`
                     : isActive
                       ? ''
@@ -10370,7 +10405,7 @@ export default function App() {
                 )}
                 {/* Active indicator line */}
                 {isActive && !primary && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full" />
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full" />
                 )}
                 <Icon
                   size={primary ? 24 : 22}

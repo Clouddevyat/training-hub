@@ -48,7 +48,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
         : 'border-amber-500'
     }`}>
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
+        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-sage-600'} />
         <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
       </div>
       <div className="space-y-3">
