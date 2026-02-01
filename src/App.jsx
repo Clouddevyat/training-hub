@@ -3575,7 +3575,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
   const steps = [
     {
       Icon: Mountain,
-      title: 'Welcome to Training Hub',
+      title: 'Welcome to Meridian Cairn',
       subtitle: 'Your complete training companion',
       content: 'Built for serious athletes who demand precision periodization, intelligent load management, and field-ready reliability.',
       features: ['40-week periodized programs', 'Smart load tracking', 'Works offline'],
@@ -7975,16 +7975,20 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        {/* Logo & Branding */}
-        <div className="text-center mb-8 animate-fadeIn">
-          <CairnIcon size={80} className="mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-warm-white mb-2 tracking-tight">Training Hub</h1>
-          <p className="text-amber-400/80 text-lg font-light tracking-wide">Your Personal Training Companion</p>
+        {/* Logo & Branding - Dramatic Reveal */}
+        <div className="text-center mb-10">
+          <CairnIcon size={100} className="mx-auto mb-6 animate-logo-reveal" />
+          <h1 className="text-5xl sm:text-6xl font-light text-warm-white tracking-widest uppercase animate-title-slide animate-glow-pulse">
+            Meridian <span className="text-amber-400 font-normal">Cairn</span>
+          </h1>
+          <div className="mt-3 animate-subtitle-fade">
+            <p className="text-slate-400 text-xs sm:text-sm font-mono tracking-[0.3em] uppercase">Training Systems</p>
+          </div>
         </div>
 
         {/* Welcome Back - Returning User */}
         {step === 'welcome-back' && savedProfile && (
-          <div className="w-full max-w-sm space-y-6 animate-fadeInUp">
+          <div className="w-full max-w-sm space-y-6 animate-dramatic-fade">
             <div className="glass-dark rounded-3xl p-8 text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
                 <span className="text-3xl text-white font-semibold">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
@@ -8032,7 +8036,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Welcome - New User */}
         {step === 'welcome' && (
-          <div className="w-full max-w-sm space-y-4 animate-fadeInUp">
+          <div className="w-full max-w-sm space-y-4 animate-dramatic-fade">
             <div className="glass-dark rounded-3xl p-8">
               <h2 className="text-2xl font-bold text-warm-white mb-2 text-center">Get Started</h2>
               <p className="text-amber-300/70 text-center mb-6">Create your profile to begin training</p>
@@ -8092,7 +8096,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Create Profile */}
         {step === 'create' && (
-          <div className="w-full max-w-sm animate-fadeInUp">
+          <div className="w-full max-w-sm animate-dramatic-fade">
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
@@ -8162,7 +8166,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
         {/* Link Existing Account */}
         {step === 'link' && (
-          <div className="w-full max-w-sm animate-fadeInUp">
+          <div className="w-full max-w-sm animate-dramatic-fade">
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
@@ -8224,8 +8228,8 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
       </div>
 
       {/* Footer */}
-      <div className="p-6 text-center relative z-10">
-        <p className="text-amber-300/40 text-xs">Training Hub v2.2 • Your data syncs securely to the cloud</p>
+      <div className="p-6 text-center relative z-10 animate-subtitle-fade">
+        <p className="text-slate-500 text-xs font-mono tracking-wider">MERIDIAN CAIRN v2.2 • Secure Cloud Sync</p>
       </div>
     </div>
   );
@@ -8747,7 +8751,7 @@ export default function App() {
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <CairnIcon size={28} />
-              <h1 className="text-lg font-bold tracking-tight">Training Hub <span className="text-xs font-normal opacity-50">v2.2</span></h1>
+              <h1 className="text-lg font-light tracking-wider uppercase">Meridian <span className="text-amber-400 font-normal">Cairn</span></h1>
             </button>
           </div>
           <div className="flex items-center gap-1">
