@@ -48,7 +48,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
         : 'border-amber-500'
     }`}>
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={18} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
+        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
         <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
       </div>
       <div className="space-y-3">
@@ -60,7 +60,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
                 <p className={`text-sm ${theme.textMuted} mt-1`}>
                   {analysis.recommendation === 'increase' ? (
                     <>
-                      <span className="text-green-500">↑ Ready to progress</span>
+                      <span className="text-nominal">↑ Ready to progress</span>
                       {analysis.stats.avgRpe && <span className="ml-2">Avg RPE: {analysis.stats.avgRpe}</span>}
                     </>
                   ) : (
@@ -80,7 +80,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
               {analysis.suggestedAction && analysis.recommendation === 'increase' && (
                 <button
                   onClick={() => applyProgression(analysis)}
-                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg font-medium"
+                  className="px-3 py-1.5 bg-nominal hover:bg-sage-600 text-white text-sm rounded-lg font-medium"
                 >
                   Apply
                 </button>

@@ -100,7 +100,7 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     {entry.weight && (
-                      <span className={`font-mono font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      <span className={`font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
                         {entry.weight} lbs
                       </span>
                     )}
@@ -109,9 +109,9 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
                     )}
                     {entry.rpe && (
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
-                        entry.rpe >= 9 ? 'bg-red-500/20 text-red-500' :
+                        entry.rpe >= 9 ? 'bg-critical/20 text-critical' :
                         entry.rpe >= 7 ? 'bg-amber-500/20 text-amber-500' :
-                        'bg-green-500/20 text-green-500'
+                        'bg-nominal/20 text-nominal'
                       }`}>RPE {entry.rpe}</span>
                     )}
                   </div>

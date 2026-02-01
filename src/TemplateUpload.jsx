@@ -106,9 +106,9 @@ export const TemplateUploadView = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className={`${theme.card} rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
           <h2 className={`text-lg font-bold ${theme.text}`}>Upload Program Template</h2>
-          <button onClick={onClose} className={`p-2 rounded-lg ${theme.textMuted} hover:bg-gray-100 dark:hover:bg-gray-800`}>
+          <button onClick={onClose} className={`p-2 rounded-lg ${theme.textMuted} hover:bg-slate-100 dark:hover:bg-slate-800`}>
             <X size={20} />
           </button>
         </div>
@@ -123,8 +123,8 @@ export const TemplateUploadView = ({
                 onDrop={handleDrop}
                 className={`block border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                   dragOver 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                    ? 'border-amber-500 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-gray-300 dark:border-slate-600 hover:border-gray-400'
                 }`}
               >
                 <Upload className={`mx-auto mb-3 ${theme.textMuted}`} size={40} />
@@ -139,7 +139,7 @@ export const TemplateUploadView = ({
               </label>
 
               <div className={`flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20`}>
-                <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                <Info size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   Templates are read-only program blueprints. Upload a JSON file to add it to your template library.
                 </p>
@@ -150,7 +150,7 @@ export const TemplateUploadView = ({
           {/* Validating State */}
           {uploadState === 'validating' && (
             <div className="text-center py-8">
-              <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-3" />
+              <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-3" />
               <p className={theme.text}>Validating template...</p>
             </div>
           )}
@@ -160,16 +160,16 @@ export const TemplateUploadView = ({
             <>
               <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="text-red-500 flex-shrink-0" size={20} />
+                  <AlertTriangle className="text-critical flex-shrink-0" size={20} />
                   <div>
                     <p className="font-medium text-red-700 dark:text-red-300">Upload Failed</p>
-                    <p className="text-sm text-red-600 dark:text-red-400 mt-1 whitespace-pre-wrap">{error}</p>
+                    <p className="text-sm text-red-600 dark:text-critical mt-1 whitespace-pre-wrap">{error}</p>
                   </div>
                 </div>
               </div>
               <button
                 onClick={reset}
-                className="w-full py-2 px-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium"
+                className="w-full py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
               >
                 Try Again
               </button>
@@ -180,7 +180,7 @@ export const TemplateUploadView = ({
           {uploadState === 'preview' && parsedTemplate && (
             <>
               {/* Template Info */}
-              <div className={`p-4 rounded-lg ${theme.cardAlt || 'bg-gray-50 dark:bg-gray-800'}`}>
+              <div className={`p-4 rounded-lg ${theme.cardAlt || 'bg-gray-50 dark:bg-slate-800'}`}>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">{parsedTemplate.meta?.icon || '📋'}</span>
                   <div>
@@ -202,7 +202,7 @@ export const TemplateUploadView = ({
                       {validationResult.warnings.length} Warning{validationResult.warnings.length > 1 ? 's' : ''}
                     </span>
                   </div>
-                  <ul className="text-xs text-yellow-600 dark:text-yellow-400 space-y-1">
+                  <ul className="text-xs text-yellow-600 dark:text-warning space-y-1">
                     {validationResult.warnings.slice(0, 3).map((w, i) => (
                       <li key={i}>• {w}</li>
                     ))}
@@ -222,9 +222,9 @@ export const TemplateUploadView = ({
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {profileCheck?.complete ? (
-                      <Check size={16} className="text-green-500" />
+                      <Check size={16} className="text-nominal" />
                     ) : (
-                      <AlertTriangle size={16} className="text-orange-500" />
+                      <AlertTriangle size={16} className="text-amber-500" />
                     )}
                     <span className={`font-medium text-sm ${profileCheck?.complete ? 'text-green-700 dark:text-green-300' : 'text-orange-700 dark:text-orange-300'}`}>
                       Profile {profileCheck?.percentComplete}% Complete
@@ -243,27 +243,27 @@ export const TemplateUploadView = ({
                     {profileCheck?.present?.map(({ field, value }) => (
                       <div key={field} className="flex items-center justify-between text-xs">
                         <span className={theme.textMuted}>{field}</span>
-                        <span className="text-green-600 dark:text-green-400">✓ {value}</span>
+                        <span className="text-sage-600 dark:text-sage-400">✓ {value}</span>
                       </div>
                     ))}
                     {profileCheck?.missing?.map(field => (
                       <div key={field} className="flex items-center justify-between text-xs">
                         <span className={theme.textMuted}>{field}</span>
-                        <span className="text-orange-600 dark:text-orange-400">Missing</span>
+                        <span className="text-orange-600 dark:text-amber-400">Missing</span>
                       </div>
                     ))}
                   </div>
                 )}
 
                 {!profileCheck?.complete && (
-                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                  <p className="text-xs text-orange-600 dark:text-amber-400 mt-2">
                     Some calculations will show percentages instead of exact weights until you update your profile.
                   </p>
                 )}
               </div>
 
               {/* Template Structure Preview */}
-              <div className={`p-3 rounded-lg ${theme.cardAlt || 'bg-gray-50 dark:bg-gray-800'}`}>
+              <div className={`p-3 rounded-lg ${theme.cardAlt || 'bg-gray-50 dark:bg-slate-800'}`}>
                 <button 
                   onClick={() => setShowDetails(!showDetails)}
                   className={`flex items-center justify-between w-full text-sm font-medium ${theme.text}`}
@@ -320,7 +320,7 @@ export const TemplateUploadView = ({
                 </button>
                 <button
                   onClick={confirmUpload}
-                  className="flex-1 py-2 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
+                  className="flex-1 py-2 px-4 rounded-lg bg-amber-600 text-white font-medium hover:bg-blue-700"
                 >
                   Add Template
                 </button>

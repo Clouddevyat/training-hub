@@ -53,7 +53,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
             <div
               key={i}
               className={`h-2 rounded-full transition-all ${
-                i === step ? 'w-8 bg-blue-500' : i < step ? 'w-2 bg-blue-500/50' : 'w-2 bg-gray-600/50'
+                i === step ? 'w-8 bg-amber-500' : i < step ? 'w-2 bg-amber-500/50' : 'w-2 bg-slate-600/50'
               }`}
             />
           ))}
@@ -63,7 +63,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
         <div className="px-6 py-8 text-center">
           <div className="text-6xl mb-4">{currentStep.icon}</div>
           <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>{currentStep.title}</h2>
-          <p className="text-blue-400 font-medium mb-4">{currentStep.subtitle}</p>
+          <p className="text-amber-400 font-medium mb-4">{currentStep.subtitle}</p>
           <p className={`${theme.textMuted} mb-6`}>{currentStep.content}</p>
 
           {/* Feature pills */}
@@ -94,7 +94,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
                 setStep(step + 1);
               }
             }}
-            className={`flex-1 py-3 rounded-xl font-medium bg-blue-500 hover:bg-blue-600 text-white ${step === 0 ? 'w-full' : ''}`}
+            className={`flex-1 py-3 rounded-xl font-medium bg-amber-500 hover:bg-amber-600 text-white ${step === 0 ? 'w-full' : ''}`}
           >
             {isLast ? "Let's Go!" : 'Next'}
           </button>

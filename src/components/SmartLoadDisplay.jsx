@@ -27,7 +27,7 @@ const SmartLoadDisplay = ({ prescription, profile, theme, darkMode, currentWeek 
 
   return (
     <div className={`p-4 ${darkMode ? 'bg-orange-900/30' : 'bg-orange-50'} rounded-lg`}>
-      <p className={`text-xs font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'} uppercase mb-2`}>
+      <p className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-orange-600'} uppercase mb-2`}>
         Load Target (Week {currentWeek})
       </p>
       <div className="flex items-baseline gap-2">

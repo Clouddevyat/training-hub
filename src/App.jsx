@@ -110,24 +110,25 @@ const getTodayKey = () => {
   return `${year}-${month}-${day}`;
 };
 
+// Meridian Cairn color system for workout types
 const getTypeColor = (type, dark) => {
-  const colors = { 
-    strength: dark ? 'bg-red-600' : 'bg-red-500', 
-    cardio: dark ? 'bg-blue-600' : 'bg-blue-500', 
-    muscular_endurance: dark ? 'bg-orange-600' : 'bg-orange-500', 
-    recovery: dark ? 'bg-green-600' : 'bg-green-500', 
-    long_effort: dark ? 'bg-purple-600' : 'bg-purple-500' 
+  const colors = {
+    strength: dark ? 'bg-critical' : 'bg-critical',
+    cardio: dark ? 'bg-info' : 'bg-info',
+    muscular_endurance: dark ? 'bg-amber-600' : 'bg-amber-500',
+    recovery: dark ? 'bg-sage-600' : 'bg-sage-500',
+    long_effort: dark ? 'bg-slate-500' : 'bg-slate-600'
   };
-  return colors[type] || (dark ? 'bg-gray-600' : 'bg-gray-500');
+  return colors[type] || (dark ? 'bg-slate-600' : 'bg-slate-500');
 };
 
-const getTypeBorder = (type) => ({ 
-  strength: 'border-red-500', 
-  cardio: 'border-blue-500', 
-  muscular_endurance: 'border-orange-500', 
-  recovery: 'border-green-500', 
-  long_effort: 'border-purple-500' 
-}[type] || 'border-gray-500');
+const getTypeBorder = (type) => ({
+  strength: 'border-critical',
+  cardio: 'border-info',
+  muscular_endurance: 'border-amber-500',
+  recovery: 'border-sage-500',
+  long_effort: 'border-slate-500'
+}[type] || 'border-slate-500');
 
 const getTypeIcon = (type) => ({
   strength: Dumbbell,
@@ -319,10 +320,10 @@ const calculateReadinessScore = (data) => {
 };
 
 const getReadinessColor = (score) => {
-  if (score >= 80) return 'text-green-500';
-  if (score >= 60) return 'text-yellow-500';
-  if (score >= 40) return 'text-orange-500';
-  return 'text-red-500';
+  if (score >= 80) return 'text-nominal';
+  if (score >= 60) return 'text-warning';
+  if (score >= 40) return 'text-amber-500';
+  return 'text-critical';
 };
 
 const getReadinessLabel = (score) => {
@@ -1180,7 +1181,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
             onClick={() => onChange(opt.value)}
             className={`flex-1 py-2 px-1 rounded-lg text-xs font-medium transition-all ${
               value === opt.value
-                ? opt.color || 'bg-blue-500 text-white'
+                ? opt.color || 'bg-amber-500 text-white'
                 : `${theme.cardAlt} ${theme.text} hover:opacity-80`
             }`}
           >
@@ -1231,7 +1232,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
             {last7Days.map((day, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div 
-                  className={`w-full rounded-t ${day.score >= 70 ? 'bg-green-500' : day.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  className={`w-full rounded-t ${day.score >= 70 ? 'bg-nominal' : day.score >= 50 ? 'bg-warning' : 'bg-critical'}`}
                   style={{ height: `${(day.score / 100) * 100}%`, minHeight: '4px' }}
                 />
                 <span className={`text-xs ${theme.textMuted}`}>{parseLocalDate(day.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
@@ -1250,11 +1251,11 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
           value={formData.sleepQuality}
           onChange={(v) => setFormData(prev => ({ ...prev, sleepQuality: v }))}
           options={[
-            { value: 1, label: 'Poor', color: 'bg-red-500 text-white' },
-            { value: 2, label: 'Fair', color: 'bg-orange-500 text-white' },
-            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 1, label: 'Poor', color: 'bg-critical text-white' },
+            { value: 2, label: 'Fair', color: 'bg-amber-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-warning text-white' },
             { value: 4, label: 'Good', color: 'bg-lime-500 text-white' },
-            { value: 5, label: 'Great', color: 'bg-green-500 text-white' },
+            { value: 5, label: 'Great', color: 'bg-nominal text-white' },
           ]}
         />
 
@@ -1279,11 +1280,11 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
           value={formData.energyLevel}
           onChange={(v) => setFormData(prev => ({ ...prev, energyLevel: v }))}
           options={[
-            { value: 1, label: 'Dead', color: 'bg-red-500 text-white' },
-            { value: 2, label: 'Low', color: 'bg-orange-500 text-white' },
-            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 1, label: 'Dead', color: 'bg-critical text-white' },
+            { value: 2, label: 'Low', color: 'bg-amber-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-warning text-white' },
             { value: 4, label: 'Good', color: 'bg-lime-500 text-white' },
-            { value: 5, label: 'High', color: 'bg-green-500 text-white' },
+            { value: 5, label: 'High', color: 'bg-nominal text-white' },
           ]}
         />
 
@@ -1292,11 +1293,11 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
           value={formData.soreness}
           onChange={(v) => setFormData(prev => ({ ...prev, soreness: v }))}
           options={[
-            { value: 1, label: 'None', color: 'bg-green-500 text-white' },
+            { value: 1, label: 'None', color: 'bg-nominal text-white' },
             { value: 2, label: 'Light', color: 'bg-lime-500 text-white' },
-            { value: 3, label: 'Mod', color: 'bg-yellow-500 text-white' },
-            { value: 4, label: 'Heavy', color: 'bg-orange-500 text-white' },
-            { value: 5, label: 'Severe', color: 'bg-red-500 text-white' },
+            { value: 3, label: 'Mod', color: 'bg-warning text-white' },
+            { value: 4, label: 'Heavy', color: 'bg-amber-500 text-white' },
+            { value: 5, label: 'Severe', color: 'bg-critical text-white' },
           ]}
         />
 
@@ -1305,11 +1306,11 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
           value={formData.motivation}
           onChange={(v) => setFormData(prev => ({ ...prev, motivation: v }))}
           options={[
-            { value: 1, label: 'None', color: 'bg-red-500 text-white' },
-            { value: 2, label: 'Low', color: 'bg-orange-500 text-white' },
-            { value: 3, label: 'OK', color: 'bg-yellow-500 text-white' },
+            { value: 1, label: 'None', color: 'bg-critical text-white' },
+            { value: 2, label: 'Low', color: 'bg-amber-500 text-white' },
+            { value: 3, label: 'OK', color: 'bg-warning text-white' },
             { value: 4, label: 'Ready', color: 'bg-lime-500 text-white' },
-            { value: 5, label: 'Fired Up', color: 'bg-green-500 text-white' },
+            { value: 5, label: 'Fired Up', color: 'bg-nominal text-white' },
           ]}
         />
 
@@ -1349,7 +1350,7 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
 
         <button
           onClick={saveCheck}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           {todayCheck ? 'Update Check-in' : 'Save Check-in'}
         </button>
@@ -1589,14 +1590,14 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                 {!timerRunning ? (
                   <button 
                     onClick={() => setTimerRunning(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl"
+                    className="flex items-center gap-2 px-6 py-3 bg-nominal hover:bg-sage-600 text-white font-semibold rounded-xl"
                   >
                     <Play size={20} /> Start
                   </button>
                 ) : (
                   <button 
                     onClick={() => setTimerRunning(false)}
-                    className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl"
+                    className="flex items-center gap-2 px-6 py-3 bg-warning hover:bg-yellow-600 text-white font-semibold rounded-xl"
                   >
                     <StopCircle size={20} /> Pause
                   </button>
@@ -1625,17 +1626,17 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                           key={prompt.key}
                           className={`p-2 rounded-lg text-center transition-all ${
                             isActive && !hasValue 
-                              ? 'bg-orange-500 text-white animate-pulse' 
+                              ? 'bg-amber-500 text-white animate-pulse' 
                               : hasValue 
                                 ? (darkMode ? 'bg-green-900/50' : 'bg-green-100')
                                 : theme.card
                           }`}
                         >
-                          <p className={`text-xs font-medium ${hasValue ? 'text-green-500' : isActive ? 'text-white' : theme.textMuted}`}>
+                          <p className={`text-xs font-medium ${hasValue ? 'text-nominal' : isActive ? 'text-white' : theme.textMuted}`}>
                             {prompt.label}
                           </p>
                           {hasValue ? (
-                            <p className={`font-mono font-bold text-green-500`}>{testData[prompt.key]}</p>
+                            <p className={`font-mono font-bold text-nominal`}>{testData[prompt.key]}</p>
                           ) : (
                             <input
                               type="number"
@@ -1654,10 +1655,10 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                   {testData.hr15 && testData.hr60 && (
                     <div className={`mt-4 p-3 ${parseFloat(test.calculateDrift(testData)) < 5 ? (darkMode ? 'bg-green-900/30' : 'bg-green-50') : (darkMode ? 'bg-red-900/30' : 'bg-red-50')} rounded-lg`}>
                       <p className={`text-sm ${theme.textMuted}`}>Cardiac Drift</p>
-                      <p className={`text-3xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                      <p className={`text-3xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-nominal' : 'text-critical'}`}>
                         {test.calculateDrift(testData)}%
                       </p>
-                      <p className={`text-xs mt-1 ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                      <p className={`text-xs mt-1 ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-nominal' : 'text-critical'}`}>
                         {parseFloat(test.calculateDrift(testData)) < 5 ? '✓ Strong aerobic base' : '✗ More base work needed'}
                       </p>
                     </div>
@@ -1726,7 +1727,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
             {test.calculateDrift && testData.hr15 && testData.hr60 && !isAetTest && (
               <div className={`p-4 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg`}>
                 <p className={`text-sm ${theme.textMuted}`}>Calculated Drift</p>
-                <p className={`text-2xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                <p className={`text-2xl font-bold ${parseFloat(test.calculateDrift(testData)) < 5 ? 'text-nominal' : 'text-critical'}`}>
                   {test.calculateDrift(testData)}%
                 </p>
                 <p className={`text-xs ${theme.textMuted} mt-1`}>
@@ -1748,7 +1749,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
 
           <button
             onClick={saveTestResult}
-            className="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-6 bg-nominal hover:bg-sage-600 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <Save size={20} /> Save Results
           </button>
@@ -1789,7 +1790,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                     </div>
                     <div className={`flex flex-wrap gap-3 mt-2 text-sm`}>
                       {result.data.time && <span className={`font-mono ${theme.text}`}>⏱️ {result.data.time}</span>}
-                      {result.data.drift && <span className={`font-mono ${parseFloat(result.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>📉 {result.data.drift}%</span>}
+                      {result.data.drift && <span className={`font-mono ${parseFloat(result.data.drift) < 5 ? 'text-nominal' : 'text-critical'}`}>📉 {result.data.drift}%</span>}
                       {result.data.rate && <span className={`font-mono ${theme.text}`}>⛰️ {result.data.rate} ft/hr</span>}
                       {result.data.maxHR && <span className={`font-mono ${theme.text}`}>❤️ {result.data.maxHR} bpm</span>}
                       {result.data.avgHR && <span className={`font-mono ${theme.text}`}>💓 avg {result.data.avgHR} bpm</span>}
@@ -1857,8 +1858,8 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           return (
             <div key={test.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                  <RenderIcon icon={test.icon} Icon={test.Icon} size={20} className="text-blue-500" />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                  <RenderIcon icon={test.icon} Icon={test.Icon} size={20} className="text-amber-500" />
                 </div>
                 <div>
                   <h4 className={`font-medium ${theme.text}`}>{test.name}</h4>
@@ -1876,10 +1877,10 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                 </div>
                 <div className={`p-3 ${improvement && improvement > 0 ? (darkMode ? 'bg-green-900/30' : 'bg-green-50') : theme.cardAlt} rounded-lg`}>
                   <p className={`text-xs ${theme.textMuted}`}>Change</p>
-                  <p className={`font-mono font-bold ${improvement && improvement > 0 ? 'text-green-500' : theme.text}`}>
+                  <p className={`font-mono font-bold ${improvement && improvement > 0 ? 'text-nominal' : theme.text}`}>
                     {improvementLabel || '—'}
                   </p>
-                  <TrendingUp size={16} className={`mx-auto mt-1 ${improvement && improvement > 0 ? 'text-green-500' : theme.textMuted}`} />
+                  <TrendingUp size={16} className={`mx-auto mt-1 ${improvement && improvement > 0 ? 'text-nominal' : theme.textMuted}`} />
                 </div>
                 <div className={`p-3 ${theme.cardAlt} rounded-lg`}>
                   <p className={`text-xs ${theme.textMuted}`}>Latest</p>
@@ -1991,7 +1992,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
             return (
               <div key={test.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${isDue ? (darkMode ? 'ring-1 ring-amber-500/50' : 'ring-1 ring-amber-300') : ''}`}>
                 <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                     <TestIcon size={24} className={theme.textMuted} />
                   </div>
                   <div className="flex-1">
@@ -2015,7 +2016,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                       <span>⏱️ {test.duration}</span>
                       <span>🔄 Every {test.frequency} mo</span>
                       {test.benchmarkTargets && (
-                        <span className="text-green-500">✓ {test.benchmarkTargets.good}</span>
+                        <span className="text-nominal">✓ {test.benchmarkTargets.good}</span>
                       )}
                     </div>
                     {lastResult && (
@@ -2023,7 +2024,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                         <span className={theme.textMuted}>Last:</span>
                         <span className={`font-medium ${theme.text}`}>{formatDateShort(lastResult.date)}</span>
                         {lastResult.data.time && <span className={`font-mono ${theme.text}`}>⏱️ {lastResult.data.time}</span>}
-                        {lastResult.data.drift && <span className={`font-mono ${parseFloat(lastResult.data.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>📉 {lastResult.data.drift}%</span>}
+                        {lastResult.data.drift && <span className={`font-mono ${parseFloat(lastResult.data.drift) < 5 ? 'text-nominal' : 'text-critical'}`}>📉 {lastResult.data.drift}%</span>}
                         {lastResult.data.rate && <span className={`font-mono ${theme.text}`}>⛰️ {lastResult.data.rate} ft/hr</span>}
                         {lastResult.data.maxHR && <span className={`font-mono ${theme.text}`}>❤️ {lastResult.data.maxHR}</span>}
                         {lastResult.data.totalSteps && <span className={`font-mono ${theme.text}`}>🔄 {lastResult.data.totalSteps} steps</span>}
@@ -2036,7 +2037,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
                 </div>
                 <button
                   onClick={() => startTest(test.id)}
-                  className={`w-full mt-4 py-2 ${isDue ? 'bg-blue-500 hover:bg-blue-600 text-white' : `${theme.cardAlt} ${theme.text}`} hover:opacity-90 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
+                  className={`w-full mt-4 py-2 ${isDue ? 'bg-amber-500 hover:bg-amber-600 text-white' : `${theme.cardAlt} ${theme.text}`} hover:opacity-90 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
                 >
                   <PlayCircle size={18} /> {isDue ? 'Start Test (Due)' : 'Start Test'}
                 </button>
@@ -2410,7 +2411,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
                       <p className={`font-medium ${theme.text}`}>{PR_DISPLAY_NAMES[pr.key] || pr.key}</p>
                       <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date?.slice(0, 10))}</p>
                     </div>
-                    <p className={`font-mono font-bold text-green-500`}>{pr.value} lbs</p>
+                    <p className={`font-mono font-bold text-nominal`}>{pr.value} lbs</p>
                   </div>
                 ))}
               </div>
@@ -2456,7 +2457,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
               <div className="flex items-end justify-between mb-4">
                 {benchmarkTrends.fiveMile.map((t, i) => (
                   <div key={i} className="text-center flex-1">
-                    <p className={`font-mono font-bold ${i === benchmarkTrends.fiveMile.length - 1 ? 'text-green-500 text-lg' : theme.text}`}>
+                    <p className={`font-mono font-bold ${i === benchmarkTrends.fiveMile.length - 1 ? 'text-nominal text-lg' : theme.text}`}>
                       {t.time || '—'}
                     </p>
                     <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(t.date)}</p>
@@ -2476,13 +2477,13 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
                   <div key={i} className={`flex items-center justify-between p-3 ${theme.cardAlt} rounded-lg`}>
                     <span className={`text-sm ${theme.textMuted}`}>{formatDateShort(t.date)}</span>
                     <div className="flex items-center gap-2">
-                      <div className={`w-24 h-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+                      <div className={`w-24 h-2 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-full overflow-hidden`}>
                         <div 
-                          className={`h-full ${parseFloat(t.drift) < 5 ? 'bg-green-500' : parseFloat(t.drift) < 10 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          className={`h-full ${parseFloat(t.drift) < 5 ? 'bg-nominal' : parseFloat(t.drift) < 10 ? 'bg-warning' : 'bg-critical'}`}
                           style={{ width: `${Math.min(parseFloat(t.drift) * 10, 100)}%` }}
                         />
                       </div>
-                      <span className={`font-mono font-bold ${parseFloat(t.drift) < 5 ? 'text-green-500' : 'text-red-500'}`}>
+                      <span className={`font-mono font-bold ${parseFloat(t.drift) < 5 ? 'text-nominal' : 'text-critical'}`}>
                         {t.drift}%
                       </span>
                     </div>
@@ -2504,7 +2505,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
                       <span className={`text-sm ${theme.textMuted}`}>{formatDateShort(t.date)}</span>
                       {t.load && <span className={`text-xs ${theme.textMuted} ml-2`}>@ {t.load} lbs</span>}
                     </div>
-                    <span className={`font-mono font-bold ${t.rate >= 1000 ? 'text-green-500' : theme.text}`}>
+                    <span className={`font-mono font-bold ${t.rate >= 1000 ? 'text-nominal' : theme.text}`}>
                       {t.rate} ft/hr
                     </span>
                   </div>
@@ -2552,12 +2553,12 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
               <div className="space-y-2">
                 {prHistory.map((pr, i) => (
                   <div key={i} className={`flex items-center gap-3 p-2 ${theme.cardAlt} rounded-lg`}>
-                    <div className={`w-2 h-2 rounded-full bg-green-500`} />
+                    <div className={`w-2 h-2 rounded-full bg-nominal`} />
                     <div className="flex-1">
                       <p className={`text-sm ${theme.text}`}>{PR_DISPLAY_NAMES[pr.key] || pr.key}</p>
                       <p className={`text-xs ${theme.textMuted}`}>{formatDateShort(pr.date?.slice(0, 10))}</p>
                     </div>
-                    <p className={`font-mono font-bold text-green-500`}>{pr.value} lbs</p>
+                    <p className={`font-mono font-bold text-nominal`}>{pr.value} lbs</p>
                   </div>
                 ))}
               </div>
@@ -2589,7 +2590,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
                         {summited ? '⛰️ ' : ''}{item.current || 0} / {targetLbs} lbs
                       </span>
                     </div>
-                    <div className={`relative h-3 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+                    <div className={`relative h-3 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-200'} rounded-full overflow-hidden`}>
                       {/* Progress bar with gradient */}
                       <div
                         className="h-full rounded-full transition-all duration-500"
@@ -2605,12 +2606,12 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
                       {[25, 50, 75].map(mark => (
                         <div
                           key={mark}
-                          className={`absolute top-0 bottom-0 w-px ${darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}
+                          className={`absolute top-0 bottom-0 w-px ${darkMode ? 'bg-slate-600' : 'bg-slate-300'}`}
                           style={{ left: `${mark}%` }}
                         />
                       ))}
                       {/* Summit flag at 100% */}
-                      <div className={`absolute top-0 bottom-0 right-0 w-0.5 ${progress >= 100 ? 'bg-emerald-400' : darkMode ? 'bg-gray-500' : 'bg-gray-400'}`} />
+                      <div className={`absolute top-0 bottom-0 right-0 w-0.5 ${progress >= 100 ? 'bg-emerald-400' : darkMode ? 'bg-slate-500' : 'bg-slate-400'}`} />
                     </div>
                     {/* Progress percentage */}
                     <div className="flex justify-end mt-1">
@@ -2676,8 +2677,8 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
           <div className="flex items-center gap-2">
             <input type={unit === 'min:sec' ? 'text' : 'number'} value={tempValue} onChange={(e) => setTempValue(e.target.value)} placeholder={unit === 'min:sec' ? '32:00' : '0'} className={`w-24 px-2 py-1 rounded ${theme.input} text-right text-sm`} autoFocus onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditMode(null); setTempValue(''); }}} />
             <span className={`text-xs ${theme.textMuted}`}>{unit}</span>
-            <button onClick={saveEdit} className="p-1 text-green-500"><CheckCircle2 size={18} /></button>
-            <button onClick={() => { setEditMode(null); setTempValue(''); }} className="p-1 text-red-500"><XIcon size={18} /></button>
+            <button onClick={saveEdit} className="p-1 text-nominal"><CheckCircle2 size={18} /></button>
+            <button onClick={() => { setEditMode(null); setTempValue(''); }} className="p-1 text-critical"><XIcon size={18} /></button>
           </div>
         ) : (
           <button onClick={() => startEdit(category, fieldKey, value)} className="flex items-center gap-2 group">
@@ -2702,7 +2703,7 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
         </div>
         {loadTargets && (
           <div className={`mt-4 p-3 ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'} rounded-lg`}>
-            <p className={`text-xs font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'} mb-2`}>LOAD TARGETS</p>
+            <p className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-amber-600'} mb-2`}>LOAD TARGETS</p>
             <div className="grid grid-cols-4 gap-2 text-center">
               {Object.entries(loadTargets).map(([key, val]) => (
                 <div key={key}><p className={`font-mono font-bold ${theme.text}`}>{val}</p><p className={`text-xs ${theme.textMuted}`}>{key === 'light' ? '15%' : key === 'base' ? '20%' : key === 'standard' ? '25%' : '30%'}</p></div>
@@ -2733,7 +2734,7 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
                 }}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   isSelected
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-amber-500 text-white'
                     : `${theme.cardAlt} ${theme.text} opacity-60`
                 }`}
               >
@@ -2762,7 +2763,7 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
         </div>
         {zones && (
           <div className={`mt-4 p-3 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg`}>
-            <p className={`text-xs font-medium ${darkMode ? 'text-green-400' : 'text-green-600'} mb-2`}>HR ZONES</p>
+            <p className={`text-xs font-medium ${darkMode ? 'text-sage-400' : 'text-sage-600'} mb-2`}>HR ZONES</p>
             <div className="space-y-1">
               {Object.entries(zones).filter(([k]) => k.startsWith('zone')).map(([key, zone]) => (
                 <div key={key} className="flex justify-between text-sm"><span className={theme.textMuted}>{key.replace('zone', 'Z')} - {zone.name}</span><span className={`font-mono ${theme.text}`}>{zone.min}-{zone.max}</span></div>
@@ -2866,7 +2867,7 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
 
         {/* Weight */}
         <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
-          <p className="text-red-500 text-sm font-medium text-center mb-2">Weight</p>
+          <p className="text-critical text-sm font-medium text-center mb-2">Weight</p>
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustWeight(-5)}
@@ -2909,7 +2910,7 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
 
         {/* Reps */}
         <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
-          <p className="text-red-500 text-sm font-medium text-center mb-2">Reps</p>
+          <p className="text-critical text-sm font-medium text-center mb-2">Reps</p>
           <div className="flex items-center justify-between">
             <button
               onClick={() => adjustReps(-1)}
@@ -2929,7 +2930,7 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
 
         {/* RPE */}
         <div className={`p-4 rounded-xl ${theme.cardAlt}`}>
-          <p className="text-red-500 text-sm font-medium text-center mb-3">Rate of Perceived Exertion</p>
+          <p className="text-critical text-sm font-medium text-center mb-3">Rate of Perceived Exertion</p>
           <div className="flex justify-center gap-2 mb-2">
             {[6, 7, 8, 9, 10].map(value => (
               <button
@@ -2937,8 +2938,8 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
                 onClick={() => setRpe(value)}
                 className={`w-12 h-12 rounded-lg font-bold text-lg transition-all ${
                   rpe === value
-                    ? 'bg-blue-500 text-white'
-                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${theme.text}`
+                    ? 'bg-amber-500 text-white'
+                    : `${darkMode ? 'bg-slate-700' : 'bg-slate-200'} ${theme.text}`
                 }`}
               >
                 {value}
@@ -2966,13 +2967,13 @@ const SetPerformanceModal = ({ isOpen, onClose, setData, setIdx, onSave, previou
         <div className="flex gap-3">
           <button
             onClick={handleClear}
-            className={`flex-1 py-4 rounded-xl font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}
+            className={`flex-1 py-4 rounded-xl font-semibold ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}
           >
             Clear
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 py-4 rounded-xl font-semibold bg-red-500 text-white"
+            className="flex-1 py-4 rounded-xl font-semibold bg-critical text-white"
           >
             Done
           </button>
@@ -3081,7 +3082,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
         <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
           allSetsComplete
             ? 'bg-emerald-500/20'
-            : darkMode ? 'bg-gray-700' : 'bg-gray-100'
+            : darkMode ? 'bg-slate-700' : 'bg-slate-100'
         }`}>
           {allSetsComplete ? <CheckCircle2 size={20} className="text-emerald-500" /> : getPatternIcon(pattern)}
         </div>
@@ -3090,7 +3091,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
           <div className="flex items-center gap-2 flex-wrap">
             <p className={`font-semibold ${allSetsComplete ? 'text-emerald-500' : theme.text}`}>{displayName}</p>
             {swappedTo && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded-full font-medium">
+              <span className="text-[10px] px-1.5 py-0.5 bg-sage-600/20 text-sage-400 rounded-full font-medium">
                 swapped
               </span>
             )}
@@ -3122,7 +3123,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
               className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                 set.completed
                   ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
-                  : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                  : darkMode ? 'bg-slate-600' : 'bg-slate-300'
               }`}
             />
           ))}
@@ -3139,7 +3140,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
           {/* Info row */}
           <div className={`flex flex-wrap gap-2 text-xs ${theme.textMuted} mb-2`}>
             {workingWeight && (
-              <span className={`px-2 py-1 rounded ${darkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
+              <span className={`px-2 py-1 rounded ${darkMode ? 'bg-blue-900/50 text-amber-300' : 'bg-blue-100 text-blue-700'}`}>
                 Target: {workingWeight} lbs ({exercise.percentage}% of {prValue})
               </span>
             )}
@@ -3148,7 +3149,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
           </div>
 
           {exercise.progressionNote && (
-            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-purple-400' : 'text-purple-600'} mb-2`}>
+            <div className={`flex items-center gap-1 text-xs ${darkMode ? 'text-sage-400' : 'text-purple-600'} mb-2`}>
               <TrendingUp size={12} /><span>{exercise.progressionNote}</span>
             </div>
           )}
@@ -3168,14 +3169,14 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left active:scale-[0.98] ${
                   set.completed
                     ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/10 ring-1 ring-emerald-500/30'
-                    : `${darkMode ? 'bg-gray-800/50' : 'bg-white'} ring-1 ${darkMode ? 'ring-white/5' : 'ring-black/5'} hover:ring-cyan-500/30`
+                    : `${darkMode ? 'bg-slate-800/50' : 'bg-white'} ring-1 ${darkMode ? 'ring-white/5' : 'ring-black/5'} hover:ring-cyan-500/30`
                 }`}
               >
                 {/* Set number */}
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
                   set.completed
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${theme.text}`
+                    : `${darkMode ? 'bg-slate-700' : 'bg-slate-100'} ${theme.text}`
                 }`}>
                   {set.completed ? <Check size={16} strokeWidth={3} /> : setIdx + 1}
                 </div>
@@ -3193,7 +3194,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
                       )}
                       {set.rpe && (
                         <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
-                          set.rpe >= 9 ? 'bg-red-500/20 text-red-400' :
+                          set.rpe >= 9 ? 'bg-critical/20 text-critical' :
                           set.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
                           'bg-cyan-500/20 text-cyan-400'
                         }`}>
@@ -3365,7 +3366,7 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     {entry.weight && (
-                      <span className={`font-mono font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      <span className={`font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
                         {entry.weight} lbs
                       </span>
                     )}
@@ -3374,9 +3375,9 @@ const ExerciseHistoryModal = ({ exercise, workoutLogs, profile, onClose, theme, 
                     )}
                     {entry.rpe && (
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
-                        entry.rpe >= 9 ? 'bg-red-500/20 text-red-500' :
+                        entry.rpe >= 9 ? 'bg-critical/20 text-critical' :
                         entry.rpe >= 7 ? 'bg-amber-500/20 text-amber-500' :
-                        'bg-green-500/20 text-green-500'
+                        'bg-nominal/20 text-nominal'
                       }`}>RPE {entry.rpe}</span>
                     )}
                   </div>
@@ -3502,7 +3503,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
             <label className={`block text-sm font-medium ${theme.text} mb-2`}>Equipment</label>
             <div className="flex flex-wrap gap-2">
               {EQUIPMENT_OPTIONS.map(eq => (
-                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-blue-500 text-white' : theme.chip}`}>
+                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-amber-500 text-white' : theme.chip}`}>
                   {EQUIPMENT_DISPLAY_NAMES[eq] || eq}
                 </button>
               ))}
@@ -3513,7 +3514,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
             <label className={`block text-sm font-medium ${theme.text} mb-2`}>Target Muscles</label>
             <div className="flex flex-wrap gap-2">
               {MUSCLE_OPTIONS.map(muscle => (
-                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-green-500 text-white' : theme.chip}`}>
+                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-nominal text-white' : theme.chip}`}>
                   {muscle}
                 </button>
               ))}
@@ -3523,7 +3524,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
 
         <div className={`p-4 border-t ${theme.border} flex gap-3`}>
           <button onClick={onClose} className={`flex-1 py-3 ${theme.btnSecondary} rounded-xl font-medium`}>Cancel</button>
-          <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl font-medium text-white">
+          <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 rounded-xl font-medium text-white">
             {editExercise ? 'Update' : 'Add Exercise'}
           </button>
         </div>
@@ -3586,7 +3587,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
             <div
               key={i}
               className={`h-2 rounded-full transition-all ${
-                i === step ? 'w-8 bg-blue-500' : i < step ? 'w-2 bg-blue-500/50' : 'w-2 bg-gray-600/50'
+                i === step ? 'w-8 bg-amber-500' : i < step ? 'w-2 bg-amber-500/50' : 'w-2 bg-slate-600/50'
               }`}
             />
           ))}
@@ -3598,7 +3599,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
             <currentStep.Icon size={36} className="text-white" />
           </div>
           <h2 className={`text-2xl font-bold ${theme.text} mb-2`}>{currentStep.title}</h2>
-          <p className="text-blue-400 font-medium mb-4">{currentStep.subtitle}</p>
+          <p className="text-amber-400 font-medium mb-4">{currentStep.subtitle}</p>
           <p className={`${theme.textMuted} mb-6`}>{currentStep.content}</p>
 
           {/* Feature pills */}
@@ -3629,7 +3630,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
                 setStep(step + 1);
               }
             }}
-            className={`flex-1 py-3 rounded-xl font-medium bg-blue-500 hover:bg-blue-600 text-white ${step === 0 ? 'w-full' : ''}`}
+            className={`flex-1 py-3 rounded-xl font-medium bg-amber-500 hover:bg-amber-600 text-white ${step === 0 ? 'w-full' : ''}`}
           >
             {isLast ? "Let's Go!" : 'Next'}
           </button>
@@ -3696,7 +3697,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
         : 'border-amber-500'
     }`}>
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp size={18} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
+        <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
         <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
       </div>
       <div className="space-y-3">
@@ -3708,7 +3709,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
                 <p className={`text-sm ${theme.textMuted} mt-1`}>
                   {analysis.recommendation === 'increase' ? (
                     <>
-                      <span className="text-green-500">↑ Ready to progress</span>
+                      <span className="text-nominal">↑ Ready to progress</span>
                       {analysis.stats.avgRpe && <span className="ml-2">Avg RPE: {analysis.stats.avgRpe}</span>}
                     </>
                   ) : (
@@ -3728,7 +3729,7 @@ const ProgressionInsights = ({ analyses, profile, setAthleteProfile, theme, dark
               {analysis.suggestedAction && analysis.recommendation === 'increase' && (
                 <button
                   onClick={() => applyProgression(analysis)}
-                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg font-medium"
+                  className="px-3 py-1.5 bg-nominal hover:bg-sage-600 text-white text-sm rounded-lg font-medium"
                 >
                   Apply
                 </button>
@@ -3780,7 +3781,7 @@ const SmartLoadDisplay = ({ prescription, profile, theme, darkMode, currentWeek 
 
   return (
     <div className={`p-4 ${darkMode ? 'bg-orange-900/30' : 'bg-orange-50'} rounded-lg`}>
-      <p className={`text-xs font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'} uppercase mb-2`}>Load Target (Week {currentWeek})</p>
+      <p className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-orange-600'} uppercase mb-2`}>Load Target (Week {currentWeek})</p>
       <div className="flex items-baseline gap-2">
         {isBodyweight ? (
           <span className={`text-2xl font-bold font-mono ${theme.text}`}>Bodyweight</span>
@@ -4713,7 +4714,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
     <div className="p-4">
       <div className="flex items-center gap-2 mb-6">
         {['type', 'details', 'phases', 'template', 'review'].map((s, i) => (
-          <div key={s} className={`h-2 flex-1 rounded-full ${['type', 'details', 'phases', 'template', 'review'].indexOf(step) >= i ? 'bg-blue-500' : theme.cardAlt}`} />
+          <div key={s} className={`h-2 flex-1 rounded-full ${['type', 'details', 'phases', 'template', 'review'].indexOf(step) >= i ? 'bg-amber-500' : theme.cardAlt}`} />
         ))}
       </div>
 
@@ -4730,18 +4731,18 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           </div>
           
           {/* Create New Options */}
-          <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
+          <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500`}>
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                <Dumbbell size={24} className="text-blue-500" />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                <Dumbbell size={24} className="text-amber-500" />
               </div>
               <div><p className={`font-bold ${theme.text}`}>New Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div>
             </div>
           </button>
-          <button onClick={() => { setProgramType('macro'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500`}>
+          <button onClick={() => { setProgramType('macro'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500`}>
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
-                <Calendar size={24} className="text-purple-500" />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-purple-100'}`}>
+                <Calendar size={24} className="text-sage-500" />
               </div>
               <div><p className={`font-bold ${theme.text}`}>New Macrocycle</p><p className={`text-sm ${theme.textMuted}`}>Multiple mesocycles (12-52 weeks)</p></div>
             </div>
@@ -4757,8 +4758,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   <div key={prog.id} className={`${theme.card} rounded-xl p-4 border ${theme.border}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
-                          <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={20} className="text-purple-500" />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-sage-600/20' : 'bg-purple-100'}`}>
+                          <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={20} className="text-sage-500" />
                         </div>
                         <div>
                           <p className={`font-medium ${theme.text}`}>{prog.name}</p>
@@ -4771,31 +4772,31 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                       <div className="flex gap-1">
                         <button 
                           onClick={() => loadProgramForEdit(prog.id, false)} 
-                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-blue-500/20`}
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-amber-500/20`}
                           title="Edit"
                         >
-                          <Edit3 size={16} className="text-blue-500" />
+                          <Edit3 size={16} className="text-amber-500" />
                         </button>
                         <button 
                           onClick={() => loadProgramForEdit(prog.id, true)} 
-                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`}
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-sage-600/20`}
                           title="Duplicate"
                         >
-                          <Copy size={16} className="text-purple-500" />
+                          <Copy size={16} className="text-sage-500" />
                         </button>
                         <button 
                           onClick={() => exportProgram(prog.id)} 
-                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-green-500/20`}
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-nominal/20`}
                           title="Export"
                         >
-                          <Download size={16} className="text-green-500" />
+                          <Download size={16} className="text-nominal" />
                         </button>
                         <button 
                           onClick={() => setShowDeleteConfirm(prog.id)} 
-                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`}
+                          className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-critical/20`}
                           title="Delete"
                         >
-                          <Trash2 size={16} className="text-red-500" />
+                          <Trash2 size={16} className="text-critical" />
                         </button>
                       </div>
                     </div>
@@ -4824,7 +4825,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               </button>
               <button 
                 onClick={() => deleteProgram(showDeleteConfirm)} 
-                className="flex-1 py-2 rounded-lg bg-red-500 text-white font-medium"
+                className="flex-1 py-2 rounded-lg bg-critical text-white font-medium"
               >
                 Delete
               </button>
@@ -4843,7 +4844,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             </p>
             
             {/* File Upload */}
-            <label className={`block w-full py-3 px-4 mb-3 rounded-lg border-2 border-dashed ${theme.border} text-center cursor-pointer hover:border-blue-500`}>
+            <label className={`block w-full py-3 px-4 mb-3 rounded-lg border-2 border-dashed ${theme.border} text-center cursor-pointer hover:border-amber-500`}>
               <input 
                 type="file" 
                 accept=".json"
@@ -4864,7 +4865,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             />
             
             {importError && (
-              <p className="text-red-500 text-sm mb-3">{importError}</p>
+              <p className="text-critical text-sm mb-3">{importError}</p>
             )}
             
             <div className="flex gap-3">
@@ -4877,7 +4878,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               <button 
                 onClick={importProgram}
                 disabled={!importText.trim()}
-                className={`flex-1 py-2 rounded-lg font-medium ${importText.trim() ? 'bg-blue-500 text-white' : theme.btnDisabled}`}
+                className={`flex-1 py-2 rounded-lg font-medium ${importText.trim() ? 'bg-amber-500 text-white' : theme.btnDisabled}`}
               >
                 Import
               </button>
@@ -4904,8 +4905,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           )}
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Program Name</label><input type="text" value={programName} onChange={(e) => setProgramName(e.target.value)} placeholder="e.g., Pre-Season Strength" className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
           <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Description</label><textarea value={programDescription} onChange={(e) => setProgramDescription(e.target.value)} placeholder="Brief description..." rows={2} className={`w-full p-3 rounded-lg ${theme.input} border`} /></div>
-          <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{PROGRAM_ICONS.map(iconObj => (<button key={iconObj.id} onClick={() => setProgramIcon(iconObj.id)} className={`p-2 rounded-lg ${programIcon === iconObj.id ? 'bg-blue-500 text-white' : theme.cardAlt}`} title={iconObj.name}><iconObj.Icon size={24} /></button>))}</div></div>
-          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : theme.btnDisabled}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
+          <div><label className={`block text-sm font-medium ${theme.text} mb-2`}>Icon</label><div className="flex flex-wrap gap-2">{PROGRAM_ICONS.map(iconObj => (<button key={iconObj.id} onClick={() => setProgramIcon(iconObj.id)} className={`p-2 rounded-lg ${programIcon === iconObj.id ? 'bg-amber-500 text-white' : theme.cardAlt}`} title={iconObj.name}><iconObj.Icon size={24} /></button>))}</div></div>
+          <button onClick={() => setStep('phases')} disabled={!programName} className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-amber-500 text-white' : theme.btnDisabled}`}>Next: {editingProgramId ? 'Edit' : 'Add'} Phases</button>
         </div>
       )}
 
@@ -4947,11 +4948,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   })()}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium shadow-md">
+                  <button onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }} className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium shadow-md">
                     <Edit3 size={14} /> Edit Days
                   </button>
-                  <button onClick={() => duplicatePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-purple-500/20`} title="Duplicate Phase"><Copy size={16} className="text-purple-500" /></button>
-                  <button onClick={() => removePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-red-500/20`} title="Delete Phase"><Trash2 size={16} className="text-red-500" /></button>
+                  <button onClick={() => duplicatePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-sage-600/20`} title="Duplicate Phase"><Copy size={16} className="text-sage-500" /></button>
+                  <button onClick={() => removePhase(idx)} className={`p-2 rounded-lg ${theme.cardAlt} hover:bg-critical/20`} title="Delete Phase"><Trash2 size={16} className="text-critical" /></button>
                 </div>
               </div>
             </div>
@@ -5003,14 +5004,14 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                         !isCompatible
                           ? 'opacity-40 cursor-not-allowed ' + theme.cardAlt
                           : newPhaseProgression === model.id
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-amber-500 text-white'
                             : theme.chip
                       }`}
                     >
                       {model.Icon && <model.Icon size={18} className="mr-2" />}
                       <span className="text-sm font-medium">{model.name}</span>
                       {!isCompatible && (
-                        <span className="absolute top-1 right-1 text-xs text-red-400">✗</span>
+                        <span className="absolute top-1 right-1 text-xs text-critical">✗</span>
                       )}
                     </button>
                   );
@@ -5020,8 +5021,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 
               {/* Model-specific info */}
               {newPhaseProgression === 'undulatingDaily' && (
-                <div className={`mt-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/30`}>
-                  <p className={`text-xs text-blue-400 font-medium mb-1`}>🌊 DUP Day Types</p>
+                <div className={`mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30`}>
+                  <p className={`text-xs text-amber-400 font-medium mb-1`}>🌊 DUP Day Types</p>
                   <div className="flex flex-wrap gap-1">
                     {PROGRESSION_MODELS.undulatingDaily.dayTypes.map(dt => (
                       <span key={dt.id} className={`text-xs px-2 py-0.5 rounded-full bg-${dt.color}-500/20 text-${dt.color}-400`}>
@@ -5034,8 +5035,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               )}
 
               {newPhaseProgression === 'block' && (
-                <div className={`mt-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30`}>
-                  <p className={`text-xs text-yellow-400 font-medium mb-1`}>🧱 Creates 3 Separate Phases ({newPhaseWeeks} weeks total)</p>
+                <div className={`mt-2 p-2 rounded-lg bg-warning/10 border border-yellow-500/30`}>
+                  <p className={`text-xs text-warning font-medium mb-1`}>🧱 Creates 3 Separate Phases ({newPhaseWeeks} weeks total)</p>
                   <div className="flex flex-wrap gap-1">
                     {(() => {
                       const { accumWeeks, transWeeks, realWeeks } = PROGRESSION_MODELS.block.getBlockWeeks(newPhaseWeeks);
@@ -5055,8 +5056,8 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               )}
 
               {newPhaseProgression === 'conjugate' && (
-                <div className={`mt-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/30`}>
-                  <p className={`text-xs text-purple-400 font-medium mb-1`}>🔀 Conjugate Structure</p>
+                <div className={`mt-2 p-2 rounded-lg bg-sage-600/10 border border-purple-500/30`}>
+                  <p className={`text-xs text-sage-400 font-medium mb-1`}>🔀 Conjugate Structure</p>
                   <div className="flex flex-wrap gap-1">
                     {PROGRESSION_MODELS.conjugate.dayTypes.map(dt => (
                       <span key={dt.id} className={`text-xs px-2 py-0.5 rounded-full bg-${dt.color}-500/20 text-${dt.color}-400`}>
@@ -5071,10 +5072,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 
             {/* Compatibility warning */}
             {!isCompatibleCombo && (
-              <div className={`p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-2`}>
-                <AlertTriangle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
+              <div className={`p-3 rounded-lg bg-critical/10 border border-red-500/30 flex items-start gap-2`}>
+                <AlertTriangle size={16} className="text-critical mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className={`text-sm text-red-400 font-medium`}>Incompatible Combination</p>
+                  <p className={`text-sm text-critical font-medium`}>Incompatible Combination</p>
                   <p className={`text-xs ${theme.textMuted}`}>
                     {PROGRESSION_MODELS[newPhaseProgression].name} doesn't work with {TRAINING_TRACKS[newPhaseTrack].name} track.
                     Try: {compatibleModelsForTrack.map(m => m.name).join(', ')}
@@ -5086,12 +5087,12 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             <button
               onClick={addPhase}
               disabled={!newPhaseName || !isCompatibleCombo}
-              className={`w-full py-2 rounded-lg font-medium ${newPhaseName && isCompatibleCombo ? 'bg-green-500 text-white' : theme.btnDisabled}`}
+              className={`w-full py-2 rounded-lg font-medium ${newPhaseName && isCompatibleCombo ? 'bg-nominal text-white' : theme.btnDisabled}`}
             >
               <Plus size={18} className="inline mr-1" /> Add Phase
             </button>
           </div>
-          {phases.length > 0 && (<button onClick={() => setStep('review')} className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white">Review & Save Program</button>)}
+          {phases.length > 0 && (<button onClick={() => setStep('review')} className="w-full py-3 rounded-xl font-medium bg-amber-500 text-white">Review & Save Program</button>)}
         </div>
       )}
 
@@ -5103,9 +5104,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           <div className="flex gap-2">
             <button
               onClick={() => setShowSplitPicker(true)}
-              className="flex-1 py-2.5 px-4 rounded-lg bg-gray-600/50 hover:bg-gray-500/50 text-gray-200 text-sm font-medium flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 px-4 rounded-lg bg-slate-600/50 hover:bg-slate-500/50 text-slate-200 text-sm font-medium flex items-center justify-center gap-2"
             >
-              <Library size={16} className="text-blue-400" /> Apply Split Template
+              <Library size={16} className="text-amber-400" /> Apply Split Template
             </button>
           </div>
           
@@ -5121,9 +5122,9 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                 <div className="flex flex-wrap gap-2">
                   {muscleList.map(([muscle, sets]) => (
                     <span key={muscle} className={`text-xs px-2 py-1 rounded-full ${
-                      sets < 10 ? 'bg-yellow-500/20 text-yellow-500' : 
-                      sets > 20 ? 'bg-red-500/20 text-red-500' : 
-                      'bg-green-500/20 text-green-500'
+                      sets < 10 ? 'bg-warning/20 text-warning' : 
+                      sets > 20 ? 'bg-critical/20 text-critical' : 
+                      'bg-nominal/20 text-nominal'
                     }`}>
                       {muscle}: {sets}
                     </span>
@@ -5143,33 +5144,33 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             const TrackIcon = currentPhase.track && TRAINING_TRACKS[currentPhase.track]?.Icon;
             const ProgressionIcon = PROGRESSION_MODELS[currentPhase.progression]?.Icon;
             return (
-            <div className={`${theme.cardAlt} rounded-lg p-3 border-l-4 border-blue-500`}>
+            <div className={`${theme.cardAlt} rounded-lg p-3 border-l-4 border-amber-500`}>
               <div className="flex items-center gap-2 mb-2">
                 {currentPhase.track && TRAINING_TRACKS[currentPhase.track] && (
                   <span className={`text-xs px-2 py-1 rounded-full bg-${TRAINING_TRACKS[currentPhase.track].color}-500/20 text-${TRAINING_TRACKS[currentPhase.track].color}-400 font-medium flex items-center gap-1`}>
                     {TrackIcon && <TrackIcon size={12} />} {TRAINING_TRACKS[currentPhase.track].name}
                   </span>
                 )}
-                <span className={`text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1`}>
+                <span className={`text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium flex items-center gap-1`}>
                   {ProgressionIcon && <ProgressionIcon size={12} />} {PROGRESSION_MODELS[currentPhase.progression]?.name || 'Custom'}
                 </span>
               </div>
               <p className={`text-xs font-medium ${theme.text} mb-1`}>Week 1 Defaults</p>
               <div className="flex flex-wrap gap-3 text-xs">
                 {currentPhase.weeklyProgression[0].sets && (
-                  <span className={theme.textMuted}>Sets: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].sets}</span></span>
+                  <span className={theme.textMuted}>Sets: <span className="text-amber-500 font-medium">{currentPhase.weeklyProgression[0].sets}</span></span>
                 )}
                 {currentPhase.weeklyProgression[0].reps && (
-                  <span className={theme.textMuted}>Reps: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].reps}</span></span>
+                  <span className={theme.textMuted}>Reps: <span className="text-amber-500 font-medium">{currentPhase.weeklyProgression[0].reps}</span></span>
                 )}
                 {currentPhase.weeklyProgression[0].intensity && (
-                  <span className={theme.textMuted}>Intensity: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].intensity}%</span></span>
+                  <span className={theme.textMuted}>Intensity: <span className="text-amber-500 font-medium">{currentPhase.weeklyProgression[0].intensity}%</span></span>
                 )}
                 {currentPhase.weeklyProgression[0].rpe && (
-                  <span className={theme.textMuted}>RPE: <span className="text-blue-500 font-medium">{currentPhase.weeklyProgression[0].rpe}</span></span>
+                  <span className={theme.textMuted}>RPE: <span className="text-amber-500 font-medium">{currentPhase.weeklyProgression[0].rpe}</span></span>
                 )}
                 {currentPhase.weeklyProgression[0].focus && (
-                  <span className={theme.textMuted}>Focus: <span className="text-purple-500 font-medium">{currentPhase.weeklyProgression[0].focus}</span></span>
+                  <span className={theme.textMuted}>Focus: <span className="text-sage-500 font-medium">{currentPhase.weeklyProgression[0].focus}</span></span>
                 )}
               </div>
               <p className={`text-xs ${theme.textMuted} mt-1 italic`}>New exercises use these defaults. Weeks auto-progress per model.</p>
@@ -5196,10 +5197,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   {(day.type !== 'recovery' && (day.exercises?.length > 0 || day.type === 'cardio')) && (
                     <button
                       onClick={() => setShowCopyDayPicker({ sourceDayIdx: dayIdx })}
-                      className={`p-1 rounded ${theme.cardAlt} hover:bg-blue-500/20`}
+                      className={`p-1 rounded ${theme.cardAlt} hover:bg-amber-500/20`}
                       title="Copy to another day"
                     >
-                      <Copy size={14} className="text-blue-500" />
+                      <Copy size={14} className="text-amber-500" />
                     </button>
                   )}
                 </div>
@@ -5287,38 +5288,38 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                           <div key={ex.id} className={`${theme.cardAlt} rounded-lg p-3 ${isInGroup ? `border-l-4 ${groupColor}` : ''} ${isInGroup && !isLastInGroup ? 'mb-0 rounded-b-none' : ''} ${isInGroup && !isFirstInGroup ? 'mt-0 rounded-t-none border-t border-dashed' : ''}`}>
                             {/* Group Header */}
                             {isFirstInGroup && (
-                              <div className={`text-xs font-medium mb-2 flex items-center justify-between ${ex.groupType === 'superset' ? 'text-orange-500' : 'text-purple-500'}`}>
+                              <div className={`text-xs font-medium mb-2 flex items-center justify-between ${ex.groupType === 'superset' ? 'text-amber-500' : 'text-sage-500'}`}>
                                 <span>{ex.groupType === 'superset' ? '⚡ Superset' : '🔄 Circuit'}</span>
                                 <button onClick={() => removeFromGroup(dayIdx, exIdx)} className="text-xs opacity-70 hover:opacity-100">Remove grouping</button>
                               </div>
                             )}
                             
                             <div className="flex items-center justify-between mb-2">
-                              <button onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })} className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-blue-500'}`}>{ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}</button>
+                              <button onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })} className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-amber-500'}`}>{ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}</button>
                               <div className="flex gap-1">
                                 {ex.exerciseId && !isInGroup && (
                                   <>
-                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'superset')} className={`p-1 ${theme.iconMuted} hover:text-orange-500`} title="Start Superset"><Zap size={14} /></button>
-                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.iconMuted} hover:text-purple-500`} title="Start Circuit"><RefreshCw size={14} /></button>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'superset')} className={`p-1 ${theme.iconMuted} hover:text-amber-500`} title="Start Superset"><Zap size={14} /></button>
+                                    <button onClick={() => createExerciseGroup(dayIdx, exIdx, 'circuit')} className={`p-1 ${theme.iconMuted} hover:text-sage-500`} title="Start Circuit"><RefreshCw size={14} /></button>
                                   </>
                                 )}
                                 {ex.exerciseId && (
                                   <button
                                     onClick={() => setShowConditionalEditor({ dayIdx, exIdx })}
-                                    className={`p-1 ${ex.conditional ? 'text-yellow-500' : theme.iconMuted} hover:text-yellow-500`}
+                                    className={`p-1 ${ex.conditional ? 'text-warning' : theme.iconMuted} hover:text-warning`}
                                     title="Conditional Logic"
                                   >
                                     <GitBranch size={14} />
                                   </button>
                                 )}
-                                {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.iconMuted} hover:text-blue-500`} title="Swap"><RotateCcw size={14} /></button>)}
-                                <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500"><Trash2 size={14} /></button>
+                                {ex.exerciseId && (<button onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })} className={`p-1 ${theme.iconMuted} hover:text-amber-500`} title="Swap"><RotateCcw size={14} /></button>)}
+                                <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-critical"><Trash2 size={14} /></button>
                               </div>
                             </div>
                             
                             {/* Conditional Badge */}
                             {ex.conditional && (
-                              <div className="mb-2 text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded flex items-center gap-1">
+                              <div className="mb-2 text-xs bg-warning/20 text-warning px-2 py-1 rounded flex items-center gap-1">
                                 <GitBranch size={12} />
                                 <span>If {ex.conditional.condition}: {ex.conditional.action}</span>
                               </div>
@@ -5330,13 +5331,13 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                                 <label className={theme.textMuted}>Reps</label>
                                 <div className="flex gap-1">
                                   {ex.isAmrap ? (
-                                    <span className={`flex-1 p-1 rounded ${theme.input} text-center font-medium text-green-500`}>AMRAP</span>
+                                    <span className={`flex-1 p-1 rounded ${theme.input} text-center font-medium text-nominal`}>AMRAP</span>
                                   ) : (
                                     <input type="text" value={ex.reps} onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })} className={`flex-1 p-1 rounded ${theme.input} min-w-0`} />
                                   )}
                                   <button 
                                     onClick={() => updateExercise(dayIdx, exIdx, { isAmrap: !ex.isAmrap })}
-                                    className={`px-1 rounded text-[10px] font-bold ${ex.isAmrap ? 'bg-green-500 text-white' : theme.cardAlt}`}
+                                    className={`px-1 rounded text-[10px] font-bold ${ex.isAmrap ? 'bg-nominal text-white' : theme.cardAlt}`}
                                     title="As Many Reps As Possible"
                                   >
                                     ∞
@@ -5350,7 +5351,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                                   const target = getTargetWeight(ex.exerciseId, ex.intensity);
                                   if (!target) return null;
                                   return (
-                                    <p className="text-[10px] text-green-500 mt-0.5 font-medium">
+                                    <p className="text-[10px] text-nominal mt-0.5 font-medium">
                                       ≈ {target.weight} {target.unit}
                                     </p>
                                   );
@@ -5404,7 +5405,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                             {isLastInGroup && (
                               <button 
                                 onClick={() => addToGroup(dayIdx, ex.groupId, ex.groupType)}
-                                className={`w-full mt-2 py-1 text-xs border border-dashed rounded ${ex.groupType === 'superset' ? 'border-orange-500/50 text-orange-500' : 'border-purple-500/50 text-purple-500'}`}
+                                className={`w-full mt-2 py-1 text-xs border border-dashed rounded ${ex.groupType === 'superset' ? 'border-orange-500/50 text-amber-500' : 'border-purple-500/50 text-sage-500'}`}
                               >
                                 + Add to {ex.groupType}
                               </button>
@@ -5419,7 +5420,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               )}
             </div>
           ))}
-          <button onClick={() => setStep('phases')} className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white">Save Template</button>
+          <button onClick={() => setStep('phases')} className="w-full py-3 rounded-xl font-medium bg-amber-500 text-white">Save Template</button>
         </div>
       )}
 
@@ -5438,7 +5439,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             </div>
           )}
           <div className={`${theme.card} rounded-xl p-5`}>
-            <div className="flex items-center gap-3 mb-4">{(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={40} className="text-blue-500" />; })()}<div><h4 className={`text-xl font-bold ${theme.text}`}>{programName}</h4><p className={`text-sm ${theme.textMuted}`}>{programDescription}</p></div></div>
+            <div className="flex items-center gap-3 mb-4">{(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={40} className="text-amber-500" />; })()}<div><h4 className={`text-xl font-bold ${theme.text}`}>{programName}</h4><p className={`text-sm ${theme.textMuted}`}>{programDescription}</p></div></div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{totalWeeks}</p><p className={`text-xs ${theme.textMuted}`}>Total Weeks</p></div>
               <div className={`${theme.cardAlt} rounded-lg p-3 text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{phases.length}</p><p className={`text-xs ${theme.textMuted}`}>Phases</p></div>
@@ -5464,7 +5465,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           
           <div className="flex gap-3">
             <button onClick={() => setStep('phases')} className={`flex-1 py-3 rounded-xl font-medium ${theme.cardAlt} ${theme.text}`}>Edit</button>
-            <button onClick={saveProgram} className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white">
+            <button onClick={saveProgram} className="flex-1 py-3 rounded-xl font-medium bg-nominal text-white">
               {editingProgramId ? 'Update Program' : 'Save Program'}
             </button>
           </div>
@@ -5478,7 +5479,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               <div>
                 <h3 className={`font-bold ${theme.text}`}>Select Exercise</h3>
                 {suggestedPatterns && (
-                  <p className={`text-xs text-blue-500`}>
+                  <p className={`text-xs text-amber-500`}>
                     ★ Suggested for {currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx]?.session || currentPhase?.weeklyTemplate?.[showExercisePicker.dayIdx]?.dayName}
                   </p>
                 )}
@@ -5489,30 +5490,30 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
 
             {/* Movement Pattern Filter */}
             <div className="flex flex-wrap gap-2 mb-3">
-              <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
+              <button onClick={() => setExerciseFilter('all')} className={`px-3 py-1.5 rounded-full text-sm font-medium ${exerciseFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>All</button>
               {Object.values(MOVEMENT_PATTERNS).filter(p => p.id !== 'cardio' && p.id !== 'mobility').map(pattern => (
-                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}><pattern.Icon size={14} /> {pattern.name}</button>
+                <button key={pattern.id} onClick={() => setExerciseFilter(pattern.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 ${exerciseFilter === pattern.id ? 'bg-amber-500 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}><pattern.Icon size={14} /> {pattern.name}</button>
               ))}
             </div>
 
             {/* Muscle Group Filter */}
             <div className="flex flex-wrap gap-2 mb-3">
               <span className={`text-sm font-medium ${theme.text} self-center mr-1`}>Muscles:</span>
-              <button onClick={() => setMuscleFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${muscleFilter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
+              <button onClick={() => setMuscleFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${muscleFilter === 'all' ? 'bg-sage-600 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>All</button>
               {suggestedMuscles && suggestedMuscles.map(muscle => (
-                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/40'}`}>★ {muscle}</button>
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-sage-600 text-white' : 'bg-sage-600/30 text-purple-300 hover:bg-sage-600/40'}`}>★ {muscle}</button>
               ))}
               {MUSCLE_FILTER_OPTIONS.filter(m => !suggestedMuscles?.includes(m)).slice(0, 12).map(muscle => (
-                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-purple-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{muscle}</button>
+                <button key={muscle} onClick={() => setMuscleFilter(muscle)} className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${muscleFilter === muscle ? 'bg-sage-600 text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>{muscle}</button>
               ))}
             </div>
 
             {/* Equipment Filter */}
             <div className="flex flex-wrap gap-2 mb-4">
               <span className={`text-sm font-medium ${theme.text} self-center mr-1`}>Equipment:</span>
-              <button onClick={() => setEquipmentFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>All</button>
+              <button onClick={() => setEquipmentFilter('all')} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === 'all' ? 'bg-nominal text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>All</button>
               {EQUIPMENT_OPTIONS.map(eq => (
-                <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === eq ? 'bg-green-500 text-white' : 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50'}`}>{eq}</button>
+                <button key={eq} onClick={() => setEquipmentFilter(eq)} className={`px-2.5 py-1 rounded-full text-xs font-medium ${equipmentFilter === eq ? 'bg-nominal text-white' : 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50'}`}>{eq}</button>
               ))}
             </div>
 
@@ -5526,19 +5527,19 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   const categoryPriority = suggestedCategories?.indexOf(ex.category);
                   const isTopCategory = categoryPriority === 0; // First in recommended list (e.g., competition in Realization)
                   return (
-                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left hover:bg-gray-700/50 ${isSuggested ? 'border-l-4 border-blue-500' : ''} ${isTopCategory ? 'border-l-4 border-yellow-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
+                    <button key={ex.id} onClick={() => selectExercise(ex.id)} className={`w-full p-3 ${theme.card} rounded-lg text-left hover:bg-slate-700/50 ${isSuggested ? 'border-l-4 border-amber-500' : ''} ${isTopCategory ? 'border-l-4 border-yellow-500' : ''} ${ex.isCustom ? 'border-r-4 border-green-500' : ''}`}>
                       <p className={`font-medium ${theme.text} flex items-center gap-1`}>
-                        {isSuggested && !isTopCategory && <span className="text-blue-400">★</span>}
-                        {isTopCategory && <span className="text-yellow-400">★</span>}
+                        {isSuggested && !isTopCategory && <span className="text-amber-400">★</span>}
+                        {isTopCategory && <span className="text-warning">★</span>}
                         <span>{ex.name}</span>
-                        {ex.isCustom && <span className="ml-2 text-xs text-green-400">(Custom)</span>}
+                        {ex.isCustom && <span className="ml-2 text-xs text-sage-400">(Custom)</span>}
                         {isTopCategory && currentPhase?.blockId && (
-                          <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                          <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-warning/20 text-warning">
                             {ex.category === 'competition' ? '🏆 Competition' : ex.category === 'gpp' ? '🔧 GPP' : ex.category}
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-gray-400">{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
+                      <p className="text-sm text-slate-400">{MOVEMENT_PATTERNS[ex.pattern]?.name} • {ex.muscles?.slice(0, 3).join(', ')}</p>
                     </button>
                   );
                 })
@@ -5570,11 +5571,11 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                 <button
                   key={split.id}
                   onClick={() => applySplitTemplate(split.id)}
-                  className={`w-full p-4 ${theme.cardAlt} rounded-xl text-left hover:border-blue-500 border-2 border-transparent`}
+                  className={`w-full p-4 ${theme.cardAlt} rounded-xl text-left hover:border-amber-500 border-2 border-transparent`}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                      {split.Icon && <split.Icon size={20} className="text-blue-500" />}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                      {split.Icon && <split.Icon size={20} className="text-amber-500" />}
                     </div>
                     <div>
                       <p className={`font-bold ${theme.text}`}>{split.name}</p>
@@ -5584,10 +5585,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   <div className="flex flex-wrap gap-1 mt-2">
                     {split.days.map((day, i) => (
                       <span key={i} className={`text-xs px-2 py-0.5 rounded ${
-                        day.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
-                        day.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
-                        day.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-gray-500/20 text-gray-400'
+                        day.type === 'strength' ? 'bg-amber-500/20 text-amber-400' :
+                        day.type === 'cardio' ? 'bg-critical/20 text-critical' :
+                        day.type === 'muscular_endurance' ? 'bg-amber-500/20 text-amber-400' :
+                        'bg-slate-500/20 text-slate-400'
                       }`}>
                         {day.dayName}
                       </span>
@@ -5620,7 +5621,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   <button
                     key={idx}
                     onClick={() => copyDayTo(showCopyDayPicker.sourceDayIdx, idx)}
-                    className={`w-full p-3 ${theme.cardAlt} rounded-lg text-left hover:bg-blue-500/20`}
+                    className={`w-full p-3 ${theme.cardAlt} rounded-lg text-left hover:bg-amber-500/20`}
                   >
                     <p className={`font-medium ${theme.text}`}>{day.dayName}</p>
                     <p className={`text-xs ${theme.textMuted}`}>
@@ -5647,7 +5648,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             {/* Header */}
             <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
               <div className="flex items-center gap-3">
-                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-blue-500" />; })()}
+                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-amber-500" />; })()}
                 <div>
                   <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
                   <p className={`text-xs ${theme.textMuted}`}>Preview Mode</p>
@@ -5702,17 +5703,17 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                         )}
                       </div>
                       <div className="flex flex-wrap gap-4 text-sm">
-                        <span className={theme.text}>Intensity: <span className="text-blue-400">{weekData.progression.intensity || weekData.track?.baseIntensity}%</span></span>
-                        <span className={theme.text}>Sets: <span className="text-blue-400">{weekData.progression.sets || weekData.track?.baseSets}</span></span>
-                        <span className={theme.text}>Reps: <span className="text-blue-400">{weekData.progression.reps || weekData.track?.baseReps}</span></span>
+                        <span className={theme.text}>Intensity: <span className="text-amber-400">{weekData.progression.intensity || weekData.track?.baseIntensity}%</span></span>
+                        <span className={theme.text}>Sets: <span className="text-amber-400">{weekData.progression.sets || weekData.track?.baseSets}</span></span>
+                        <span className={theme.text}>Reps: <span className="text-amber-400">{weekData.progression.reps || weekData.track?.baseReps}</span></span>
                         {(weekData.progression.rpe || weekData.track?.baseRpe) && (
-                          <span className={theme.text}>RPE: <span className="text-blue-400">{weekData.progression.rpe || weekData.track?.baseRpe}</span></span>
+                          <span className={theme.text}>RPE: <span className="text-amber-400">{weekData.progression.rpe || weekData.track?.baseRpe}</span></span>
                         )}
                         {weekData.progression.focus && (
-                          <span className={theme.text}>Focus: <span className="text-purple-400">{weekData.progression.focus}</span></span>
+                          <span className={theme.text}>Focus: <span className="text-sage-400">{weekData.progression.focus}</span></span>
                         )}
                         {weekData.progression.isDeload && (
-                          <span className="text-green-400 font-medium">🔄 Deload Week</span>
+                          <span className="text-sage-400 font-medium">🔄 Deload Week</span>
                         )}
                       </div>
                       {/* Block periodization phase info */}
@@ -5757,10 +5758,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                             )}
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            day.type === 'strength' ? 'bg-red-500/20 text-red-400' :
-                            day.type === 'cardio' ? 'bg-blue-500/20 text-blue-400' :
-                            day.type === 'recovery' ? 'bg-green-500/20 text-green-400' :
-                            'bg-gray-500/20 text-gray-400'
+                            day.type === 'strength' ? 'bg-critical/20 text-critical' :
+                            day.type === 'cardio' ? 'bg-amber-500/20 text-amber-400' :
+                            day.type === 'recovery' ? 'bg-nominal/20 text-sage-400' :
+                            'bg-slate-500/20 text-slate-400'
                           }`}>
                             {day.type}
                           </span>
@@ -5823,7 +5824,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                       <button
                         key={idx}
                         onClick={() => setPreviewWeek(phase.weeksRange[0])}
-                        className={`w-full p-2 rounded-lg text-left ${isCurrentPhase ? 'bg-blue-500/20 border border-blue-500' : theme.cardAlt}`}
+                        className={`w-full p-2 rounded-lg text-left ${isCurrentPhase ? 'bg-amber-500/20 border border-amber-500' : theme.cardAlt}`}
                       >
                         <div className="flex justify-between">
                           <span className={theme.text}>{phase.name}</span>
@@ -5846,7 +5847,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
             {/* Header */}
             <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
               <div className="flex items-center gap-3">
-                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-blue-500" />; })()}
+                {(() => { const PIcon = getProgramIcon(programIcon); return <PIcon size={24} className="text-amber-500" />; })()}
                 <div>
                   <h2 className={`font-bold ${theme.text}`}>{programName}</h2>
                   <p className={`text-xs ${theme.textMuted}`}>Calendar Preview • {totalWeeks} weeks</p>
@@ -5880,15 +5881,15 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                             <div className="flex items-center gap-2 mb-1">
                               <button 
                                 onClick={() => setShowWeekOverride({ phaseIdx, weekNum })}
-                                className={`text-xs font-medium ${theme.textMuted} w-12 hover:text-blue-500 text-left`}
+                                className={`text-xs font-medium ${theme.textMuted} w-12 hover:text-amber-500 text-left`}
                               >
                                 Wk {weekNum}
                               </button>
-                              {weekProg.isDeload && <span className="text-xs px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded">Deload</span>}
-                              {hasOverrides && <span className="text-xs px-1.5 py-0.5 bg-yellow-500/20 text-yellow-500 rounded">Modified</span>}
+                              {weekProg.isDeload && <span className="text-xs px-1.5 py-0.5 bg-nominal/20 text-nominal rounded">Deload</span>}
+                              {hasOverrides && <span className="text-xs px-1.5 py-0.5 bg-warning/20 text-warning rounded">Modified</span>}
                               <button 
                                 onClick={() => setShowWeekOverride({ phaseIdx, weekNum })}
-                                className={`text-xs ${theme.textMuted} hover:text-blue-500 ml-auto`}
+                                className={`text-xs ${theme.textMuted} hover:text-amber-500 ml-auto`}
                               >
                                 <Edit3 size={12} />
                               </button>
@@ -5901,10 +5902,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                                   <div 
                                     key={dayIdx}
                                     className={`p-1.5 rounded text-center text-xs ${
-                                      dayData.type === 'strength' ? 'bg-blue-500/20 text-blue-400' :
-                                      dayData.type === 'cardio' ? 'bg-red-500/20 text-red-400' :
-                                      dayData.type === 'muscular_endurance' ? 'bg-orange-500/20 text-orange-400' :
-                                      dayData.type === 'mobility' ? 'bg-purple-500/20 text-purple-400' :
+                                      dayData.type === 'strength' ? 'bg-amber-500/20 text-amber-400' :
+                                      dayData.type === 'cardio' ? 'bg-critical/20 text-critical' :
+                                      dayData.type === 'muscular_endurance' ? 'bg-amber-500/20 text-amber-400' :
+                                      dayData.type === 'mobility' ? 'bg-sage-600/20 text-sage-400' :
                                       `${theme.cardAlt} ${theme.textMuted}`
                                     } ${isOverridden ? 'ring-2 ring-yellow-500' : ''}`}
                                     title={`${dayData.dayName}: ${dayData.session || dayData.type}${isOverridden ? ' (Modified)' : ''}`}
@@ -5931,10 +5932,10 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               <div className={`mt-4 ${theme.cardAlt} rounded-lg p-3`}>
                 <p className={`text-xs font-medium ${theme.textMuted} mb-2`}>Legend</p>
                 <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500/30"></span> Strength</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/30"></span> Cardio</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-500/30"></span> Muscular End.</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500/30"></span> Mobility</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/30"></span> Strength</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-critical/30"></span> Cardio</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/30"></span> Muscular End.</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-sage-600/30"></span> Mobility</span>
                   <span className="flex items-center gap-1"><span className={`w-3 h-3 rounded ${theme.cardAlt}`}></span> Rest</span>
                 </div>
               </div>
@@ -5973,7 +5974,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                       {override && (
                         <button 
                           onClick={() => clearWeekOverride(showWeekOverride.phaseIdx, showWeekOverride.weekNum, dayIdx)}
-                          className="text-xs text-red-500 hover:underline"
+                          className="text-xs text-critical hover:underline"
                         >
                           Reset to template
                         </button>
@@ -6074,7 +6075,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
               return (
                 <>
                   <h3 className={`font-bold text-lg ${theme.text} mb-2`}>
-                    <GitBranch size={20} className="inline mr-2 text-yellow-500" />
+                    <GitBranch size={20} className="inline mr-2 text-warning" />
                     Conditional Logic
                   </h3>
                   <p className={`text-sm ${theme.textMuted} mb-4`}>
@@ -6135,7 +6136,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                     {exercise.conditional && (
                       <button 
                         onClick={() => { updateExercise(dayIdx, exIdx, { conditional: null }); setShowConditionalEditor(null); }}
-                        className="flex-1 py-2 rounded-lg bg-red-500/20 text-red-500"
+                        className="flex-1 py-2 rounded-lg bg-critical/20 text-critical"
                       >
                         Remove Rule
                       </button>
@@ -6168,17 +6169,17 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
   
   const getTypeColor = (type) => {
     const colors = {
-      strength: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      aerobic: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      cardio: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      conditioning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-      threshold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-      long_effort: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-      recovery: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      rest: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-      muscular_endurance: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+      strength: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-critical',
+      aerobic: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-amber-400',
+      cardio: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-amber-400',
+      conditioning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-amber-400',
+      threshold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-warning',
+      long_effort: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-sage-400',
+      recovery: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-sage-400',
+      rest: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+      muscular_endurance: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-amber-400'
     };
-    return colors[type] || 'bg-gray-100 text-gray-600';
+    return colors[type] || 'bg-slate-100 text-slate-600';
   };
 
   // Get detours - use program-specific if available, otherwise use universal
@@ -6195,13 +6196,13 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
         {/* Header */}
         <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-              <RenderIcon icon={program.iconId || program.icon} Icon={program.Icon} size={24} className="text-blue-500" />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+              <RenderIcon icon={program.iconId || program.icon} Icon={program.Icon} size={24} className="text-amber-500" />
             </div>
             <div>
               <h2 className={`font-bold text-lg ${theme.text}`}>{program.name}</h2>
               {program.isTemplate && (
-                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">Template</span>
+                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-sage-400 text-xs rounded-full">Template</span>
               )}
             </div>
           </div>
@@ -6252,10 +6253,10 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
                   >
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        idx === 0 ? 'bg-blue-500 text-white' :
-                        idx === 1 ? 'bg-green-500 text-white' :
-                        idx === 2 ? 'bg-orange-500 text-white' :
-                        'bg-gray-500 text-white'
+                        idx === 0 ? 'bg-amber-500 text-white' :
+                        idx === 1 ? 'bg-nominal text-white' :
+                        idx === 2 ? 'bg-amber-500 text-white' :
+                        'bg-slate-500 text-white'
                       }`}>{idx + 1}</span>
                       <div>
                         <p className={`font-semibold ${theme.text}`}>{phase.name}</p>
@@ -6278,7 +6279,7 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
                         <div className="mb-4">
                           <p className={`text-xs font-semibold ${theme.textMuted} uppercase mb-2`}>Exit Criteria</p>
                           <ul className={`text-sm ${theme.text} space-y-1`}>
-                            {phase.exitCriteria.map((c, i) => <li key={i} className="flex items-start gap-2"><Target size={14} className="text-green-500 mt-0.5 flex-shrink-0" />{c}</li>)}
+                            {phase.exitCriteria.map((c, i) => <li key={i} className="flex items-start gap-2"><Target size={14} className="text-nominal mt-0.5 flex-shrink-0" />{c}</li>)}
                           </ul>
                         </div>
                       )}
@@ -6351,8 +6352,8 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
                         )}
                         {block.sacrifice?.length > 0 && (
                           <div>
-                            <p className={`text-xs font-semibold text-red-500 uppercase mb-1`}>⚠️ Sacrifices</p>
-                            <ul className={`text-sm text-red-600 dark:text-red-400`}>
+                            <p className={`text-xs font-semibold text-critical uppercase mb-1`}>⚠️ Sacrifices</p>
+                            <ul className={`text-sm text-red-600 dark:text-critical`}>
                               {block.sacrifice.map((s, i) => <li key={i}>• {s}</li>)}
                             </ul>
                           </div>
@@ -6428,11 +6429,11 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
               Close
             </button>
             {isActive ? (
-              <span className="flex-1 py-3 rounded-xl font-medium text-center text-green-500 bg-green-50 dark:bg-green-900/20">
+              <span className="flex-1 py-3 rounded-xl font-medium text-center text-nominal bg-green-50 dark:bg-green-900/20">
                 ✓ Active
               </span>
             ) : (
-              <button onClick={onActivate} className="flex-1 py-3 rounded-xl font-medium bg-blue-500 text-white hover:bg-blue-600">
+              <button onClick={onActivate} className="flex-1 py-3 rounded-xl font-medium bg-amber-500 text-white hover:bg-amber-600">
                 Activate Program
               </button>
             )}
@@ -6468,12 +6469,12 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
     : life.filter(b => b.category === categoryFilter);
 
   const categoryColors = {
-    strength: 'bg-red-500/20 text-red-500 border-red-500',
-    cardio: 'bg-blue-500/20 text-blue-500 border-blue-500',
-    endurance: 'bg-orange-500/20 text-orange-500 border-orange-500',
-    performance: 'bg-purple-500/20 text-purple-500 border-purple-500',
-    recovery: 'bg-green-500/20 text-green-500 border-green-500',
-    situational: 'bg-yellow-500/20 text-yellow-500 border-yellow-500',
+    strength: 'bg-critical/20 text-critical border-red-500',
+    cardio: 'bg-amber-500/20 text-amber-500 border-amber-500',
+    endurance: 'bg-amber-500/20 text-amber-500 border-orange-500',
+    performance: 'bg-sage-600/20 text-sage-500 border-purple-500',
+    recovery: 'bg-nominal/20 text-nominal border-green-500',
+    situational: 'bg-warning/20 text-warning border-yellow-500',
   };
 
   return (
@@ -6515,7 +6516,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
           {filteredSpecialty.length > 0 && (
             <div>
               <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
-                <Zap size={18} className="text-orange-500" />
+                <Zap size={18} className="text-amber-500" />
                 Specialty Blocks
                 <span className={`text-xs ${theme.textMuted}`}>({filteredSpecialty.length})</span>
               </h3>
@@ -6530,8 +6531,8 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
-                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-orange-500" />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-orange-100'}`}>
+                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-amber-500" />
                         </div>
                         <div>
                           <p className={`font-semibold ${theme.text}`}>{block.name}</p>
@@ -6560,8 +6561,8 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                         )}
                         {block.sacrifice?.length > 0 && (
                           <div>
-                            <p className={`text-xs font-semibold text-red-500 uppercase mb-1`}>⚠️ Sacrifices</p>
-                            <ul className={`text-sm text-red-600 dark:text-red-400`}>
+                            <p className={`text-xs font-semibold text-critical uppercase mb-1`}>⚠️ Sacrifices</p>
+                            <ul className={`text-sm text-red-600 dark:text-critical`}>
                               {block.sacrifice.map((s, i) => <li key={i}>• {s}</li>)}
                             </ul>
                           </div>
@@ -6576,7 +6577,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                         )}
                         <button
                           onClick={() => onSelect(block.id, 'specialty')}
-                          className="w-full mt-2 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium"
+                          className="w-full mt-2 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium"
                         >
                           Start {block.name}
                         </button>
@@ -6592,7 +6593,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
           {filteredLife.length > 0 && (
             <div>
               <h3 className={`font-semibold ${theme.text} mb-3 flex items-center gap-2`}>
-                <Heart size={18} className="text-green-500" />
+                <Heart size={18} className="text-nominal" />
                 Life Blocks
                 <span className={`text-xs ${theme.textMuted}`}>({filteredLife.length})</span>
               </h3>
@@ -6607,8 +6608,8 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                       className="w-full p-4 flex items-center justify-between text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
-                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-green-500" />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-nominal/20' : 'bg-green-100'}`}>
+                          <RenderIcon icon={block.icon} Icon={block.Icon} size={20} className="text-nominal" />
                         </div>
                         <div>
                           <p className={`font-semibold ${theme.text}`}>{block.name}</p>
@@ -6653,7 +6654,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
                         )}
                         <button
                           onClick={() => onSelect(block.id, 'life')}
-                          className="w-full mt-2 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium"
+                          className="w-full mt-2 py-2 bg-nominal hover:bg-sage-600 text-white rounded-lg font-medium"
                         >
                           Start {block.name}
                         </button>
@@ -6671,7 +6672,7 @@ const DetourPickerView = ({ program, onSelect, onClose, theme }) => {
               <p>No detours match the selected category.</p>
               <button
                 onClick={() => setCategoryFilter('all')}
-                className="mt-2 text-blue-500 underline"
+                className="mt-2 text-amber-500 underline"
               >
                 Show all detours
               </button>
@@ -6952,7 +6953,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
                 key={t.id}
                 onClick={() => { setTimerType(t.id); resetTimer(); }}
                 className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                  timerType === t.id ? 'bg-blue-500 text-white' : `${theme.cardAlt} ${theme.text}`
+                  timerType === t.id ? 'bg-amber-500 text-white' : `${theme.cardAlt} ${theme.text}`
                 }`}
               >
                 {t.label}
@@ -7076,23 +7077,23 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               : theme.cardAlt
           }`}>
             {timerType === 'interval' && (
-              <div className={`text-sm font-medium mb-2 ${intervalConfig.isRest ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-sm font-medium mb-2 ${intervalConfig.isRest ? 'text-nominal' : 'text-critical'}`}>
                 {intervalConfig.isRest ? '🌿 REST' : '🔥 WORK'} — Round {intervalConfig.currentRound}/{intervalConfig.rounds}
               </div>
             )}
             {timerType === 'emom' && mode === 'running' && (
-              <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+              <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-sage-400' : 'text-purple-600'}`}>
                 ⚡ EMOM — Minute {Math.floor(seconds / emomConfig.minuteLength) + 1}/{emomConfig.totalMinutes}
               </div>
             )}
             {timerType === 'amrap' && mode === 'running' && (
               <div className="mb-2">
-                <div className={`text-sm font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                <div className={`text-sm font-medium ${darkMode ? 'text-amber-400' : 'text-orange-600'}`}>
                   🔥 AMRAP — Rounds: {amrapConfig.roundCount}
                 </div>
                 <button 
                   onClick={() => { setAmrapConfig(c => ({ ...c, roundCount: c.roundCount + 1 })); playBeep('single'); }}
-                  className="mt-2 px-4 py-1 bg-orange-500 text-white rounded-lg text-sm font-medium"
+                  className="mt-2 px-4 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium"
                 >
                   + Round Complete
                 </button>
@@ -7107,25 +7108,25 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               }
             </div>
             {timerType === 'emom' && mode === 'running' && (
-              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
+              <div className="w-full bg-slate-600/50 rounded-full h-2 mt-4">
                 <div 
-                  className="h-2 rounded-full transition-all bg-purple-500"
+                  className="h-2 rounded-full transition-all bg-sage-600"
                   style={{ width: `${((seconds % emomConfig.minuteLength) / emomConfig.minuteLength) * 100}%` }}
                 />
               </div>
             )}
             {timerType === 'amrap' && mode === 'running' && (
-              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
+              <div className="w-full bg-slate-600/50 rounded-full h-2 mt-4">
                 <div 
-                  className="h-2 rounded-full transition-all bg-orange-500"
+                  className="h-2 rounded-full transition-all bg-amber-500"
                   style={{ width: `${((amrapConfig.totalTime - seconds) / amrapConfig.totalTime) * 100}%` }}
                 />
               </div>
             )}
             {(timerType === 'interval' || timerType === 'countdown') && mode === 'running' && (
-              <div className="w-full bg-gray-600/50 rounded-full h-2 mt-4">
+              <div className="w-full bg-slate-600/50 rounded-full h-2 mt-4">
                 <div 
-                  className={`h-2 rounded-full transition-all ${intervalConfig.isRest ? 'bg-green-500' : 'bg-blue-500'}`}
+                  className={`h-2 rounded-full transition-all ${intervalConfig.isRest ? 'bg-nominal' : 'bg-amber-500'}`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -7137,7 +7138,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
             {mode === 'stopped' && (
               <button
                 onClick={startTimer}
-                className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-nominal hover:bg-sage-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
               >
                 <PlayCircle size={20} /> Start
               </button>
@@ -7154,7 +7155,7 @@ const WorkoutTimer = ({ theme, darkMode, workoutType }) => {
               <>
                 <button
                   onClick={startTimer}
-                  className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-nominal hover:bg-sage-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
                 >
                   <PlayCircle size={20} /> Resume
                 </button>
@@ -7290,7 +7291,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
       muscular_endurance: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
       threshold: darkMode ? 'bg-amber-900/60 border-amber-700' : 'bg-amber-100 border-amber-300',
       recovery: darkMode ? 'bg-green-900/60 border-green-700' : 'bg-green-100 border-green-300',
-      rest: darkMode ? 'bg-gray-800/60 border-gray-600' : 'bg-gray-100 border-gray-300',
+      rest: darkMode ? 'bg-slate-800/60 border-slate-600' : 'bg-slate-100 border-gray-300',
     };
     return colors[type] || (darkMode ? 'bg-slate-700/60 border-slate-600' : 'bg-slate-100 border-slate-300');
   };
@@ -7318,9 +7319,9 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   
   // Get readiness color
   const getReadinessColor = (score) => {
-    if (score >= 70) return 'text-green-500';
-    if (score >= 50) return 'text-yellow-500';
-    return 'text-red-500';
+    if (score >= 70) return 'text-nominal';
+    if (score >= 50) return 'text-warning';
+    return 'text-critical';
   };
   
   // Render week view
@@ -7333,13 +7334,13 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
     const weekEndDate = getDateForProgramDay(weekNum, 7);
     
     return (
-      <div key={weekNum} className={`${theme.card} rounded-xl p-4 ${isCurrentWeek ? (darkMode ? 'ring-2 ring-blue-500' : 'ring-2 ring-blue-400') : ''}`}>
+      <div key={weekNum} className={`${theme.card} rounded-xl p-4 ${isCurrentWeek ? (darkMode ? 'ring-2 ring-amber-500' : 'ring-2 ring-blue-400') : ''}`}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="flex items-center gap-2">
               <h3 className={`font-bold ${theme.text}`}>Week {weekNum}</h3>
               {isCurrentWeek && (
-                <span className="px-2 py-0.5 text-xs font-medium bg-blue-500 text-white rounded-full">Current</span>
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-500 text-white rounded-full">Current</span>
               )}
             </div>
             <p className={`text-xs ${theme.textMuted}`}>{weekPhase?.name || 'Unknown Phase'}</p>
@@ -7350,7 +7351,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
             )}
           </div>
           <div className="text-right">
-            <p className={`text-lg font-bold ${stats.percentage === 100 ? 'text-green-500' : stats.percentage > 0 ? 'text-blue-500' : theme.textMuted}`}>
+            <p className={`text-lg font-bold ${stats.percentage === 100 ? 'text-nominal' : stats.percentage > 0 ? 'text-amber-500' : theme.textMuted}`}>
               {stats.percentage}%
             </p>
             <p className={`text-xs ${theme.textMuted}`}>{stats.completed}/{stats.planned} done</p>
@@ -7406,7 +7407,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
                       {getTypeLabel(workout.type)}
                     </span>
                     <div className="flex items-center gap-0.5 mt-0.5">
-                      {isCompleted && <CheckCircle2 size={12} className="text-green-500" />}
+                      {isCompleted && <CheckCircle2 size={12} className="text-nominal" />}
                       {dayReadiness && (
                         <span className={`text-[9px] font-bold ${getReadinessColor(dayReadiness.score)}`}>
                           {dayReadiness.score}
@@ -7595,7 +7596,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
                   <span className={`text-[8px] ${theme.textMuted}`}>{getTypeLabel(workout.type)}</span>
                 )}
                 {isCompleted && (
-                  <CheckCircle2 size={10} className="text-green-500 absolute bottom-0.5 right-0.5" />
+                  <CheckCircle2 size={10} className="text-nominal absolute bottom-0.5 right-0.5" />
                 )}
                 {dayReadiness && (
                   <span className={`text-[8px] absolute top-0.5 right-0.5 ${getReadinessColor(dayReadiness.score)}`}>
@@ -7610,7 +7611,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
         {/* Jump to today */}
         <button
           onClick={() => setSelectedMonth(new Date())}
-          className="w-full mt-3 py-2 text-sm text-blue-500 hover:text-blue-400"
+          className="w-full mt-3 py-2 text-sm text-amber-500 hover:text-amber-400"
         >
           ↩ Jump to today
         </button>
@@ -7661,7 +7662,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
             {selectedDayDetails.workoutLog ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-green-500" size={20} />
+                  <CheckCircle2 className="text-nominal" size={20} />
                   <span className={`font-medium ${theme.text}`}>Completed</span>
                 </div>
                 
@@ -7709,7 +7710,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
                   jumpToDay(selectedDayDetails.weekNum, selectedDayDetails.dayNum);
                   setSelectedDayDetails(null);
                 }}
-                className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg font-medium"
+                className="flex-1 py-2 px-4 bg-amber-500 text-white rounded-lg font-medium"
               >
                 Go to Workout
               </button>
@@ -7724,8 +7725,8 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
           <h2 className={`text-xl font-bold ${theme.text}`}>Calendar</h2>
           {calculateStreak.current > 0 && (
             <div className="flex items-center gap-1 mt-1">
-              <Flame size={14} className="text-orange-500" />
-              <span className={`text-sm font-medium text-orange-500`}>{calculateStreak.current} day streak</span>
+              <Flame size={14} className="text-amber-500" />
+              <span className={`text-sm font-medium text-amber-500`}>{calculateStreak.current} day streak</span>
               {calculateStreak.longest > calculateStreak.current && (
                 <span className={`text-xs ${theme.textMuted}`}>(best: {calculateStreak.longest})</span>
               )}
@@ -7737,7 +7738,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
             onClick={() => setViewMode('week')}
             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
               viewMode === 'week' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-amber-500 text-white' 
                 : `${theme.cardAlt} ${theme.text}`
             }`}
           >
@@ -7747,7 +7748,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
             onClick={() => setViewMode('month')}
             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
               viewMode === 'month' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-amber-500 text-white' 
                 : `${theme.cardAlt} ${theme.text}`
             }`}
           >
@@ -7757,7 +7758,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
             onClick={() => setViewMode('real')}
             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
               viewMode === 'real' 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-amber-500 text-white' 
                 : `${theme.cardAlt} ${theme.text}`
             }`}
           >
@@ -7798,7 +7799,7 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
       {viewMode !== 'real' && selectedWeek !== programState.currentWeek && (
         <button
           onClick={() => setSelectedWeek(programState.currentWeek)}
-          className="w-full py-2 text-sm text-blue-500 hover:text-blue-400"
+          className="w-full py-2 text-sm text-amber-500 hover:text-amber-400"
         >
           ↩ Jump to current week (Week {programState.currentWeek})
         </button>
@@ -7830,15 +7831,15 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
               <button
                 key={idx}
                 onClick={() => setSelectedWeek(p.weeks[0])}
-                className={`w-full text-left p-3 rounded-lg ${theme.cardAlt} ${isActive ? (darkMode ? 'ring-1 ring-blue-500' : 'ring-1 ring-blue-400') : ''}`}
+                className={`w-full text-left p-3 rounded-lg ${theme.cardAlt} ${isActive ? (darkMode ? 'ring-1 ring-amber-500' : 'ring-1 ring-blue-400') : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className={`font-medium ${theme.text}`}>{p.name}</span>
                   <span className={`text-xs ${theme.textMuted}`}>Weeks {p.weeks[0]}-{p.weeks[1]}</span>
                 </div>
-                <div className="w-full bg-gray-600/50 rounded-full h-1.5">
+                <div className="w-full bg-slate-600/50 rounded-full h-1.5">
                   <div
-                    className={`h-1.5 rounded-full ${isActive ? 'bg-blue-500' : progress === 100 ? 'bg-green-500' : 'bg-gray-500'}`}
+                    className={`h-1.5 rounded-full ${isActive ? 'bg-amber-500' : progress === 100 ? 'bg-nominal' : 'bg-slate-500'}`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -7924,7 +7925,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">⛰️</div>
-          <Loader className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
+          <Loader className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
         </div>
       </div>
     );
@@ -7934,8 +7935,8 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-sage-600/20 rounded-full blur-3xl" />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
@@ -7943,7 +7944,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
         <div className="text-center mb-8 animate-fadeIn">
           <div className="text-7xl mb-4">⛰️</div>
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Training Hub</h1>
-          <p className="text-blue-300/80 text-lg">Your Personal Training Companion</p>
+          <p className="text-amber-300/80 text-lg">Your Personal Training Companion</p>
         </div>
 
         {/* Welcome Back - Returning User */}
@@ -7954,7 +7955,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 <span className="text-3xl">{savedProfile.name?.charAt(0)?.toUpperCase() || '?'}</span>
               </div>
               <h2 className="text-2xl font-bold text-white mb-1">Welcome back!</h2>
-              <p className="text-blue-300/70 mb-6">{savedProfile.name}</p>
+              <p className="text-amber-300/70 mb-6">{savedProfile.name}</p>
 
               {savedProfile.hasBiometric && biometricAvailable ? (
                 <button
@@ -7981,13 +7982,13 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               )}
 
               {error && (
-                <p className="text-red-400 text-sm mt-4">{error}</p>
+                <p className="text-critical text-sm mt-4">{error}</p>
               )}
             </div>
 
             <button
               onClick={() => setStep('welcome')}
-              className="w-full py-3 text-blue-300/70 hover:text-white transition-colors text-sm"
+              className="w-full py-3 text-amber-300/70 hover:text-white transition-colors text-sm"
             >
               Not {savedProfile.name}? Switch profile
             </button>
@@ -7999,7 +8000,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
           <div className="w-full max-w-sm space-y-4 animate-fadeInUp">
             <div className="glass-dark rounded-3xl p-8">
               <h2 className="text-2xl font-bold text-white mb-2 text-center">Get Started</h2>
-              <p className="text-blue-300/70 text-center mb-6">Create your profile to begin training</p>
+              <p className="text-amber-300/70 text-center mb-6">Create your profile to begin training</p>
 
               <button
                 onClick={() => setStep('create')}
@@ -8014,7 +8015,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                   <div className="w-full border-t border-white/20"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-transparent text-blue-300/50">or</span>
+                  <span className="px-3 bg-transparent text-amber-300/50">or</span>
                 </div>
               </div>
 
@@ -8029,7 +8030,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               {savedProfile && (
                 <button
                   onClick={() => setStep('welcome-back')}
-                  className="w-full py-3 text-blue-300/70 hover:text-white transition-colors text-sm mt-3"
+                  className="w-full py-3 text-amber-300/70 hover:text-white transition-colors text-sm mt-3"
                 >
                   Sign in as {savedProfile.name}
                 </button>
@@ -8045,9 +8046,9 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
               ].map((feature, i) => (
                 <div key={i} className="glass-dark rounded-2xl p-4 text-center">
                   <div className="flex justify-center mb-1">
-                    <feature.Icon size={24} className="text-blue-400" />
+                    <feature.Icon size={24} className="text-amber-400" />
                   </div>
-                  <p className="text-xs text-blue-300/70">{feature.label}</p>
+                  <p className="text-xs text-amber-300/70">{feature.label}</p>
                 </div>
               ))}
             </div>
@@ -8060,7 +8061,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
-                className="text-blue-300/70 hover:text-white mb-4 flex items-center gap-1"
+                className="text-amber-300/70 hover:text-white mb-4 flex items-center gap-1"
               >
                 <ChevronLeft size={20} /> Back
               </button>
@@ -8069,13 +8070,13 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-blue-300/70 text-sm mb-2">Your Name</label>
+                  <label className="block text-amber-300/70 text-sm mb-2">Your Name</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
-                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     autoFocus
                   />
                 </div>
@@ -8083,15 +8084,15 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 {biometricAvailable && (
                   <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <Fingerprint className="text-blue-400" size={24} />
+                      <Fingerprint className="text-amber-400" size={24} />
                       <div>
                         <p className="text-white font-medium">Enable Face ID</p>
-                        <p className="text-blue-300/50 text-xs">Quick & secure login</p>
+                        <p className="text-amber-300/50 text-xs">Quick & secure login</p>
                       </div>
                     </div>
                     <button
                       onClick={() => setUseBiometric(!useBiometric)}
-                      className={`w-12 h-7 rounded-full transition-colors ${useBiometric ? 'bg-blue-500' : 'bg-white/20'}`}
+                      className={`w-12 h-7 rounded-full transition-colors ${useBiometric ? 'bg-amber-500' : 'bg-white/20'}`}
                     >
                       <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${useBiometric ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
@@ -8099,7 +8100,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                 )}
 
                 {error && (
-                  <p className="text-red-400 text-sm">{error}</p>
+                  <p className="text-critical text-sm">{error}</p>
                 )}
 
                 <button
@@ -8130,7 +8131,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
             <div className="glass-dark rounded-3xl p-8">
               <button
                 onClick={() => setStep('welcome')}
-                className="text-blue-300/70 hover:text-white mb-4 flex items-center gap-1"
+                className="text-amber-300/70 hover:text-white mb-4 flex items-center gap-1"
               >
                 <ChevronLeft size={20} /> Back
               </button>
@@ -8140,28 +8141,28 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
                   <Cloud size={32} className="text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Link Account</h2>
-                <p className="text-blue-300/70 text-sm">Enter your sync code to access your existing data on this device</p>
+                <p className="text-amber-300/70 text-sm">Enter your sync code to access your existing data on this device</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-blue-300/70 text-sm mb-2">Sync Code</label>
+                  <label className="block text-amber-300/70 text-sm mb-2">Sync Code</label>
                   <input
                     type="text"
                     value={syncCode}
                     onChange={(e) => setSyncCode(e.target.value)}
                     placeholder="e.g., john@email.com or my-sync-code"
-                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     autoFocus
                   />
                 </div>
 
-                <p className="text-blue-300/50 text-xs">
+                <p className="text-amber-300/50 text-xs">
                   💡 Find your sync code in Settings → Sync Code on your other device
                 </p>
 
                 {error && (
-                  <p className="text-red-400 text-sm">{error}</p>
+                  <p className="text-critical text-sm">{error}</p>
                 )}
 
                 <button
@@ -8189,7 +8190,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
 
       {/* Footer */}
       <div className="p-6 text-center relative z-10">
-        <p className="text-blue-300/40 text-xs">Training Hub v2.2 • Your data syncs securely to the cloud</p>
+        <p className="text-amber-300/40 text-xs">Training Hub v2.2 • Your data syncs securely to the cloud</p>
       </div>
     </div>
   );
@@ -8601,31 +8602,31 @@ export default function App() {
   }, [workoutLogs, athleteProfile, todayWorkout?.prescription?.exercises]);
 
   const theme = {
-    bg: darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-100 to-slate-200',
-    card: darkMode ? 'bg-gray-800/90 backdrop-blur-sm' : 'bg-white/80 backdrop-blur-sm shadow-lg shadow-slate-200/50',
-    cardAlt: darkMode ? 'bg-gray-700/80' : 'bg-slate-50/80',
+    bg: darkMode ? 'bg-near-black' : 'bg-gradient-to-br from-slate-100 to-slate-200',
+    card: darkMode ? 'bg-slate-800/90 backdrop-blur-sm' : 'bg-white/80 backdrop-blur-sm shadow-lg shadow-slate-200/50',
+    cardAlt: darkMode ? 'bg-slate-700/80' : 'bg-slate-50/80',
     cardHover: 'card-hover',
-    text: darkMode ? 'text-gray-100' : 'text-slate-800',
-    textMuted: darkMode ? 'text-gray-300' : 'text-slate-500',
-    textSubtle: darkMode ? 'text-gray-400' : 'text-slate-400',
-    textDisabled: darkMode ? 'text-gray-500' : 'text-slate-400',
-    border: darkMode ? 'border-gray-700/50' : 'border-slate-200/50',
-    input: darkMode ? 'bg-gray-700/80 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50' : 'bg-white/90 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50',
+    text: darkMode ? 'text-warm-white' : 'text-slate-800',
+    textMuted: darkMode ? 'text-slate-300' : 'text-slate-500',
+    textSubtle: darkMode ? 'text-slate-400' : 'text-slate-400',
+    textDisabled: darkMode ? 'text-slate-500' : 'text-slate-400',
+    border: darkMode ? 'border-slate-700/50' : 'border-slate-200/50',
+    input: darkMode ? 'bg-slate-700/80 border-slate-600 text-warm-white placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500/50' : 'bg-white/90 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500/50',
     header: darkMode ? 'glass-dark' : 'bg-gradient-to-r from-slate-800 to-slate-900',
     nav: darkMode ? 'glass-dark' : 'bg-white/90 backdrop-blur-xl border-slate-200/50 shadow-lg shadow-slate-200/20',
-    modal: darkMode ? 'bg-gray-800/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl shadow-2xl',
+    modal: darkMode ? 'bg-slate-800/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl shadow-2xl',
     modalBackdrop: 'modal-backdrop',
     glass: darkMode ? 'glass-dark' : 'glass-light',
     gradient: 'bg-gradient-to-r from-blue-500 to-purple-600',
     gradientText: 'gradient-text',
-    btnDisabled: darkMode ? 'bg-gray-700 text-gray-400' : 'bg-slate-200 text-slate-400',
+    btnDisabled: darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-400',
     // New high-contrast button styles for dark mode
-    btnSecondary: darkMode ? 'bg-gray-600/60 hover:bg-gray-500/60 text-gray-100' : 'bg-slate-100 hover:bg-slate-200 text-slate-700',
-    btnGhost: darkMode ? 'hover:bg-gray-700/50 text-gray-200' : 'hover:bg-slate-100 text-slate-600',
-    chip: darkMode ? 'bg-gray-600/50 text-gray-200 hover:bg-gray-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-    chipActive: 'bg-blue-500 text-white',
-    badge: darkMode ? 'bg-gray-600/60 text-gray-200' : 'bg-slate-100 text-slate-600',
-    iconMuted: darkMode ? 'text-gray-400' : 'text-slate-400',
+    btnSecondary: darkMode ? 'bg-slate-600/60 hover:bg-slate-500/60 text-warm-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700',
+    btnGhost: darkMode ? 'hover:bg-slate-700/50 text-slate-200' : 'hover:bg-slate-100 text-slate-600',
+    chip: darkMode ? 'bg-slate-600/50 text-slate-200 hover:bg-slate-500/50' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+    chipActive: 'bg-amber-500 text-white',
+    badge: darkMode ? 'bg-slate-600/60 text-slate-200' : 'bg-slate-100 text-slate-600',
+    iconMuted: darkMode ? 'text-slate-400' : 'text-slate-400',
   };
 
   // Handle linking account with sync code - loads cloud data then authenticates
@@ -8725,17 +8726,17 @@ export default function App() {
               </div>
             )}
             {/* Cloud Sync Status */}
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${syncStatus.syncing ? 'bg-blue-500/20' : isOffline ? 'bg-amber-500/20' : 'bg-green-500/20'}`}>
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${syncStatus.syncing ? 'bg-amber-500/20' : isOffline ? 'bg-amber-500/20' : 'bg-nominal/20'}`}>
               {syncStatus.syncing ? (
-                <Loader size={12} className="animate-spin text-blue-400" />
+                <Loader size={12} className="animate-spin text-amber-400" />
               ) : isOffline ? (
                 <CloudOff size={12} className="text-amber-400" />
               ) : (
-                <Cloud size={12} className="text-green-400" />
+                <Cloud size={12} className="text-sage-400" />
               )}
             </div>
             {readinessScore && (
-              <div className={`px-2.5 py-1 rounded-xl ${readinessScore >= 70 ? 'bg-green-500/20' : readinessScore >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}`}>
+              <div className={`px-2.5 py-1 rounded-xl ${readinessScore >= 70 ? 'bg-nominal/20' : readinessScore >= 50 ? 'bg-warning/20' : 'bg-critical/20'}`}>
                 <span className={`text-sm font-bold ${getReadinessColor(readinessScore)}`}>{readinessScore}</span>
               </div>
             )}
@@ -8754,10 +8755,10 @@ export default function App() {
           >
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: 'dashboard', label: 'Dashboard', icon: Home, bg: 'bg-blue-500/20', text: 'text-blue-500', ring: 'ring-blue-500/50', hover: 'hover:bg-blue-500/10' },
-                { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-green-500/20', text: 'text-green-500', ring: 'ring-green-500/50', hover: 'hover:bg-green-500/10' },
-                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-purple-500/20', text: 'text-purple-500', ring: 'ring-purple-500/50', hover: 'hover:bg-purple-500/10' },
-                { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-orange-500/20', text: 'text-orange-500', ring: 'ring-orange-500/50', hover: 'hover:bg-orange-500/10' },
+                { id: 'dashboard', label: 'Dashboard', icon: Home, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
+                { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-nominal/20', text: 'text-nominal', ring: 'ring-green-500/50', hover: 'hover:bg-nominal/10' },
+                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-sage-600/20', text: 'text-sage-500', ring: 'ring-purple-500/50', hover: 'hover:bg-sage-600/10' },
+                { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-orange-500/50', hover: 'hover:bg-amber-500/10' },
                 { id: 'charts', label: 'Charts', icon: LineChart, bg: 'bg-cyan-500/20', text: 'text-cyan-500', ring: 'ring-cyan-500/50', hover: 'hover:bg-cyan-500/10' },
                 { id: 'profile', label: 'Profile', icon: User, bg: 'bg-pink-500/20', text: 'text-pink-500', ring: 'ring-pink-500/50', hover: 'hover:bg-pink-500/10' },
                 { id: 'benchmarks', label: 'Benchmarks', icon: Flag, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
@@ -8795,7 +8796,7 @@ export default function App() {
               <div className={`p-4 rounded-2xl border-2 animate-fadeInUp ${activeDetour.blockType === 'specialty' ? 'border-orange-500 bg-gradient-to-br from-orange-500/20 to-orange-600/10' : 'border-green-500 bg-gradient-to-br from-green-500/20 to-green-600/10'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className={`text-xs uppercase font-semibold tracking-wider ${activeDetour.blockType === 'specialty' ? 'text-orange-500' : 'text-green-500'}`}>
+                    <p className={`text-xs uppercase font-semibold tracking-wider ${activeDetour.blockType === 'specialty' ? 'text-amber-500' : 'text-nominal'}`}>
                       {activeDetour.blockType === 'specialty' ? '⚡ Specialty Block' : '🛡️ Life Block'}
                     </p>
                     <p className={`font-bold text-lg ${theme.text}`}>{detourBlock.name}</p>
@@ -8870,7 +8871,7 @@ export default function App() {
             <button onClick={() => setFloatingPane('charts')} className={`w-full ${theme.card} rounded-2xl p-4 flex items-center justify-between card-hover group`}>
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 group-hover:scale-110 transition-transform">
-                  <LineChart size={22} className="text-blue-500" />
+                  <LineChart size={22} className="text-amber-500" />
                 </div>
                 <div className="text-left">
                   <p className={`font-semibold ${theme.text}`}>Charts & Trends</p>
@@ -8889,10 +8890,10 @@ export default function App() {
                 <div className={`${theme.card} rounded-2xl p-5`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Target size={18} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
+                      <Target size={18} className={darkMode ? 'text-sage-400' : 'text-purple-600'} />
                       <h3 className={`font-semibold ${theme.text}`}>Limiting Factors</h3>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${topFactors[0]?.severity === 'high' ? 'bg-red-500/20 text-red-500' : topFactors[0]?.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${topFactors[0]?.severity === 'high' ? 'bg-critical/20 text-critical' : topFactors[0]?.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-amber-500/20 text-amber-500'}`}>
                       {limitingFactors.length} found
                     </span>
                   </div>
@@ -8901,19 +8902,19 @@ export default function App() {
                       <div key={factor.id} className={`p-3 ${theme.cardAlt} rounded-xl`}>
                         <div className="flex items-start gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            factor.severity === 'high' ? (darkMode ? 'bg-red-500/20' : 'bg-red-100') :
+                            factor.severity === 'high' ? (darkMode ? 'bg-critical/20' : 'bg-red-100') :
                             factor.severity === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
-                            (darkMode ? 'bg-blue-500/20' : 'bg-blue-100')
+                            (darkMode ? 'bg-amber-500/20' : 'bg-blue-100')
                           }`}>
                             <RenderIcon icon={factor.icon} Icon={factor.Icon} size={18} className={
-                              factor.severity === 'high' ? 'text-red-500' :
-                              factor.severity === 'medium' ? 'text-amber-500' : 'text-blue-500'
+                              factor.severity === 'high' ? 'text-critical' :
+                              factor.severity === 'medium' ? 'text-amber-500' : 'text-amber-500'
                             } />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className={`font-medium ${theme.text}`}>{factor.title}</span>
-                              <span className={`text-xs px-1.5 py-0.5 rounded ${factor.severity === 'high' ? 'bg-red-500/20 text-red-500' : factor.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-gray-500/20 text-gray-400'}`}>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${factor.severity === 'high' ? 'bg-critical/20 text-critical' : factor.severity === 'medium' ? 'bg-amber-500/20 text-amber-500' : 'bg-slate-500/20 text-slate-400'}`}>
                                 {factor.metric}
                               </span>
                             </div>
@@ -8938,15 +8939,15 @@ export default function App() {
                 <div className={`${theme.card} rounded-2xl p-5`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <TrendingUp size={18} className={darkMode ? 'text-green-400' : 'text-green-600'} />
+                      <TrendingUp size={18} className={darkMode ? 'text-sage-400' : 'text-sage-600'} />
                       <h3 className={`font-semibold ${theme.text}`}>Progression Insights</h3>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       progressionOps[0]?.priority === 'high'
-                        ? 'bg-green-500/20 text-green-500'
+                        ? 'bg-nominal/20 text-nominal'
                         : progressionOps[0]?.priority === 'medium'
                           ? 'bg-amber-500/20 text-amber-500'
-                          : 'bg-blue-500/20 text-blue-500'
+                          : 'bg-amber-500/20 text-amber-500'
                     }`}>
                       {progressionOps.filter(p => p.priority === 'high').length} ready
                     </span>
@@ -8956,13 +8957,13 @@ export default function App() {
                       <div key={idx} className={`p-3 rounded-xl ${theme.cardAlt}`}>
                         <div className="flex items-start gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            op.priority === 'high' ? (darkMode ? 'bg-green-500/20' : 'bg-green-100') :
+                            op.priority === 'high' ? (darkMode ? 'bg-nominal/20' : 'bg-green-100') :
                             op.priority === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
-                            (darkMode ? 'bg-blue-500/20' : 'bg-blue-100')
+                            (darkMode ? 'bg-amber-500/20' : 'bg-blue-100')
                           }`}>
                             <RenderIcon icon={op.icon} Icon={op.Icon} size={18} className={
-                              op.priority === 'high' ? 'text-green-500' :
-                              op.priority === 'medium' ? 'text-amber-500' : 'text-blue-500'
+                              op.priority === 'high' ? 'text-nominal' :
+                              op.priority === 'medium' ? 'text-amber-500' : 'text-amber-500'
                             } />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -8970,10 +8971,10 @@ export default function App() {
                             <p className={`text-xs ${theme.textMuted} mt-0.5`}>{op.message}</p>
                             <p className={`text-xs mt-1 ${
                               op.priority === 'high'
-                                ? (darkMode ? 'text-green-400' : 'text-green-600')
+                                ? (darkMode ? 'text-sage-400' : 'text-sage-600')
                                 : op.priority === 'medium'
                                   ? (darkMode ? 'text-amber-400' : 'text-amber-600')
-                                  : (darkMode ? 'text-blue-400' : 'text-blue-600')
+                                  : (darkMode ? 'text-amber-400' : 'text-amber-600')
                             } font-medium`}>
                               → {op.recommendation}
                             </p>
@@ -9005,8 +9006,8 @@ export default function App() {
                       Detour
                     </button>
                   )}
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                    <RenderIcon icon={program?.icon} Icon={program?.Icon} size={28} className="text-blue-500" />
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                    <RenderIcon icon={program?.icon} Icon={program?.Icon} size={28} className="text-amber-500" />
                   </div>
                 </div>
               </div>
@@ -9035,7 +9036,7 @@ export default function App() {
                     <div className={`flex flex-wrap items-center gap-3 mt-3 text-sm ${theme.textMuted}`}>
                       <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-500/10"><Clock size={14} />{todayWorkout.duration} min</span>
                       <span className={`px-3 py-1 rounded-lg text-xs font-semibold text-white ${getTypeColor(todayWorkout.type, darkMode)}`}>{todayWorkout.type.replace('_', ' ')}</span>
-                      {todayLog?.completed && <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/20 text-green-500 font-medium"><CheckCircle2 size={14} />Done</span>}
+                      {todayLog?.completed && <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-nominal/20 text-nominal font-medium"><CheckCircle2 size={14} />Done</span>}
                     </div>
                     {readinessScore && readinessScore < 55 && todayWorkout.type !== 'recovery' && (
                       <p className={`text-xs ${darkMode ? 'text-amber-400' : 'text-amber-600'} mt-3 flex items-center gap-1`}>
@@ -9044,8 +9045,8 @@ export default function App() {
                     )}
                   </div>
                   <div className="ml-4">
-                    <div className={`p-3 rounded-xl ${theme.cardAlt} group-hover:bg-blue-500/20 transition-colors`}>
-                      <ChevronRight size={24} className={`${theme.textMuted} group-hover:text-blue-500 group-hover:translate-x-1 transition-all`} />
+                    <div className={`p-3 rounded-xl ${theme.cardAlt} group-hover:bg-amber-500/20 transition-colors`}>
+                      <ChevronRight size={24} className={`${theme.textMuted} group-hover:text-amber-500 group-hover:translate-x-1 transition-all`} />
                     </div>
                   </div>
                 </div>
@@ -9060,7 +9061,7 @@ export default function App() {
               </div>
               <div className="relative">
                 {/* Trail line connecting waypoints */}
-                <div className={`absolute left-[19px] top-6 bottom-6 w-0.5 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                <div className={`absolute left-[19px] top-6 bottom-6 w-0.5 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
                 <div className="space-y-2 relative">
                   {phase?.weeklyTemplate?.map((w, idx) => {
@@ -9079,14 +9080,14 @@ export default function App() {
                             ? 'bg-emerald-500'
                             : isCurrent
                               ? 'bg-cyan-500 ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-transparent'
-                              : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                              : darkMode ? 'bg-slate-600' : 'bg-slate-300'
                         }`}>
                           {logged ? (
                             <CheckCircle2 size={14} className="text-white" />
                           ) : isCurrent ? (
                             <Mountain size={12} className="text-white" />
                           ) : (
-                            <span className={`text-[10px] font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{w.day}</span>
+                            <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{w.day}</span>
                           )}
                         </div>
                         <span className={`flex-1 text-sm font-medium ${isCurrent ? 'text-cyan-500' : theme.text} truncate`}>
@@ -9133,13 +9134,13 @@ export default function App() {
             {readinessScore && readinessScore < 70 && todayWorkout.type !== 'recovery' && (
               <div className={`p-4 ${readinessScore < 40 ? (darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300') : (darkMode ? 'bg-amber-900/30 border-amber-700' : 'bg-amber-50 border-amber-200')} border rounded-xl`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className={readinessScore < 40 ? (darkMode ? 'text-red-400' : 'text-red-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')} size={20} />
+                  <AlertTriangle className={readinessScore < 40 ? (darkMode ? 'text-critical' : 'text-red-600') : (darkMode ? 'text-amber-400' : 'text-amber-600')} size={20} />
                   <span className={`font-medium ${theme.text}`}>{readinessScore < 40 ? 'Low' : 'Moderate'} Readiness ({readinessScore})</span>
                 </div>
                 <p className={`text-sm ${theme.textMuted}`}>{readinessInfo?.recommendation}</p>
                 {todayWorkout?.readinessAdjustment && (
                   <div className={`mt-2 pt-2 border-t ${theme.border}`}>
-                    <p className={`text-sm font-medium ${readinessScore < 40 ? 'text-red-500' : 'text-amber-500'}`}>
+                    <p className={`text-sm font-medium ${readinessScore < 40 ? 'text-critical' : 'text-amber-500'}`}>
                       ⚡ Auto-adjusted: {todayWorkout.readinessAdjustment}
                     </p>
                   </div>
@@ -9152,7 +9153,7 @@ export default function App() {
               <div className={`p-4 ${darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-300'} border rounded-xl`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🚨</span>
-                  <span className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-700'}`}>Overreach Warning (ACR: {acr})</span>
+                  <span className={`font-medium ${darkMode ? 'text-critical' : 'text-red-700'}`}>Overreach Warning (ACR: {acr})</span>
                 </div>
                 <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
                 <button 
@@ -9171,7 +9172,7 @@ export default function App() {
               <div className={`p-4 ${darkMode ? 'bg-orange-900/30 border-orange-700' : 'bg-orange-50 border-orange-300'} border rounded-xl`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">⚠️</span>
-                  <span className={`font-medium ${darkMode ? 'text-orange-400' : 'text-orange-700'}`}>Load Caution (ACR: {acr})</span>
+                  <span className={`font-medium ${darkMode ? 'text-amber-400' : 'text-orange-700'}`}>Load Caution (ACR: {acr})</span>
                 </div>
                 <p className={`text-sm ${theme.textMuted}`}>{loadStatus.recommendation}</p>
               </div>
@@ -9200,7 +9201,7 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm overflow-hidden`}>
               {todayWorkout.prescription.warmup && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Warm-up</p><p className={theme.text}>{todayWorkout.prescription.warmup}</p></div>}
               {todayWorkout.prescription.description && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Overview</p><p className={theme.text}>{todayWorkout.prescription.description}</p></div>}
-              {todayWorkout.prescription.mainSet && <div className={`p-4 border-b ${theme.border} ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}><p className="text-xs font-medium text-blue-500 uppercase mb-2">Main Set</p><p className={`text-lg font-semibold ${theme.text}`}>{todayWorkout.prescription.mainSet}</p>{todayWorkout.prescription.recovery && <p className={`${theme.textMuted} mt-1`}>Recovery: {todayWorkout.prescription.recovery}</p>}</div>}
+              {todayWorkout.prescription.mainSet && <div className={`p-4 border-b ${theme.border} ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}><p className="text-xs font-medium text-amber-500 uppercase mb-2">Main Set</p><p className={`text-lg font-semibold ${theme.text}`}>{todayWorkout.prescription.mainSet}</p>{todayWorkout.prescription.recovery && <p className={`${theme.textMuted} mt-1`}>Recovery: {todayWorkout.prescription.recovery}</p>}</div>}
               
               {todayWorkout.prescription.exercises && (
                 <div className={`p-4 border-b ${theme.border}`}>
@@ -9244,7 +9245,7 @@ export default function App() {
               {todayWorkout.prescription.options && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Options</p><ul className="space-y-1">{todayWorkout.prescription.options.map((opt, idx) => <li key={idx} className={`text-sm ${theme.textMuted}`}>• {opt}</li>)}</ul></div>}
               {todayWorkout.prescription.notes && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Notes</p><ul className="space-y-1">{(Array.isArray(todayWorkout.prescription.notes) ? todayWorkout.prescription.notes : [todayWorkout.prescription.notes]).map((note, idx) => <li key={idx} className={`text-sm ${theme.textMuted}`}>• {note}</li>)}</ul></div>}
               {todayWorkout.prescription.cooldown && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Cool-down</p><p className={theme.text}>{todayWorkout.prescription.cooldown}</p></div>}
-              {todayWorkout.prescription.intensity && <div className={`p-4 ${darkMode ? 'bg-gray-700' : 'bg-slate-800'} text-white`}><p className="text-xs uppercase opacity-70 mb-1">Intensity</p><p className="font-semibold">{todayWorkout.prescription.intensity}</p></div>}
+              {todayWorkout.prescription.intensity && <div className={`p-4 ${darkMode ? 'bg-slate-700' : 'bg-slate-800'} text-white`}><p className="text-xs uppercase opacity-70 mb-1">Intensity</p><p className="font-semibold">{todayWorkout.prescription.intensity}</p></div>}
             </div>
 
             {/* Log Form */}
@@ -9277,9 +9278,9 @@ export default function App() {
                   </div>
                   <div>
                     <label className={`block text-xs font-semibold ${theme.textMuted} uppercase tracking-wide mb-2`}>Effort (RPE)</label>
-                    <div className={`px-4 py-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} text-center`}>
+                    <div className={`px-4 py-3 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-slate-100'} text-center`}>
                       <span className={`text-2xl font-bold ${
-                        workoutData.rpe >= 9 ? 'text-red-500' :
+                        workoutData.rpe >= 9 ? 'text-critical' :
                         workoutData.rpe >= 7 ? 'text-amber-500' :
                         workoutData.rpe >= 5 ? 'text-cyan-500' :
                         'text-emerald-500'
@@ -9298,7 +9299,7 @@ export default function App() {
                     onChange={(e) => setWorkoutData(prev => ({ ...prev, rpe: parseInt(e.target.value) }))}
                     className="w-full accent-cyan-500"
                   />
-                  <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
                     <span>Easy</span><span>Moderate</span><span>Hard</span><span>Max</span>
                   </div>
                 </div>
@@ -9398,11 +9399,11 @@ export default function App() {
               <div className="space-y-3">
                 {[...workoutLogs].reverse().slice(0, 50).map((log) => {
                   const typeConfig = {
-                    strength: { gradient: 'from-red-500/10', border: 'border-red-500', icon: Dumbbell, iconColor: 'text-red-500' },
-                    cardio: { gradient: 'from-blue-500/10', border: 'border-blue-500', icon: Activity, iconColor: 'text-blue-500' },
-                    muscular_endurance: { gradient: 'from-orange-500/10', border: 'border-orange-500', icon: Flame, iconColor: 'text-orange-500' },
-                    recovery: { gradient: 'from-green-500/10', border: 'border-green-500', icon: Heart, iconColor: 'text-green-500' },
-                    long_effort: { gradient: 'from-purple-500/10', border: 'border-purple-500', icon: Mountain, iconColor: 'text-purple-500' },
+                    strength: { gradient: 'from-red-500/10', border: 'border-red-500', icon: Dumbbell, iconColor: 'text-critical' },
+                    cardio: { gradient: 'from-blue-500/10', border: 'border-amber-500', icon: Activity, iconColor: 'text-amber-500' },
+                    muscular_endurance: { gradient: 'from-orange-500/10', border: 'border-orange-500', icon: Flame, iconColor: 'text-amber-500' },
+                    recovery: { gradient: 'from-green-500/10', border: 'border-green-500', icon: Heart, iconColor: 'text-nominal' },
+                    long_effort: { gradient: 'from-purple-500/10', border: 'border-purple-500', icon: Mountain, iconColor: 'text-sage-500' },
                   };
                   const config = typeConfig[log.type] || typeConfig.cardio;
                   const TypeIcon = config.icon;
@@ -9415,7 +9416,7 @@ export default function App() {
                     >
                       <div className={`p-4 bg-gradient-to-r ${config.gradient} to-transparent`}>
                         <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-white/80'}`}>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-slate-800' : 'bg-white/80'}`}>
                             <TypeIcon size={20} className={config.iconColor} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -9429,7 +9430,7 @@ export default function App() {
                                   <span className={`text-xs font-mono font-bold px-2 py-1 rounded-lg ${
                                     log.readinessScore >= 70 ? 'bg-emerald-500/20 text-emerald-500' :
                                     log.readinessScore >= 50 ? 'bg-amber-500/20 text-amber-500' :
-                                    'bg-red-500/20 text-red-500'
+                                    'bg-critical/20 text-critical'
                                   }`}>
                                     {log.readinessScore}
                                   </span>
@@ -9443,7 +9444,7 @@ export default function App() {
                                 <Clock size={12} />{log.actual}m
                               </span>
                               <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                                log.rpe >= 9 ? 'bg-red-500/20 text-red-400' :
+                                log.rpe >= 9 ? 'bg-critical/20 text-critical' :
                                 log.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
                                 'bg-cyan-500/20 text-cyan-400'
                               }`}>
@@ -9489,7 +9490,7 @@ export default function App() {
               <div className="grid grid-cols-3 gap-3">
                 <div className={`p-3 ${theme.cardAlt} rounded-lg text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{acuteLoad}</p><p className={`text-xs ${theme.textMuted}`}>Acute (7d)</p></div>
                 <div className={`p-3 ${theme.cardAlt} rounded-lg text-center`}><p className={`text-2xl font-bold ${theme.text}`}>{chronicLoad}</p><p className={`text-xs ${theme.textMuted}`}>Chronic (28d)</p></div>
-                <div className={`p-3 ${theme.cardAlt} rounded-lg text-center`}><p className={`text-2xl font-bold ${loadRatio !== '-' && loadRatio > 1.5 ? 'text-red-500' : loadRatio !== '-' && loadRatio < 0.8 ? 'text-amber-500' : 'text-green-500'}`}>{loadRatio}</p><p className={`text-xs ${theme.textMuted}`}>A:C Ratio</p></div>
+                <div className={`p-3 ${theme.cardAlt} rounded-lg text-center`}><p className={`text-2xl font-bold ${loadRatio !== '-' && loadRatio > 1.5 ? 'text-critical' : loadRatio !== '-' && loadRatio < 0.8 ? 'text-amber-500' : 'text-nominal'}`}>{loadRatio}</p><p className={`text-xs ${theme.textMuted}`}>A:C Ratio</p></div>
               </div>
             </div>
 
@@ -9544,17 +9545,17 @@ export default function App() {
                   <div className={`absolute left-[11px] top-3 bottom-3 w-0.5 ${darkMode ? 'bg-amber-500/20' : 'bg-amber-200'}`} />
                   <div className="space-y-3">
                     {[...athleteProfile.history].filter(h => h.category === 'prs').reverse().slice(0, 10).map((pr, idx) => (
-                      <div key={idx} className={`flex items-center gap-4 p-3 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-gray-50'} relative`}>
+                      <div key={idx} className={`flex items-center gap-4 p-3 rounded-xl ${darkMode ? 'bg-slate-800/50' : 'bg-gray-50'} relative`}>
                         {/* Timeline dot */}
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
                           idx === 0
                             ? 'bg-amber-500 shadow-lg shadow-amber-500/30'
-                            : darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                            : darkMode ? 'bg-slate-700' : 'bg-slate-200'
                         }`}>
                           {idx === 0 ? (
                             <Flag size={12} className="text-white" />
                           ) : (
-                            <span className={`text-[10px] font-bold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{idx + 1}</span>
+                            <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{idx + 1}</span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -9580,8 +9581,8 @@ export default function App() {
             <div className="flex items-center justify-between">
               <h2 className={`text-xl font-bold ${theme.text}`}>Programs</h2>
               <div className="flex gap-2">
-                <button onClick={() => setShowTemplateUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-medium text-white"><Library size={16} />Template</button>
-                <button onClick={() => setCurrentView('programBuilder')} className="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium text-white"><Plus size={16} />Build</button>
+                <button onClick={() => setShowTemplateUpload(true)} className="flex items-center gap-2 px-3 py-2 bg-sage-600 hover:bg-sage-700 rounded-lg text-sm font-medium text-white"><Library size={16} />Template</button>
+                <button onClick={() => setCurrentView('programBuilder')} className="flex items-center gap-2 px-3 py-2 bg-nominal hover:bg-sage-600 rounded-lg text-sm font-medium text-white"><Plus size={16} />Build</button>
               </div>
             </div>
 
@@ -9589,7 +9590,7 @@ export default function App() {
             {Object.keys(programTemplates).length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Library size={14} className="text-purple-500" />
+                  <Library size={14} className="text-sage-500" />
                   <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Templates</h3>
                 </div>
                 {Object.entries(programTemplates).map(([id, data]) => {
@@ -9612,14 +9613,14 @@ export default function App() {
                           <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
                             isActive
                               ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
-                              : darkMode ? 'bg-gray-800' : 'bg-gray-100'
+                              : darkMode ? 'bg-slate-800' : 'bg-slate-100'
                           }`}>
                             <RenderIcon icon={data.program?.icon} Icon={data.program?.Icon} size={24} className={isActive ? 'text-cyan-500' : theme.textMuted} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className={`font-bold ${isActive ? 'text-cyan-500' : theme.text}`}>{data.program?.name}</p>
-                              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-semibold rounded-full uppercase">
+                              <span className="px-2 py-0.5 bg-sage-600/20 text-sage-400 text-[10px] font-semibold rounded-full uppercase">
                                 Template
                               </span>
                               {isActive && (
@@ -9639,7 +9640,7 @@ export default function App() {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-4">
-                          <button onClick={() => setViewingProgramId(id)} className={`px-4 py-2.5 ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${theme.text} rounded-xl text-sm font-medium transition-colors`}>
+                          <button onClick={() => setViewingProgramId(id)} className={`px-4 py-2.5 ${darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} ${theme.text} rounded-xl text-sm font-medium transition-colors`}>
                             View
                           </button>
                           {isActive ? (
@@ -9651,7 +9652,7 @@ export default function App() {
                               Start Program
                             </button>
                           )}
-                          <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-colors">
+                          <button onClick={() => { if (confirm(`Delete template "${data.program?.name}"?`)) deleteTemplate(id); }} className="px-3 py-2.5 bg-critical/10 hover:bg-critical/20 text-critical rounded-xl transition-colors">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -9666,10 +9667,10 @@ export default function App() {
             <div className="space-y-3">
               <h3 className={`text-sm font-semibold ${theme.textMuted} uppercase tracking-wide`}>Programs</h3>
               {Object.values({ ...DEFAULT_PROGRAMS, ...customPrograms }).map(prog => (
-                <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-blue-500' : ''}`}>
+                <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-amber-500' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-                      <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={24} className="text-blue-500" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                      <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={24} className="text-amber-500" />
                     </div>
                     <div className="flex-1">
                       <p className={`font-semibold ${theme.text}`}>{prog.name}</p>
@@ -9677,14 +9678,14 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button onClick={() => setViewingProgramId(prog.id)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">View</button>
+                    <button onClick={() => setViewingProgramId(prog.id)} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium">View</button>
                     {programState.currentProgram === prog.id ? (
-                      <span className="flex-1 text-center py-2 text-green-500 font-medium text-sm">Active</span>
+                      <span className="flex-1 text-center py-2 text-nominal font-medium text-sm">Active</span>
                     ) : (
-                      <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: prog.id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium">Switch</button>
+                      <button onClick={() => setProgramState(prev => ({ ...prev, currentProgram: prog.id, currentWeek: 1, currentDay: 1 }))} className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">Switch</button>
                     )}
                     {!prog.isDefault && (
-                      <button onClick={() => { if (confirm(`Delete "${prog.name}"?`)) { setCustomPrograms(prev => { const u = { ...prev }; delete u[prog.id]; return u; }); if (programState.currentProgram === prog.id) setProgramState(prev => ({ ...prev, currentProgram: 'combatAlpinist' })); }}} className="px-3 py-2 bg-red-500/10 text-red-500 rounded-lg"><Trash2 size={16} /></button>
+                      <button onClick={() => { if (confirm(`Delete "${prog.name}"?`)) { setCustomPrograms(prev => { const u = { ...prev }; delete u[prog.id]; return u; }); if (programState.currentProgram === prog.id) setProgramState(prev => ({ ...prev, currentProgram: 'combatAlpinist' })); }}} className="px-3 py-2 bg-critical/10 text-critical rounded-lg"><Trash2 size={16} /></button>
                     )}
                   </div>
                 </div>
@@ -9738,7 +9739,7 @@ export default function App() {
                       logout();
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-critical/10 rounded-xl text-sm font-medium text-critical hover:bg-critical/20 transition-colors"
                 >
                   <LogOut size={18} />
                   Log Out
@@ -9749,7 +9750,7 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <div className="flex items-center justify-between">
                 <div><h3 className={`font-semibold ${theme.text}`}>Dark Mode</h3></div>
-                <button onClick={() => setDarkMode(!darkMode)} className={`w-14 h-8 rounded-full transition-colors ${darkMode ? 'bg-blue-500' : 'bg-slate-300'} relative`}>
+                <button onClick={() => setDarkMode(!darkMode)} className={`w-14 h-8 rounded-full transition-colors ${darkMode ? 'bg-amber-500' : 'bg-slate-300'} relative`}>
                   <div className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-transform ${darkMode ? 'translate-x-7' : 'translate-x-1'}`} />
                 </button>
               </div>
@@ -9775,7 +9776,7 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`font-semibold ${theme.text}`}>Custom Exercises</h3>
-                <button onClick={() => setShowAddExercise(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium text-white">
+                <button onClick={() => setShowAddExercise(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-nominal hover:bg-sage-600 rounded-lg text-sm font-medium text-white">
                   <Plus size={16} />Add
                 </button>
               </div>
@@ -9795,7 +9796,7 @@ export default function App() {
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => setShowAddExercise(ex)} className={`p-2 ${theme.cardAlt} rounded-lg`}><Edit3 size={14} className={theme.textMuted} /></button>
-                        <button onClick={() => { if (confirm(`Delete "${ex.name}"?`)) setCustomExercises(prev => { const u = {...prev}; delete u[ex.id]; return u; }); }} className="p-2 bg-red-500/10 rounded-lg"><Trash2 size={14} className="text-red-500" /></button>
+                        <button onClick={() => { if (confirm(`Delete "${ex.name}"?`)) setCustomExercises(prev => { const u = {...prev}; delete u[ex.id]; return u; }); }} className="p-2 bg-critical/10 rounded-lg"><Trash2 size={14} className="text-critical" /></button>
                       </div>
                     </div>
                   ))}
@@ -9831,11 +9832,11 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {syncStatus.syncing ? (
-                      <Loader size={18} className="animate-spin text-blue-500" />
+                      <Loader size={18} className="animate-spin text-amber-500" />
                     ) : isOffline ? (
                       <CloudOff size={18} className="text-amber-500" />
                     ) : (
-                      <Cloud size={18} className="text-green-500" />
+                      <Cloud size={18} className="text-nominal" />
                     )}
                     <span className={theme.text}>
                       {syncStatus.syncing ? 'Syncing...' : isOffline ? 'Offline' : 'Connected'}
@@ -9848,7 +9849,7 @@ export default function App() {
                   )}
                 </div>
                 {syncStatus.error && (
-                  <div className="p-2 bg-red-500/10 rounded-lg text-red-500 text-sm">
+                  <div className="p-2 bg-critical/10 rounded-lg text-critical text-sm">
                     {syncStatus.error}
                   </div>
                 )}
@@ -9862,7 +9863,7 @@ export default function App() {
                     }
                   }}
                   disabled={syncStatus.syncing || isOffline}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl text-sm font-medium text-white`}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 rounded-xl text-sm font-medium text-white`}
                 >
                   <Cloud size={18} />
                   {syncStatus.syncing ? 'Syncing...' : 'Sync Now'}
@@ -9952,7 +9953,7 @@ export default function App() {
                         setSyncCodeInput('');
                       }}
                       disabled={syncCodeLoading}
-                      className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 rounded-xl text-sm font-medium text-white"
+                      className="flex-1 px-4 py-3 bg-nominal hover:bg-sage-600 disabled:bg-nominal/50 rounded-xl text-sm font-medium text-white"
                     >
                       {syncCodeLoading ? 'Loading...' : 'Set / Recover'}
                     </button>
@@ -9977,8 +9978,8 @@ export default function App() {
               <div className="space-y-3">
                 <button onClick={exportData} className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium`}><Download size={18} />Export All Data</button>
                 <label className="block"><span className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${theme.btnSecondary} rounded-xl text-sm font-medium cursor-pointer`}><Upload size={18} />Import Data</span><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
-                <button onClick={() => { if (confirm('Clear all logs?')) setWorkoutLogs([]); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500"><Trash2 size={18} />Clear Logs</button>
-                <button onClick={() => { if (confirm('Reset readiness data?')) setReadiness(DEFAULT_READINESS); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 rounded-xl text-sm font-medium text-red-500"><Trash2 size={18} />Clear Readiness</button>
+                <button onClick={() => { if (confirm('Clear all logs?')) setWorkoutLogs([]); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-critical/10 rounded-xl text-sm font-medium text-critical"><Trash2 size={18} />Clear Logs</button>
+                <button onClick={() => { if (confirm('Reset readiness data?')) setReadiness(DEFAULT_READINESS); }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-critical/10 rounded-xl text-sm font-medium text-critical"><Trash2 size={18} />Clear Readiness</button>
               </div>
             </div>
           </div>
@@ -10069,22 +10070,22 @@ export default function App() {
                   {ex.equipment?.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {ex.prKey && <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-500 rounded">PR tracking</span>}
-                  {ex.recentUsageCount > 0 && <span className="text-xs px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded">Used {ex.recentUsageCount}x</span>}
-                  {ex.flags?.includes('same_equipment') && <span className="text-xs px-1.5 py-0.5 bg-purple-500/20 text-purple-500 rounded">Same gear</span>}
+                  {ex.prKey && <span className="text-xs px-1.5 py-0.5 bg-amber-500/20 text-amber-500 rounded">PR tracking</span>}
+                  {ex.recentUsageCount > 0 && <span className="text-xs px-1.5 py-0.5 bg-nominal/20 text-nominal rounded">Used {ex.recentUsageCount}x</span>}
+                  {ex.flags?.includes('same_equipment') && <span className="text-xs px-1.5 py-0.5 bg-sage-600/20 text-sage-500 rounded">Same gear</span>}
                 </div>
               </div>
               {showLoadHint && ex.loadAdjustment && (
                 <div className={`text-right ${theme.textMuted}`}>
                   <p className="text-xs">Load adjust</p>
-                  <p className={`text-sm font-mono ${ex.loadAdjustment < 1 ? 'text-amber-500' : 'text-green-500'}`}>
+                  <p className={`text-sm font-mono ${ex.loadAdjustment < 1 ? 'text-amber-500' : 'text-nominal'}`}>
                     {ex.loadAdjustment < 1 ? '↓' : '↑'}{Math.abs(Math.round((1 - ex.loadAdjustment) * 100))}%
                   </p>
                 </div>
               )}
             </div>
             {!ex.hasAllEquipment && ex.missingEquipment?.length > 0 && (
-              <p className="text-xs text-red-400 mt-1">Missing: {ex.missingEquipment.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}</p>
+              <p className="text-xs text-critical mt-1">Missing: {ex.missingEquipment.map(e => EQUIPMENT_TYPES[e] || e).join(', ')}</p>
             )}
           </button>
         );
@@ -10118,7 +10119,7 @@ export default function App() {
                     }}
                     className={`w-full p-4 rounded-xl border-2 border-dashed ${theme.border} text-left`}
                   >
-                    <p className={`font-medium text-blue-500`}>↩ Reset to original</p>
+                    <p className={`font-medium text-amber-500`}>↩ Reset to original</p>
                     <p className={`text-sm ${theme.textMuted}`}>{swappingExercise.name}</p>
                   </button>
                 )}
@@ -10186,7 +10187,7 @@ export default function App() {
           >
             {/* Drag Handle */}
             <div className="flex justify-center pt-3 pb-2">
-              <div className={`w-12 h-1.5 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-slate-300'}`} />
+              <div className={`w-12 h-1.5 rounded-full ${darkMode ? 'bg-slate-600' : 'bg-slate-300'}`} />
             </div>
 
             {/* Pane Header */}
@@ -10195,13 +10196,13 @@ export default function App() {
                 <div className={`p-2 rounded-xl ${
                   floatingPane === 'workout' ? 'bg-cyan-500/20' :
                   floatingPane === 'readiness' ? 'bg-emerald-500/20' :
-                  floatingPane === 'charts' ? 'bg-purple-500/20' :
-                  'bg-blue-500/20'
+                  floatingPane === 'charts' ? 'bg-sage-600/20' :
+                  'bg-amber-500/20'
                 }`}>
                   {floatingPane === 'workout' && <Mountain size={18} className="text-cyan-500" />}
                   {floatingPane === 'readiness' && <Activity size={18} className="text-emerald-500" />}
-                  {floatingPane === 'charts' && <TrendingUp size={18} className="text-purple-500" />}
-                  {floatingPane === 'calendar' && <Calendar size={18} className="text-blue-500" />}
+                  {floatingPane === 'charts' && <TrendingUp size={18} className="text-sage-500" />}
+                  {floatingPane === 'calendar' && <Calendar size={18} className="text-amber-500" />}
                 </div>
                 <h2 className={`text-lg font-bold ${theme.text}`}>
                   {floatingPane === 'workout' && "Today's Session"}
@@ -10213,13 +10214,13 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setCurrentView(floatingPane); setFloatingPane(null); }}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${theme.text} transition-colors`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} ${theme.text} transition-colors`}
                 >
                   Expand
                 </button>
                 <button
                   onClick={() => setFloatingPane(null)}
-                  className={`p-2 rounded-xl ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                  className={`p-2 rounded-xl ${darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} transition-colors`}
                 >
                   <X size={18} className={theme.text} />
                 </button>
@@ -10240,7 +10241,7 @@ export default function App() {
                     </div>
                     <h3 className={`text-xl font-bold ${theme.text}`}>{todayWorkout.session}</h3>
                     {todayLog?.completed && (
-                      <div className="flex items-center gap-2 mt-2 text-green-500">
+                      <div className="flex items-center gap-2 mt-2 text-nominal">
                         <CheckCircle2 size={18} />
                         <span className="font-medium">Completed</span>
                       </div>

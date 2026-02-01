@@ -48,18 +48,18 @@ const ReadinessGauge = ({
     return startAngle + (clampedScore / 100) * totalAngle;
   }, [score]);
 
-  // Color zones for the gauge - altitude/oxygen themed
+  // Color zones for the gauge - Meridian Cairn palette
   const getScoreColor = (s) => {
-    if (s >= 85) return { main: '#10b981', glow: '#34d399', label: 'Summit Ready' }; // Green - optimal oxygen
-    if (s >= 70) return { main: '#06b6d4', glow: '#22d3ee', label: 'Base Camp' }; // Cyan - good altitude
-    if (s >= 55) return { main: '#f59e0b', glow: '#fbbf24', label: 'Acclimatizing' }; // Amber - adjusting
-    if (s >= 40) return { main: '#f97316', glow: '#fb923c', label: 'Thin Air' }; // Orange - struggling
-    return { main: '#ef4444', glow: '#f87171', label: 'Altitude Sick' }; // Red - danger zone
+    if (s >= 85) return { main: '#5A8B5E', glow: '#7A8B6F', label: 'Summit Ready' }; // Nominal/Sage - optimal
+    if (s >= 70) return { main: '#4A7A9B', glow: '#6B9BB8', label: 'Base Camp' }; // Info - good state
+    if (s >= 55) return { main: '#C4883A', glow: '#D4A05A', label: 'Acclimatizing' }; // Amber - adjusting
+    if (s >= 40) return { main: '#B47A2E', glow: '#C4883A', label: 'Thin Air' }; // Amber dark - struggling
+    return { main: '#C45A3A', glow: '#D47A5A', label: 'Altitude Sick' }; // Critical - danger zone
   };
 
   const colors = getScoreColor(score || 0);
 
-  // Factor breakdown with altitude-themed icons
+  // Factor breakdown with altitude-themed icons - Meridian Cairn colors
   const factors = useMemo(() => {
     if (!readinessData) return [];
     return [
@@ -68,28 +68,28 @@ const ReadinessGauge = ({
         label: 'Sleep',
         value: readinessData.sleepQuality,
         max: 5,
-        color: readinessData.sleepQuality >= 4 ? '#10b981' : readinessData.sleepQuality >= 3 ? '#f59e0b' : '#ef4444'
+        color: readinessData.sleepQuality >= 4 ? '#5A8B5E' : readinessData.sleepQuality >= 3 ? '#C4883A' : '#C45A3A'
       },
       {
         icon: Battery,
         label: 'Energy',
         value: readinessData.energyLevel,
         max: 5,
-        color: readinessData.energyLevel >= 4 ? '#10b981' : readinessData.energyLevel >= 3 ? '#f59e0b' : '#ef4444'
+        color: readinessData.energyLevel >= 4 ? '#5A8B5E' : readinessData.energyLevel >= 3 ? '#C4883A' : '#C45A3A'
       },
       {
         icon: Thermometer,
         label: 'Soreness',
         value: readinessData.soreness ? 6 - readinessData.soreness : null, // Inverted
         max: 5,
-        color: readinessData.soreness <= 2 ? '#10b981' : readinessData.soreness <= 3 ? '#f59e0b' : '#ef4444'
+        color: readinessData.soreness <= 2 ? '#5A8B5E' : readinessData.soreness <= 3 ? '#C4883A' : '#C45A3A'
       },
       {
         icon: Brain,
         label: 'Drive',
         value: readinessData.motivation,
         max: 5,
-        color: readinessData.motivation >= 4 ? '#10b981' : readinessData.motivation >= 3 ? '#f59e0b' : '#ef4444'
+        color: readinessData.motivation >= 4 ? '#5A8B5E' : readinessData.motivation >= 3 ? '#C4883A' : '#C45A3A'
       },
     ].filter(f => f.value != null);
   }, [readinessData]);
@@ -228,12 +228,12 @@ const ReadinessGauge = ({
               <div
                 key={idx}
                 className={`flex flex-col items-center p-2 rounded-lg ${
-                  darkMode ? 'bg-gray-800/50' : 'bg-gray-100/80'
+                  darkMode ? 'bg-slate-800/50' : 'bg-slate-100/80'
                 }`}
                 style={{ minWidth: '52px' }}
               >
                 <Icon size={14} style={{ color: factor.color }} />
-                <div className="w-full h-1 rounded-full bg-gray-700/30 mt-1.5 overflow-hidden">
+                <div className="w-full h-1 rounded-full bg-slate-700/30 mt-1.5 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{

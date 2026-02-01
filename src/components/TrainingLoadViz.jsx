@@ -9,7 +9,7 @@ const Sparkline = ({ data, color, height = 32, width = 80, showDots = false, the
   if (!data || data.length < 2) {
     return (
       <div
-        className={`flex items-center justify-center ${theme?.textMuted || 'text-gray-500'}`}
+        className={`flex items-center justify-center ${theme?.textMuted || 'text-slate-500'}`}
         style={{ width, height }}
       >
         <span className="text-xs">--</span>
@@ -103,45 +103,46 @@ const TrainingLoadCard = ({
   theme,
   darkMode
 }) => {
+  // Meridian Cairn color palette for training status
   const statusConfig = useMemo(() => {
     const configs = {
       building: {
         icon: Mountain,
-        color: '#3b82f6',
-        bgClass: darkMode ? 'bg-blue-900/20' : 'bg-blue-50',
-        borderClass: 'border-blue-500',
+        color: '#4A7A9B', // Info
+        bgClass: darkMode ? 'bg-info/20' : 'bg-info/10',
+        borderClass: 'border-info',
         label: 'Base Building',
         description: 'Establishing training foundation'
       },
       detraining: {
         icon: TrendingDown,
-        color: '#eab308',
-        bgClass: darkMode ? 'bg-yellow-900/20' : 'bg-yellow-50',
-        borderClass: 'border-yellow-500',
+        color: '#C4883A', // Warning/Amber
+        bgClass: darkMode ? 'bg-amber-900/20' : 'bg-amber-50',
+        borderClass: 'border-amber-500',
         label: 'Detraining',
         description: 'Fitness declining - increase load'
       },
       optimal: {
         icon: Target,
-        color: '#10b981',
-        bgClass: darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50',
-        borderClass: 'border-emerald-500',
+        color: '#5A8B5E', // Nominal/Sage
+        bgClass: darkMode ? 'bg-sage-900/20' : 'bg-sage-50',
+        borderClass: 'border-sage-500',
         label: 'Summit Zone',
         description: 'Optimal adaptation window'
       },
       caution: {
         icon: Wind,
-        color: '#f97316',
-        bgClass: darkMode ? 'bg-orange-900/20' : 'bg-orange-50',
-        borderClass: 'border-orange-500',
+        color: '#B47A2E', // Amber dark
+        bgClass: darkMode ? 'bg-amber-800/20' : 'bg-amber-100',
+        borderClass: 'border-amber-600',
         label: 'High Altitude',
         description: 'Pushing limits - monitor recovery'
       },
       overreaching: {
         icon: AlertTriangle,
-        color: '#ef4444',
-        bgClass: darkMode ? 'bg-red-900/20' : 'bg-red-50',
-        borderClass: 'border-red-500',
+        color: '#C45A3A', // Critical
+        bgClass: darkMode ? 'bg-critical/20' : 'bg-critical/10',
+        borderClass: 'border-critical',
         label: 'Death Zone',
         description: 'Injury risk - reduce load immediately'
       }
@@ -189,12 +190,12 @@ const TrainingLoadCard = ({
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-3">
         {/* ATL Card */}
-        <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
+        <div className={`p-3 rounded-xl ${darkMode ? 'bg-slate-800/50' : 'bg-white/70'}`}>
           <div className="flex items-center justify-between mb-1">
             <span className={`text-xs font-medium ${theme.textMuted} uppercase tracking-wide`}>
               Acute (7d)
             </span>
-            <Zap size={12} className="text-cyan-500" />
+            <Zap size={12} className="text-info" />
           </div>
           <div className="flex items-end justify-between">
             <span className={`text-2xl font-bold font-mono ${theme.text}`}>
@@ -202,7 +203,7 @@ const TrainingLoadCard = ({
             </span>
             <Sparkline
               data={atlHistory}
-              color="#06b6d4"
+              color="#4A7A9B"
               height={28}
               width={60}
               showDots={true}
@@ -213,12 +214,12 @@ const TrainingLoadCard = ({
         </div>
 
         {/* CTL Card */}
-        <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white/70'}`}>
+        <div className={`p-3 rounded-xl ${darkMode ? 'bg-slate-800/50' : 'bg-white/70'}`}>
           <div className="flex items-center justify-between mb-1">
             <span className={`text-xs font-medium ${theme.textMuted} uppercase tracking-wide`}>
               Chronic (28d)
             </span>
-            <Mountain size={12} className="text-purple-500" />
+            <Mountain size={12} className="text-sage-500" />
           </div>
           <div className="flex items-end justify-between">
             <span className={`text-2xl font-bold font-mono ${theme.text}`}>
@@ -226,7 +227,7 @@ const TrainingLoadCard = ({
             </span>
             <Sparkline
               data={ctlHistory}
-              color="#a855f7"
+              color="#7A8B6F"
               height={28}
               width={60}
               showDots={true}
@@ -245,12 +246,12 @@ const TrainingLoadCard = ({
  * Styled like an altitude/oxygen meter
  */
 const LoadZoneMeter = ({ acr, theme, darkMode }) => {
-  // Zone boundaries
+  // Zone boundaries - Meridian Cairn colors
   const zones = [
-    { min: 0, max: 0.8, label: 'Detraining', color: '#eab308' },
-    { min: 0.8, max: 1.3, label: 'Optimal', color: '#10b981' },
-    { min: 1.3, max: 1.5, label: 'Caution', color: '#f97316' },
-    { min: 1.5, max: 2.0, label: 'Danger', color: '#ef4444' },
+    { min: 0, max: 0.8, label: 'Detraining', color: '#C4883A' }, // Warning/Amber
+    { min: 0.8, max: 1.3, label: 'Optimal', color: '#5A8B5E' }, // Nominal
+    { min: 1.3, max: 1.5, label: 'Caution', color: '#B47A2E' }, // Amber dark
+    { min: 1.5, max: 2.0, label: 'Danger', color: '#C45A3A' }, // Critical
   ];
 
   // Clamp ACR to displayable range
@@ -261,7 +262,7 @@ const LoadZoneMeter = ({ acr, theme, darkMode }) => {
   const currentZone = zones.find(z => displayACR >= z.min && displayACR < z.max) || zones[zones.length - 1];
 
   return (
-    <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-gray-100'}`}>
+    <div className={`p-4 rounded-xl ${darkMode ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
       <div className="flex items-center justify-between mb-3">
         <span className={`text-xs font-medium ${theme.textMuted} uppercase tracking-wide`}>
           Load Balance
@@ -278,7 +279,7 @@ const LoadZoneMeter = ({ acr, theme, darkMode }) => {
       </div>
 
       {/* Zone meter bar */}
-      <div className="relative h-3 rounded-full overflow-hidden bg-gray-700/30">
+      <div className="relative h-3 rounded-full overflow-hidden bg-slate-700/30">
         {/* Zone segments */}
         <div className="absolute inset-0 flex">
           {zones.map((zone, idx) => (

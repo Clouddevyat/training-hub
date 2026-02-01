@@ -1,15 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==================== MERIDIAN CAIRN COLOR SYSTEM ==================== */
+:root {
+  /* Primary — Wasatch Granite */
+  --slate-900: #1A1E24;
+  --slate-800: #242A32;
+  --slate-700: #2C3640;
+  --slate-600: #3A4755;
+  --slate-500: #4E5D6C;
+  --slate-400: #6B7A8A;
+  --slate-300: #8E9DAB;
+  --slate-200: #B4C0CC;
+  --slate-100: #D6DEE5;
+  --slate-50:  #EDF1F4;
+
+  /* Accent — Sandstone Amber */
+  --amber-900: #5C3A12;
+  --amber-800: #7A4E1A;
+  --amber-700: #9B6424;
+  --amber-600: #B47A2E;
+  --amber-500: #C4883A;
+  --amber-400: #D4A05A;
+  --amber-300: #E0B87E;
+  --amber-200: #EBCFA5;
+  --amber-100: #F4E3CA;
+  --amber-50:  #FAF3EA;
+
+  /* Secondary — Sage Field */
+  --sage-900: #2E3A28;
+  --sage-800: #3E4E36;
+  --sage-700: #4F6344;
+  --sage-600: #617753;
+  --sage-500: #7A8B6F;
+  --sage-400: #93A488;
+  --sage-300: #ADBBA3;
+  --sage-200: #C7D1BF;
+  --sage-100: #DFE6DB;
+  --sage-50:  #F0F3EE;
+
+  /* Functional */
+  --warm-white: #F5F2ED;
+  --cool-white: #EDF1F4;
+  --near-black: #1A1E24;
+
+  /* Status */
+  --critical: #C45A3A;
+  --warning: #C4883A;
+  --nominal: #5A8B5E;
+  --info: #4A7A9B;
+
+  /* Semantic aliases for app use */
+  --bg-primary: var(--warm-white);
+  --bg-dark: var(--near-black);
+  --bg-card: white;
+  --bg-card-dark: var(--slate-800);
+  --text-primary: var(--slate-800);
+  --text-secondary: var(--slate-500);
+  --text-muted: var(--slate-400);
+  --text-light: var(--warm-white);
+  --accent: var(--amber-500);
+  --accent-hover: var(--amber-600);
+  --border: var(--slate-100);
+  --border-dark: var(--slate-700);
+}
 
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--warm-white);
+  color: var(--text-primary);
 }
 
 .safe-area-pb {
@@ -57,26 +125,26 @@ body {
 
 /* ==================== MODERN UI SYSTEM ==================== */
 
-/* Glassmorphism effects */
+/* Glassmorphism effects - Meridian Cairn */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(245, 242, 237, 0.1);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(245, 242, 237, 0.15);
 }
 
 .glass-dark {
-  background: rgba(17, 24, 39, 0.8);
+  background: rgba(26, 30, 36, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--slate-700);
 }
 
 .glass-light {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(245, 242, 237, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--slate-100);
 }
 
 /* Modal backdrop with blur */
@@ -180,13 +248,13 @@ body {
   animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
-/* Pulse glow */
+/* Pulse glow - Amber accent */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 0 0 rgba(196, 136, 58, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    box-shadow: 0 0 0 8px rgba(196, 136, 58, 0);
   }
 }
 
@@ -262,13 +330,13 @@ button:active {
   height: 200px;
 }
 
-/* Glow button */
+/* Glow button - Amber accent */
 .btn-glow {
   transition: all 0.3s ease;
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 20px rgba(196, 136, 58, 0.5);
 }
 
 /* ==================== CARD EFFECTS ==================== */
@@ -287,11 +355,11 @@ button:active {
   box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.15);
 }
 
-/* Card with gradient border */
+/* Card with gradient border - Slate to Amber */
 .card-gradient-border {
   position: relative;
   background: linear-gradient(var(--bg-color), var(--bg-color)) padding-box,
-              linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box;
+              linear-gradient(135deg, var(--slate-600) 0%, var(--amber-500) 100%) border-box;
   border: 2px solid transparent;
 }
 
@@ -316,13 +384,13 @@ button:active {
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background: #3b82f6;
+  background: var(--amber-500);
   border-radius: 50%;
   animation: bounceIn 0.3s ease-out;
 }
 
 .nav-glow {
-  box-shadow: 0 -4px 30px -10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 -4px 30px -10px rgba(196, 136, 58, 0.3);
 }
 
 /* ==================== INPUT EFFECTS ==================== */
@@ -332,13 +400,14 @@ input[type="range"] {
   width: 100%;
   height: 8px;
   border-radius: 4px;
-  background: #e2e8f0;
+  background: var(--slate-200);
   outline: none;
 }
 
 .dark input[type="range"],
-[class*="bg-gray-900"] input[type="range"] {
-  background: #374151;
+[class*="bg-slate-900"] input[type="range"],
+[class*="bg-near-black"] input[type="range"] {
+  background: var(--slate-600);
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -346,34 +415,34 @@ input[type="range"]::-webkit-slider-thumb {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--amber-500);
   cursor: pointer;
   border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 2px 8px rgba(196, 136, 58, 0.4);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 12px rgba(196, 136, 58, 0.5);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--amber-500);
   cursor: pointer;
   border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 2px 8px rgba(196, 136, 58, 0.4);
 }
 
-/* Text input focus effect */
+/* Text input focus effect - Amber accent */
 input[type="text"]:focus,
 input[type="number"]:focus,
 textarea:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 3px rgba(196, 136, 58, 0.3);
 }
 
 /* ==================== TOGGLE SWITCH ==================== */
@@ -382,14 +451,14 @@ textarea:focus {
   position: relative;
   width: 52px;
   height: 28px;
-  background: #cbd5e1;
+  background: var(--slate-300);
   border-radius: 999px;
   transition: background 0.3s;
   cursor: pointer;
 }
 
 .toggle-switch.active {
-  background: #3b82f6;
+  background: var(--amber-500);
 }
 
 .toggle-switch::after {
@@ -414,7 +483,7 @@ textarea:focus {
 .progress-bar {
   position: relative;
   overflow: hidden;
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(196, 136, 58, 0.2);
   border-radius: 999px;
 }
 
@@ -438,19 +507,19 @@ textarea:focus {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 20px rgba(196, 136, 58, 0.4);
   transition: all 0.3s ease;
   z-index: 40;
 }
 
 .fab:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 30px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 30px rgba(196, 136, 58, 0.5);
 }
 
 .fab:active {
@@ -476,14 +545,14 @@ textarea:focus {
 /* ==================== SKELETON LOADING ==================== */
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--slate-100) 25%, var(--slate-200) 50%, var(--slate-100) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
 }
 
 .dark .skeleton {
-  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background: linear-gradient(90deg, var(--slate-700) 25%, var(--slate-600) 50%, var(--slate-700) 75%);
   background-size: 200% 100%;
 }
 
@@ -520,22 +589,64 @@ button, a, input, textarea, select {
 /* ==================== GRADIENT TEXT ==================== */
 
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--slate-500) 0%, var(--amber-500) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-fire {
-  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  background: linear-gradient(135deg, var(--amber-500) 0%, var(--critical) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-success {
-  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--nominal) 0%, var(--sage-500) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ==================== STATUS INDICATORS ==================== */
+
+.status-critical {
+  background: rgba(196, 90, 58, 0.15);
+  color: var(--critical);
+}
+
+.status-warning {
+  background: rgba(196, 136, 58, 0.15);
+  color: var(--warning);
+}
+
+.status-nominal {
+  background: rgba(90, 139, 94, 0.15);
+  color: var(--nominal);
+}
+
+.status-info {
+  background: rgba(74, 122, 155, 0.15);
+  color: var(--info);
+}
+
+/* ==================== MERIDIAN CAIRN UTILITY CLASSES ==================== */
+
+.font-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+.text-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.divider-amber {
+  width: 48px;
+  height: 1px;
+  background: var(--amber-500);
 }

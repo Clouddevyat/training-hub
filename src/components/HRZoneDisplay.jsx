@@ -15,7 +15,7 @@ const HRZoneDisplay = ({ hrZone, profile, theme, darkMode }) => {
   return (
     <div className={`p-3 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg flex items-center justify-between`}>
       <div>
-        <p className={`text-xs font-medium ${darkMode ? 'text-green-400' : 'text-green-600'} uppercase`}>Target HR</p>
+        <p className={`text-xs font-medium ${darkMode ? 'text-sage-400' : 'text-sage-600'} uppercase`}>Target HR</p>
         <p className={`font-medium ${theme.text}`}>{zone.name}</p>
       </div>
       <div className="text-right">

@@ -206,7 +206,7 @@ const ProgramBuilderView = ({
             key={s}
             className={`h-2 flex-1 rounded-full ${
               ['type', 'details', 'phases', 'template', 'review'].indexOf(step) >= i
-                ? 'bg-blue-500'
+                ? 'bg-amber-500'
                 : theme.cardAlt
             }`}
           />
@@ -220,7 +220,7 @@ const ProgramBuilderView = ({
           
           <button
             onClick={() => { setProgramType('meso'); setStep('details'); }}
-            className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500 transition-colors`}
+            className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500 transition-colors`}
           >
             <div className="flex items-center gap-4">
               <span className="text-3xl">📦</span>
@@ -233,7 +233,7 @@ const ProgramBuilderView = ({
 
           <button
             onClick={() => { setProgramType('macro'); setStep('details'); }}
-            className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-blue-500 transition-colors`}
+            className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500 transition-colors`}
           >
             <div className="flex items-center gap-4">
               <span className="text-3xl">📅</span>
@@ -280,7 +280,7 @@ const ProgramBuilderView = ({
                 <button
                   key={icon}
                   onClick={() => setProgramIcon(icon)}
-                  className={`text-2xl p-2 rounded-lg ${programIcon === icon ? 'bg-blue-500' : theme.cardAlt}`}
+                  className={`text-2xl p-2 rounded-lg ${programIcon === icon ? 'bg-amber-500' : theme.cardAlt}`}
                 >
                   {icon}
                 </button>
@@ -291,7 +291,7 @@ const ProgramBuilderView = ({
           <button
             onClick={() => setStep('phases')}
             disabled={!programName}
-            className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+            className={`w-full py-3 rounded-xl font-medium ${programName ? 'bg-amber-500 text-white' : 'bg-slate-300 text-slate-500'}`}
           >
             Next: Add {programType === 'meso' ? 'Phase' : 'Mesocycles'}
           </button>
@@ -321,13 +321,13 @@ const ProgramBuilderView = ({
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setCurrentPhaseIdx(idx); setStep('template'); }}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm"
+                    className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm"
                   >
                     Edit Days
                   </button>
                   <button
                     onClick={() => removePhase(idx)}
-                    className="px-3 py-1 bg-red-500/20 text-red-500 rounded-lg text-sm"
+                    className="px-3 py-1 bg-critical/20 text-critical rounded-lg text-sm"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -371,7 +371,7 @@ const ProgramBuilderView = ({
                   <button
                     key={model.id}
                     onClick={() => setNewPhaseProgression(model.id)}
-                    className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+                    className={`p-3 rounded-lg text-left ${newPhaseProgression === model.id ? 'bg-amber-500 text-white' : theme.cardAlt}`}
                   >
                     <span className="text-lg mr-2">{model.icon}</span>
                     <span className="text-sm font-medium">{model.name}</span>
@@ -386,7 +386,7 @@ const ProgramBuilderView = ({
             <button
               onClick={addPhase}
               disabled={!newPhaseName}
-              className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+              className={`w-full py-2 rounded-lg font-medium ${newPhaseName ? 'bg-nominal text-white' : 'bg-slate-300 text-slate-500'}`}
             >
               <Plus size={18} className="inline mr-1" /> Add Phase
             </button>
@@ -395,7 +395,7 @@ const ProgramBuilderView = ({
           {phases.length > 0 && (
             <button
               onClick={() => setStep('review')}
-              className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white"
+              className="w-full py-3 rounded-xl font-medium bg-amber-500 text-white"
             >
               Review & Save Program
             </button>
@@ -493,7 +493,7 @@ const ProgramBuilderView = ({
                           <div className="flex items-center justify-between mb-2">
                             <button
                               onClick={() => setShowExercisePicker({ dayIdx, exerciseIdx: exIdx })}
-                              className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-blue-500'}`}
+                              className={`text-sm font-medium ${ex.exerciseId ? theme.text : 'text-amber-500'}`}
                             >
                               {ex.exerciseId ? EXERCISE_LIBRARY[ex.exerciseId]?.name || ex.name : '+ Select Exercise'}
                             </button>
@@ -501,13 +501,13 @@ const ProgramBuilderView = ({
                               {ex.exerciseId && (
                                 <button
                                   onClick={() => setShowSwapPicker({ dayIdx, exerciseIdx: exIdx, currentExerciseId: ex.exerciseId })}
-                                  className={`p-1 ${theme.textMuted} hover:text-blue-500`}
+                                  className={`p-1 ${theme.textMuted} hover:text-amber-500`}
                                   title="Swap exercise"
                                 >
                                   <RotateCcw size={14} />
                                 </button>
                               )}
-                              <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-red-500">
+                              <button onClick={() => removeExercise(dayIdx, exIdx)} className="p-1 text-critical">
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -569,7 +569,7 @@ const ProgramBuilderView = ({
 
           <button
             onClick={() => setStep('phases')}
-            className="w-full py-3 rounded-xl font-medium bg-blue-500 text-white"
+            className="w-full py-3 rounded-xl font-medium bg-amber-500 text-white"
           >
             Save Template
           </button>
@@ -625,7 +625,7 @@ const ProgramBuilderView = ({
             </button>
             <button
               onClick={saveProgram}
-              className="flex-1 py-3 rounded-xl font-medium bg-green-500 text-white"
+              className="flex-1 py-3 rounded-xl font-medium bg-nominal text-white"
             >
               Save Program
             </button>
@@ -655,7 +655,7 @@ const ProgramBuilderView = ({
             <div className="flex flex-wrap gap-2 mb-4">
               <button
                 onClick={() => setExerciseFilter('all')}
-                className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+                className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === 'all' ? 'bg-amber-500 text-white' : theme.cardAlt}`}
               >
                 All
               </button>
@@ -663,7 +663,7 @@ const ProgramBuilderView = ({
                 <button
                   key={pattern.id}
                   onClick={() => setExerciseFilter(pattern.id)}
-                  className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-blue-500 text-white' : theme.cardAlt}`}
+                  className={`px-3 py-1 rounded-full text-sm ${exerciseFilter === pattern.id ? 'bg-amber-500 text-white' : theme.cardAlt}`}
                 >
                   {pattern.icon} {pattern.name}
                 </button>

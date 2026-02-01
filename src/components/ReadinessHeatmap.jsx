@@ -47,12 +47,12 @@ const ReadinessHeatmap = ({
 
   // Altitude-themed color scale
   const getScoreColor = (score) => {
-    if (score === null) return darkMode ? 'bg-gray-800' : 'bg-gray-200';
+    if (score === null) return darkMode ? 'bg-slate-800' : 'bg-slate-200';
     if (score >= 85) return 'bg-emerald-500'; // Summit
     if (score >= 70) return 'bg-cyan-500';    // High camp
     if (score >= 55) return 'bg-amber-500';   // Base camp
-    if (score >= 40) return 'bg-orange-500';  // Foothills
-    return 'bg-red-500';                       // Valley
+    if (score >= 40) return 'bg-amber-500';  // Foothills
+    return 'bg-critical';                       // Valley
   };
 
   const getScoreOpacity = (score) => {
@@ -91,7 +91,7 @@ const ReadinessHeatmap = ({
   }
 
   return (
-    <div className={`rounded-2xl ${darkMode ? 'bg-gray-800/30' : 'bg-gray-50'} p-4`}>
+    <div className={`rounded-2xl ${darkMode ? 'bg-slate-800/30' : 'bg-gray-50'} p-4`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ const ReadinessHeatmap = ({
         <div className="flex items-center gap-2">
           <span className={`text-[10px] ${theme.textMuted}`}>Low</span>
           <div className="flex gap-0.5">
-            {['bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-cyan-500', 'bg-emerald-500'].map((color, idx) => (
+            {['bg-critical', 'bg-amber-500', 'bg-amber-500', 'bg-cyan-500', 'bg-emerald-500'].map((color, idx) => (
               <div
                 key={idx}
                 className={`w-3 h-3 rounded-sm ${color}`}

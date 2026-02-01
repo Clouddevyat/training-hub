@@ -88,10 +88,10 @@ const HRZoneViz = ({
   if (compact) {
     // Compact horizontal bar view
     return (
-      <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-gray-100'}`}>
+      <div className={`p-3 rounded-xl ${darkMode ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Heart size={14} className="text-red-500" />
+            <Heart size={14} className="text-critical" />
             <span className={`text-xs font-medium ${theme.textMuted} uppercase`}>
               Target Zone
             </span>
@@ -154,11 +154,11 @@ const HRZoneViz = ({
 
   // Full view with all zone details
   return (
-    <div className={`rounded-2xl ${darkMode ? 'bg-gray-800/30' : 'bg-gray-50'} p-4`}>
+    <div className={`rounded-2xl ${darkMode ? 'bg-slate-800/30' : 'bg-gray-50'} p-4`}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className={`p-2 rounded-lg ${darkMode ? 'bg-red-900/30' : 'bg-red-100'}`}>
-          <Heart size={18} className="text-red-500" />
+          <Heart size={18} className="text-critical" />
         </div>
         <div>
           <h3 className={`font-semibold ${theme.text}`}>Heart Rate Zones</h3>
@@ -217,10 +217,10 @@ const HRZoneViz = ({
               className={`flex items-center p-2.5 rounded-xl transition-all duration-300 ${
                 zone.isTarget
                   ? darkMode
-                    ? 'bg-gray-700/70 ring-2'
+                    ? 'bg-slate-700/70 ring-2'
                     : 'bg-white ring-2 shadow-md'
                   : darkMode
-                    ? 'bg-gray-800/30'
+                    ? 'bg-slate-800/30'
                     : 'bg-white/50'
               }`}
               style={{

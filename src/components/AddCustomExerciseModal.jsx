@@ -100,7 +100,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
             <label className={`block text-sm font-medium ${theme.text} mb-2`}>Equipment</label>
             <div className="flex flex-wrap gap-2">
               {EQUIPMENT_OPTIONS.map(eq => (
-                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-blue-500 text-white' : theme.chip}`}>
+                <button key={eq} onClick={() => toggleEquipment(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${equipment.includes(eq) ? 'bg-amber-500 text-white' : theme.chip}`}>
                   {EQUIPMENT_DISPLAY_NAMES[eq] || eq}
                 </button>
               ))}
@@ -111,7 +111,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
             <label className={`block text-sm font-medium ${theme.text} mb-2`}>Target Muscles</label>
             <div className="flex flex-wrap gap-2">
               {MUSCLE_OPTIONS.map(muscle => (
-                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-green-500 text-white' : theme.chip}`}>
+                <button key={muscle} onClick={() => toggleMuscle(muscle)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${muscles.includes(muscle) ? 'bg-nominal text-white' : theme.chip}`}>
                   {muscle}
                 </button>
               ))}
@@ -121,7 +121,7 @@ const AddCustomExerciseModal = ({ onClose, onSave, editExercise, theme, darkMode
 
         <div className={`p-4 border-t ${theme.border} flex gap-3`}>
           <button onClick={onClose} className={`flex-1 py-3 ${theme.btnSecondary} rounded-xl font-medium`}>Cancel</button>
-          <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 rounded-xl font-medium text-white">
+          <button onClick={handleSave} disabled={!name.trim()} className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 rounded-xl font-medium text-white">
             {editExercise ? 'Update' : 'Add Exercise'}
           </button>
         </div>
