@@ -3614,7 +3614,7 @@ const OnboardingFlow = ({ onComplete, theme, darkMode }) => {
   const isLast = step === steps.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 safe-area-pt safe-area-pb" style={{ backgroundColor: 'rgba(0,0,0,0.9)', filter: 'none' }}>
       <div className={`w-full max-w-md ${theme.card} rounded-2xl overflow-hidden`}>
         {/* Progress dots */}
         <div className="flex justify-center gap-2 pt-6 pb-2">
@@ -8733,8 +8733,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen ${theme.bg} animate-app-enter`}>
-      {/* Onboarding Flow for First-Time Users */}
+    <>
+      {/* Onboarding Flow for First-Time Users - outside animated container */}
       {showOnboarding && (
         <OnboardingFlow
           theme={theme}
@@ -8746,7 +8746,8 @@ export default function App() {
         />
       )}
 
-      {/* Offline Banner */}
+      <div className={`min-h-screen ${theme.bg} animate-app-enter`}>
+        {/* Offline Banner */}
       {isOffline && (
         <div className="bg-amber-500 text-amber-950 text-center py-1 text-sm font-medium">
           📴 Offline Mode — Data saves locally
@@ -10454,7 +10455,8 @@ export default function App() {
           })}
         </div>
       </nav>
-    </div>
+      </div>
+    </>
   );
 }
 // Build 1769743122
