@@ -111,7 +111,17 @@ const getTodayKey = () => {
 };
 
 // Meridian Cairn color system for workout types
-const getTypeColor = (type, dark) => {
+const getTypeColor = (type, dark, gradient = false) => {
+  if (gradient) {
+    const gradients = {
+      strength: 'bg-gradient-to-br from-critical via-critical/90 to-amber-700',
+      cardio: 'bg-gradient-to-br from-info via-info/90 to-slate-600',
+      muscular_endurance: 'bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700',
+      recovery: 'bg-gradient-to-br from-sage-500 via-sage-600 to-sage-700',
+      long_effort: 'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700'
+    };
+    return gradients[type] || 'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700';
+  }
   const colors = {
     strength: dark ? 'bg-critical' : 'bg-critical',
     cardio: dark ? 'bg-info' : 'bg-info',
@@ -1253,9 +1263,12 @@ const ReadinessCheckView = ({ readiness, setReadiness, athleteProfile, theme, da
           <p className={`text-sm ${theme.textMuted} mt-2`}>{readinessInfo?.recommendation}</p>
         </div>
       ) : (
-        <div className={`${theme.card} rounded-xl shadow-sm p-5 text-center`}>
-          <div className={`text-2xl font-medium ${theme.textMuted}`}>No check-in yet</div>
-          <p className={`text-sm ${theme.textMuted} mt-2`}>Complete your daily check-in below</p>
+        <div className={`${theme.card} rounded-xl shadow-sm p-8 text-center`}>
+          <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+            <Battery size={32} className="text-amber-400" />
+          </div>
+          <div className={`text-xl font-semibold ${theme.text} mb-1`}>No check-in yet</div>
+          <p className={`text-sm ${theme.textMuted}`}>Complete your daily check-in below</p>
         </div>
       )}
 
@@ -9177,8 +9190,8 @@ export default function App() {
         {/* WORKOUT VIEW */}
         {currentView === 'workout' && todayWorkout && (
           <div className="p-4 space-y-4">
-            <div className={`${getTypeColor(todayWorkout.type, darkMode)} rounded-xl p-5 text-white`}>
-              <p className="text-sm opacity-80 uppercase">Week {programState.currentWeek} • Day {programState.currentDay}</p>
+            <div className={`${getTypeColor(todayWorkout.type, darkMode, true)} rounded-xl p-5 text-white shadow-lg`}>
+              <p className="text-sm opacity-80 uppercase tracking-wide">Week {programState.currentWeek} • Day {programState.currentDay}</p>
               <h2 className="text-2xl font-bold mt-1">{todayWorkout.session}</h2>
               <div className="flex items-center gap-4 mt-3 text-sm opacity-90">
                 <span className="flex items-center gap-1"><Clock size={16} />{todayWorkout.duration} min{todayWorkout.durationProgressed && todayWorkout.originalDuration && ` (was ${todayWorkout.originalDuration})`}</span>
@@ -9574,9 +9587,12 @@ export default function App() {
                   ))}
                 </div>
               ) : (
-                <div className={`text-center py-6 ${theme.textMuted}`}>
-                  <TrendingUp size={32} className="mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Complete workouts to see volume data</p>
+                <div className="text-center py-8">
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+                    <TrendingUp size={32} className="text-amber-400" />
+                  </div>
+                  <p className={`font-medium ${theme.text} mb-1`}>No volume data yet</p>
+                  <p className={`text-sm ${theme.textMuted}`}>Complete workouts to see volume data</p>
                 </div>
               )}
             </div>
@@ -9870,22 +9886,24 @@ export default function App() {
 
             <div className={`${theme.card} rounded-xl shadow-sm p-5`}>
               <h3 className={`font-semibold ${theme.text} mb-4`}>Program Position</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className={`block text-sm ${theme.textMuted} mb-2`}>Week</label>
-                  <div className="flex items-center justify-center gap-4">
-                    <button onClick={() => setProgramState(prev => ({ ...prev, currentWeek: Math.max(1, prev.currentWeek - 1) }))} className={`p-2 rounded-lg ${theme.cardAlt}`}><ChevronLeft size={20} className={theme.text} /></button>
-                    <span className={`text-2xl font-bold ${theme.text} w-16 text-center`}>{programState.currentWeek}</span>
-                    <button onClick={() => setProgramState(prev => ({ ...prev, currentWeek: Math.min(40, prev.currentWeek + 1) }))} className={`p-2 rounded-lg ${theme.cardAlt}`}><ChevronRight size={20} className={theme.text} /></button>
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`${theme.cardAlt} rounded-xl p-4`}>
+                  <label className={`block text-xs uppercase tracking-wider font-semibold ${theme.textMuted} mb-3 text-center`}>Week</label>
+                  <div className="flex items-center justify-center gap-3">
+                    <button onClick={() => setProgramState(prev => ({ ...prev, currentWeek: Math.max(1, prev.currentWeek - 1) }))} className={`p-2 rounded-lg ${darkMode ? 'bg-slate-600 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-300'} transition-colors`}><ChevronLeft size={18} className={theme.text} /></button>
+                    <span className={`text-3xl font-bold ${theme.text} w-12 text-center`}>{programState.currentWeek}</span>
+                    <button onClick={() => setProgramState(prev => ({ ...prev, currentWeek: Math.min(40, prev.currentWeek + 1) }))} className={`p-2 rounded-lg ${darkMode ? 'bg-slate-600 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-300'} transition-colors`}><ChevronRight size={18} className={theme.text} /></button>
                   </div>
+                  <p className={`text-xs ${theme.textMuted} text-center mt-2`}>of 40</p>
                 </div>
-                <div>
-                  <label className={`block text-sm ${theme.textMuted} mb-2`}>Day</label>
-                  <div className="flex items-center justify-center gap-4">
-                    <button onClick={() => setProgramState(prev => ({ ...prev, currentDay: Math.max(1, prev.currentDay - 1) }))} className={`p-2 rounded-lg ${theme.cardAlt}`}><ChevronLeft size={20} className={theme.text} /></button>
-                    <span className={`text-2xl font-bold ${theme.text} w-16 text-center`}>{programState.currentDay}</span>
-                    <button onClick={() => setProgramState(prev => ({ ...prev, currentDay: Math.min(7, prev.currentDay + 1) }))} className={`p-2 rounded-lg ${theme.cardAlt}`}><ChevronRight size={20} className={theme.text} /></button>
+                <div className={`${theme.cardAlt} rounded-xl p-4`}>
+                  <label className={`block text-xs uppercase tracking-wider font-semibold ${theme.textMuted} mb-3 text-center`}>Day</label>
+                  <div className="flex items-center justify-center gap-3">
+                    <button onClick={() => setProgramState(prev => ({ ...prev, currentDay: Math.max(1, prev.currentDay - 1) }))} className={`p-2 rounded-lg ${darkMode ? 'bg-slate-600 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-300'} transition-colors`}><ChevronLeft size={18} className={theme.text} /></button>
+                    <span className={`text-3xl font-bold ${theme.text} w-12 text-center`}>{programState.currentDay}</span>
+                    <button onClick={() => setProgramState(prev => ({ ...prev, currentDay: Math.min(7, prev.currentDay + 1) }))} className={`p-2 rounded-lg ${darkMode ? 'bg-slate-600 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-300'} transition-colors`}><ChevronRight size={18} className={theme.text} /></button>
                   </div>
+                  <p className={`text-xs ${theme.textMuted} text-center mt-2`}>of 7</p>
                 </div>
               </div>
             </div>

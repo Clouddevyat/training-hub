@@ -277,10 +277,10 @@ body {
 }
 
 .glass-dark {
-  background: rgba(26, 30, 36, 0.85);
+  background: rgba(36, 42, 50, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--slate-700);
+  border: 1px solid rgba(107, 122, 138, 0.15);
 }
 
 .glass-light {
