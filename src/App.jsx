@@ -7981,7 +7981,7 @@ const WelcomeScreen = ({ onLogin, onCreateProfile, onLinkAccount, biometricAvail
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-warm-white tracking-[0.15em] uppercase animate-title-slide">
             Meridian <span className="text-amber-400 font-normal">Cairn</span>
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm font-mono tracking-[0.3em] uppercase mt-4 animate-subtitle-fade">
+          <p className="text-slate-300 text-sm sm:text-base font-mono tracking-[0.3em] uppercase mt-4 animate-subtitle-fade">
             Training Systems
           </p>
         </div>
