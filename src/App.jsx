@@ -1893,7 +1893,7 @@ const BenchmarkTestsView = ({ athleteProfile, setAthleteProfile, benchmarkResult
           return (
             <div key={test.id} className={`${theme.card} rounded-xl p-4`}>
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
                   <RenderIcon icon={test.icon} Icon={test.Icon} size={20} className="text-amber-500" />
                 </div>
                 <div>
@@ -2603,7 +2603,7 @@ const ChartsView = ({ workoutLogs, benchmarkResults, readiness, athleteProfile, 
           {/* Strength Standards - Summit Progress */}
           <div className={`${theme.card} rounded-xl p-4`}>
             <div className="flex items-center gap-2 mb-3">
-              <Mountain size={18} className="text-cyan-500" />
+              <Mountain size={18} className="text-amber-400" />
               <h3 className={`font-semibold ${theme.text}`}>Summit Standards</h3>
             </div>
             <p className={`text-xs ${theme.textMuted} mb-4`}>Based on {athleteProfile.weight || 225} lb bodyweight</p>
@@ -2737,7 +2737,7 @@ const AthleteProfileView = ({ profile, setProfile, theme, darkMode }) => {
           <EditableField category="basic" fieldKey="age" value={profile.age} unit="years" />
         </div>
         {loadTargets && (
-          <div className={`mt-4 p-3 ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'} rounded-lg`}>
+          <div className={`mt-4 p-3 ${darkMode ? 'bg-info/20' : 'bg-info/10'} rounded-lg`}>
             <p className={`text-xs font-medium ${darkMode ? 'text-amber-400' : 'text-amber-600'} mb-2`}>LOAD TARGETS</p>
             <div className="grid grid-cols-4 gap-2 text-center">
               {Object.entries(loadTargets).map(([key, val]) => (
@@ -3142,7 +3142,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
             )}
             {exercise.sets && !exercise.reps && <span className={`font-medium ${theme.textMuted}`}>{exercise.sets} sets</span>}
             {workingWeight && (
-              <span className="font-mono font-bold text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-md text-xs">
+              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-xs">
                 {workingWeight} lb
               </span>
             )}
@@ -3175,7 +3175,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
           {/* Info row */}
           <div className={`flex flex-wrap gap-2 text-xs ${theme.textMuted} mb-2`}>
             {workingWeight && (
-              <span className={`px-2 py-1 rounded ${darkMode ? 'bg-blue-900/50 text-amber-300' : 'bg-blue-100 text-blue-700'}`}>
+              <span className={`px-2 py-1 rounded ${darkMode ? 'bg-info/30 text-amber-300' : 'bg-info/20 text-info'}`}>
                 Target: {workingWeight} lbs ({exercise.percentage}% of {prValue})
               </span>
             )}
@@ -3204,7 +3204,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left active:scale-[0.98] ${
                   set.completed
                     ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/10 ring-1 ring-emerald-500/30'
-                    : `${darkMode ? 'bg-slate-800/50' : 'bg-white'} ring-1 ${darkMode ? 'ring-white/5' : 'ring-black/5'} hover:ring-cyan-500/30`
+                    : `${darkMode ? 'bg-slate-800/50' : 'bg-white'} ring-1 ${darkMode ? 'ring-white/5' : 'ring-black/5'} hover:ring-amber-500/30`
                 }`}
               >
                 {/* Set number */}
@@ -3231,7 +3231,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
                         <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
                           set.rpe >= 9 ? 'bg-critical/20 text-critical' :
                           set.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
-                          'bg-cyan-500/20 text-cyan-400'
+                          'bg-amber-500/20 text-amber-400'
                         }`}>
                           RPE {set.rpe}
                         </span>
@@ -3241,7 +3241,7 @@ const SmartExercise = ({ exercise, profile, theme, darkMode, isComplete, onToggl
                     <div className="flex items-center gap-2">
                       <span className={`text-sm ${theme.textMuted}`}>Tap to log</span>
                       {workingWeight && (
-                        <span className="text-xs font-mono text-cyan-500/70">• {workingWeight} lb target</span>
+                        <span className="text-xs font-mono text-amber-400/70">• {workingWeight} lb target</span>
                       )}
                     </div>
                   )}
@@ -4768,7 +4768,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
           {/* Create New Options */}
           <button onClick={() => { setProgramType('meso'); setStep('details'); }} className={`w-full ${theme.card} rounded-xl p-5 text-left border-2 ${theme.border} hover:border-amber-500`}>
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
                 <Dumbbell size={24} className="text-amber-500" />
               </div>
               <div><p className={`font-bold ${theme.text}`}>New Mesocycle</p><p className={`text-sm ${theme.textMuted}`}>Single training block (3-8 weeks)</p></div>
@@ -5609,7 +5609,7 @@ const ProgramBuilderView = ({ customPrograms, setCustomPrograms, customExercises
                   className={`w-full p-4 ${theme.cardAlt} rounded-xl text-left hover:border-amber-500 border-2 border-transparent`}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
                       {split.Icon && <split.Icon size={20} className="text-amber-500" />}
                     </div>
                     <div>
@@ -6205,8 +6205,8 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
   const getTypeColor = (type) => {
     const colors = {
       strength: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-critical',
-      aerobic: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-amber-400',
-      cardio: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-amber-400',
+      aerobic: 'bg-info/20 text-info dark:bg-info/20 dark:text-amber-400',
+      cardio: 'bg-info/20 text-info dark:bg-info/20 dark:text-amber-400',
       conditioning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-amber-400',
       threshold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-warning',
       long_effort: 'bg-sage-100 text-sage-700 dark:bg-sage-900/30 dark:text-sage-400',
@@ -6231,7 +6231,7 @@ const ProgramOverviewView = ({ programId, program, templateData, onClose, onActi
         {/* Header */}
         <div className={`sticky top-0 ${theme.card} border-b ${theme.border} p-4 flex items-center justify-between z-10`}>
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
               <RenderIcon icon={program.iconId || program.icon} Icon={program.Icon} size={24} className="text-amber-500" />
             </div>
             <div>
@@ -7319,8 +7319,8 @@ const CalendarView = ({ programState, setProgramState, workoutLogs, phase, progr
   const getTypeColorLight = (type) => {
     const colors = {
       strength: darkMode ? 'bg-red-900/60 border-red-700' : 'bg-red-100 border-red-300',
-      aerobic: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
-      cardio: darkMode ? 'bg-blue-900/60 border-blue-700' : 'bg-blue-100 border-blue-300',
+      aerobic: darkMode ? 'bg-info/30 border-info' : 'bg-info/20 border-info/50',
+      cardio: darkMode ? 'bg-info/30 border-info' : 'bg-info/20 border-info/50',
       long_aerobic: darkMode ? 'bg-sage-900/60 border-sage-700' : 'bg-sage-100 border-sage-300',
       long_effort: darkMode ? 'bg-sage-900/60 border-sage-700' : 'bg-sage-100 border-sage-300',
       muscular_endurance: darkMode ? 'bg-orange-900/60 border-orange-700' : 'bg-orange-100 border-orange-300',
@@ -8746,7 +8746,7 @@ export default function App() {
               onClick={() => setCurrentView('dashboard')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <span className="text-2xl">⛰️</span>
+              <CairnIcon size={28} />
               <h1 className="text-lg font-bold tracking-tight">Training Hub <span className="text-xs font-normal opacity-50">v2.2</span></h1>
             </button>
           </div>
@@ -8791,15 +8791,15 @@ export default function App() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: Home, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
-                { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-nominal/20', text: 'text-nominal', ring: 'ring-green-500/50', hover: 'hover:bg-nominal/10' },
-                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-sage-600/20', text: 'text-sage-500', ring: 'ring-sage-500/50', hover: 'hover:bg-sage-600/10' },
-                { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-orange-500/50', hover: 'hover:bg-amber-500/10' },
-                { id: 'charts', label: 'Charts', icon: LineChart, bg: 'bg-cyan-500/20', text: 'text-cyan-500', ring: 'ring-cyan-500/50', hover: 'hover:bg-cyan-500/10' },
-                { id: 'profile', label: 'Profile', icon: User, bg: 'bg-pink-500/20', text: 'text-pink-500', ring: 'ring-pink-500/50', hover: 'hover:bg-pink-500/10' },
-                { id: 'benchmarks', label: 'Benchmarks', icon: Flag, bg: 'bg-amber-500/20', text: 'text-amber-500', ring: 'ring-amber-500/50', hover: 'hover:bg-amber-500/10' },
-                { id: 'log', label: 'Workout Log', icon: FileText, bg: 'bg-emerald-500/20', text: 'text-emerald-500', ring: 'ring-emerald-500/50', hover: 'hover:bg-emerald-500/10' },
-                { id: 'progress', label: 'Progress', icon: BarChart3, bg: 'bg-sage-500/20', text: 'text-sage-500', ring: 'ring-sage-500/50', hover: 'hover:bg-sage-500/10' },
-                { id: 'programs', label: 'Programs', icon: Dumbbell, bg: 'bg-rose-500/20', text: 'text-rose-500', ring: 'ring-rose-500/50', hover: 'hover:bg-rose-500/10' },
+                { id: 'readiness', label: 'Readiness', icon: Battery, bg: 'bg-nominal/20', text: 'text-nominal', ring: 'ring-nominal/50', hover: 'hover:bg-nominal/10' },
+                { id: 'workout', label: 'Workout', icon: Play, bg: 'bg-sage-500/20', text: 'text-sage-500', ring: 'ring-sage-500/50', hover: 'hover:bg-sage-500/10' },
+                { id: 'calendar', label: 'Calendar', icon: Calendar, bg: 'bg-amber-600/20', text: 'text-amber-400', ring: 'ring-amber-400/50', hover: 'hover:bg-amber-600/10' },
+                { id: 'charts', label: 'Charts', icon: LineChart, bg: 'bg-info/20', text: 'text-info', ring: 'ring-info/50', hover: 'hover:bg-info/10' },
+                { id: 'profile', label: 'Profile', icon: User, bg: 'bg-slate-400/20', text: 'text-slate-300', ring: 'ring-slate-400/50', hover: 'hover:bg-slate-400/10' },
+                { id: 'benchmarks', label: 'Benchmarks', icon: Flag, bg: 'bg-critical/20', text: 'text-critical', ring: 'ring-critical/50', hover: 'hover:bg-critical/10' },
+                { id: 'log', label: 'Workout Log', icon: FileText, bg: 'bg-sage-600/20', text: 'text-sage-400', ring: 'ring-sage-400/50', hover: 'hover:bg-sage-600/10' },
+                { id: 'progress', label: 'Progress', icon: BarChart3, bg: 'bg-amber-700/20', text: 'text-amber-300', ring: 'ring-amber-300/50', hover: 'hover:bg-amber-700/10' },
+                { id: 'programs', label: 'Programs', icon: Dumbbell, bg: 'bg-warning/20', text: 'text-warning', ring: 'ring-warning/50', hover: 'hover:bg-warning/10' },
                 { id: 'settings', label: 'Settings', icon: Settings, bg: 'bg-slate-500/20', text: 'text-slate-400', ring: 'ring-slate-500/50', hover: 'hover:bg-slate-500/10' }
               ].map(({ id, label, icon: Icon, bg, text, ring, hover }) => (
                 <button
@@ -8856,8 +8856,8 @@ export default function App() {
             {/* Readiness Section - High Altitude Theme */}
             {!todayReadiness && (
               <button onClick={() => setFloatingPane('readiness')} className={`w-full p-5 ${darkMode ? 'bg-gradient-to-br from-slate-800/50 via-slate-900/50 to-slate-800/50 border-amber-500/30' : 'bg-gradient-to-br from-slate-50 via-white to-amber-50 border-amber-200'} border rounded-2xl flex items-center gap-4 card-hover`}>
-                <div className={`p-3 rounded-xl ${darkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'}`}>
-                  <Mountain className={darkMode ? 'text-cyan-400' : 'text-cyan-600'} size={24} />
+                <div className={`p-3 rounded-xl ${darkMode ? 'bg-amber-500/20' : 'bg-amber-100'}`}>
+                  <Mountain className={darkMode ? 'text-amber-400' : 'text-amber-500'} size={24} />
                 </div>
                 <div className="text-left flex-1">
                   <p className={`font-semibold ${theme.text}`}>Begin Altitude Check</p>
@@ -8939,7 +8939,7 @@ export default function App() {
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             factor.severity === 'high' ? (darkMode ? 'bg-critical/20' : 'bg-red-100') :
                             factor.severity === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
-                            (darkMode ? 'bg-amber-500/20' : 'bg-blue-100')
+                            (darkMode ? 'bg-amber-500/20' : 'bg-info/20')
                           }`}>
                             <RenderIcon icon={factor.icon} Icon={factor.Icon} size={18} className={
                               factor.severity === 'high' ? 'text-critical' :
@@ -8994,7 +8994,7 @@ export default function App() {
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             op.priority === 'high' ? (darkMode ? 'bg-nominal/20' : 'bg-green-100') :
                             op.priority === 'medium' ? (darkMode ? 'bg-amber-500/20' : 'bg-amber-100') :
-                            (darkMode ? 'bg-amber-500/20' : 'bg-blue-100')
+                            (darkMode ? 'bg-amber-500/20' : 'bg-info/20')
                           }`}>
                             <RenderIcon icon={op.icon} Icon={op.Icon} size={18} className={
                               op.priority === 'high' ? 'text-nominal' :
@@ -9041,7 +9041,7 @@ export default function App() {
                       Detour
                     </button>
                   )}
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
                     <RenderIcon icon={program?.icon} Icon={program?.Icon} size={28} className="text-amber-500" />
                   </div>
                 </div>
@@ -9091,7 +9091,7 @@ export default function App() {
             {/* This Week Card - Route Map Style */}
             <div className={`${theme.card} rounded-2xl p-5`}>
               <div className="flex items-center gap-2 mb-4">
-                <Flag size={16} className="text-cyan-500" />
+                <Flag size={16} className="text-amber-400" />
                 <h3 className={`font-semibold ${theme.text}`}>Weekly Route</h3>
               </div>
               <div className="relative">
@@ -9106,7 +9106,7 @@ export default function App() {
                     return (
                       <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                         isCurrent
-                          ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-cyan-500/30 shadow-sm'
+                          ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/30 shadow-sm'
                           : theme.cardAlt
                       }`}>
                         {/* Waypoint marker */}
@@ -9114,7 +9114,7 @@ export default function App() {
                           logged
                             ? 'bg-emerald-500'
                             : isCurrent
-                              ? 'bg-cyan-500 ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-transparent'
+                              ? 'bg-amber-500 ring-2 ring-amber-500/50 ring-offset-2 ring-offset-transparent'
                               : darkMode ? 'bg-slate-600' : 'bg-slate-300'
                         }`}>
                           {logged ? (
@@ -9125,7 +9125,7 @@ export default function App() {
                             <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{w.day}</span>
                           )}
                         </div>
-                        <span className={`flex-1 text-sm font-medium ${isCurrent ? 'text-cyan-500' : theme.text} truncate`}>
+                        <span className={`flex-1 text-sm font-medium ${isCurrent ? 'text-amber-400' : theme.text} truncate`}>
                           {w.session || w.name}
                         </span>
                         <span className={`text-xs font-mono ${logged ? 'text-emerald-500' : theme.textMuted}`}>
@@ -9236,7 +9236,7 @@ export default function App() {
             <div className={`${theme.card} rounded-xl shadow-sm overflow-hidden`}>
               {todayWorkout.prescription.warmup && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Warm-up</p><p className={theme.text}>{todayWorkout.prescription.warmup}</p></div>}
               {todayWorkout.prescription.description && <div className={`p-4 border-b ${theme.border}`}><p className={`text-xs font-medium ${theme.textMuted} uppercase mb-2`}>Overview</p><p className={theme.text}>{todayWorkout.prescription.description}</p></div>}
-              {todayWorkout.prescription.mainSet && <div className={`p-4 border-b ${theme.border} ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}><p className="text-xs font-medium text-amber-500 uppercase mb-2">Main Set</p><p className={`text-lg font-semibold ${theme.text}`}>{todayWorkout.prescription.mainSet}</p>{todayWorkout.prescription.recovery && <p className={`${theme.textMuted} mt-1`}>Recovery: {todayWorkout.prescription.recovery}</p>}</div>}
+              {todayWorkout.prescription.mainSet && <div className={`p-4 border-b ${theme.border} ${darkMode ? 'bg-info/20' : 'bg-info/10'}`}><p className="text-xs font-medium text-amber-500 uppercase mb-2">Main Set</p><p className={`text-lg font-semibold ${theme.text}`}>{todayWorkout.prescription.mainSet}</p>{todayWorkout.prescription.recovery && <p className={`${theme.textMuted} mt-1`}>Recovery: {todayWorkout.prescription.recovery}</p>}</div>}
               
               {todayWorkout.prescription.exercises && (
                 <div className={`p-4 border-b ${theme.border}`}>
@@ -9317,7 +9317,7 @@ export default function App() {
                       <span className={`text-2xl font-bold ${
                         workoutData.rpe >= 9 ? 'text-critical' :
                         workoutData.rpe >= 7 ? 'text-amber-500' :
-                        workoutData.rpe >= 5 ? 'text-cyan-500' :
+                        workoutData.rpe >= 5 ? 'text-amber-400' :
                         'text-emerald-500'
                       }`}>{workoutData.rpe}</span>
                       <span className={`text-sm ${theme.textMuted}`}>/10</span>
@@ -9421,8 +9421,8 @@ export default function App() {
             <div className="flex items-center justify-between"><h2 className={`text-xl font-bold ${theme.text}`}>Workout Log</h2><span className={`text-sm ${theme.textMuted}`}>{workoutLogs.length} total</span></div>
             {workoutLogs.length === 0 ? (
               <div className={`${theme.card} rounded-2xl p-8 text-center`}>
-                <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-cyan-500/10' : 'bg-cyan-50'}`}>
-                  <Mountain size={40} className="text-cyan-500" />
+                <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center ${darkMode ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+                  <Mountain size={40} className="text-amber-400" />
                 </div>
                 <h3 className={`font-semibold ${theme.text} mb-2`}>No Sessions Logged</h3>
                 <p className={`text-sm ${theme.textMuted} mb-4`}>Complete your first workout to start tracking progress</p>
@@ -9481,7 +9481,7 @@ export default function App() {
                               <span className={`text-xs font-medium px-2 py-0.5 rounded ${
                                 log.rpe >= 9 ? 'bg-critical/20 text-critical' :
                                 log.rpe >= 7 ? 'bg-amber-500/20 text-amber-400' :
-                                'bg-cyan-500/20 text-cyan-400'
+                                'bg-amber-500/20 text-amber-400'
                               }`}>
                                 RPE {log.rpe}
                               </span>
@@ -9635,7 +9635,7 @@ export default function App() {
                       key={id}
                       className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                         isActive
-                          ? 'ring-2 ring-cyan-500 shadow-lg shadow-amber-500/20'
+                          ? 'ring-2 ring-amber-500 shadow-lg shadow-amber-500/20'
                           : `${theme.card} hover:shadow-md`
                       }`}
                     >
@@ -9650,17 +9650,17 @@ export default function App() {
                               ? 'bg-gradient-to-br from-amber-500/20 to-sage-500/20'
                               : darkMode ? 'bg-slate-800' : 'bg-slate-100'
                           }`}>
-                            <RenderIcon icon={data.program?.icon} Icon={data.program?.Icon} size={24} className={isActive ? 'text-cyan-500' : theme.textMuted} />
+                            <RenderIcon icon={data.program?.icon} Icon={data.program?.Icon} size={24} className={isActive ? 'text-amber-400' : theme.textMuted} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className={`font-bold ${isActive ? 'text-cyan-500' : theme.text}`}>{data.program?.name}</p>
+                              <p className={`font-bold ${isActive ? 'text-amber-400' : theme.text}`}>{data.program?.name}</p>
                               <span className="px-2 py-0.5 bg-sage-600/20 text-sage-400 text-[10px] font-semibold rounded-full uppercase">
                                 Template
                               </span>
                               {isActive && (
-                                <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-[10px] font-semibold rounded-full flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-semibold rounded-full flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
                                   Active
                                 </span>
                               )}
@@ -9679,7 +9679,7 @@ export default function App() {
                             View
                           </button>
                           {isActive ? (
-                            <div className="flex-1 flex items-center justify-center text-cyan-500 font-semibold text-sm gap-2">
+                            <div className="flex-1 flex items-center justify-center text-amber-400 font-semibold text-sm gap-2">
                               <CheckCircle2 size={16} /> Active
                             </div>
                           ) : (
@@ -9704,7 +9704,7 @@ export default function App() {
               {Object.values({ ...DEFAULT_PROGRAMS, ...customPrograms }).map(prog => (
                 <div key={prog.id} className={`${theme.card} rounded-xl shadow-sm p-4 ${programState.currentProgram === prog.id ? 'ring-2 ring-amber-500' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-blue-100'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-amber-500/20' : 'bg-info/20'}`}>
                       <RenderIcon icon={prog.iconId || prog.icon} Icon={prog.Icon} size={24} className="text-amber-500" />
                     </div>
                     <div className="flex-1">
@@ -10229,12 +10229,12 @@ export default function App() {
             <div className={`px-5 pb-4 flex items-center justify-between border-b ${theme.border}`}>
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${
-                  floatingPane === 'workout' ? 'bg-cyan-500/20' :
+                  floatingPane === 'workout' ? 'bg-amber-500/20' :
                   floatingPane === 'readiness' ? 'bg-emerald-500/20' :
                   floatingPane === 'charts' ? 'bg-sage-600/20' :
                   'bg-amber-500/20'
                 }`}>
-                  {floatingPane === 'workout' && <Mountain size={18} className="text-cyan-500" />}
+                  {floatingPane === 'workout' && <Mountain size={18} className="text-amber-400" />}
                   {floatingPane === 'readiness' && <Activity size={18} className="text-emerald-500" />}
                   {floatingPane === 'charts' && <TrendingUp size={18} className="text-sage-500" />}
                   {floatingPane === 'calendar' && <Calendar size={18} className="text-amber-500" />}
@@ -10389,18 +10389,18 @@ export default function App() {
                     ? `${isActive
                         ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-sage-600'
                         : 'bg-gradient-to-br from-amber-500 to-amber-600'
-                      } text-white shadow-lg shadow-cyan-500/40 -mt-5 px-5 py-3`
+                      } text-white shadow-lg shadow-amber-500/40 -mt-5 px-5 py-3`
                     : isActive
                       ? ''
-                      : `${theme.textMuted} hover:text-cyan-400 active:scale-95`
+                      : `${theme.textMuted} hover:text-amber-400 active:scale-95`
                 }`}
-                style={primary ? { boxShadow: '0 4px 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2)' } : {}}
+                style={primary ? { boxShadow: '0 4px 20px rgba(196, 136, 58, 0.4), 0 0 40px rgba(196, 136, 58, 0.2)' } : {}}
               >
                 {/* Active glow effect */}
                 {isActive && !primary && (
                   <span
                     className="absolute inset-0 rounded-xl opacity-20"
-                    style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)' }}
+                    style={{ background: 'radial-gradient(circle, rgba(196,136,58,0.4) 0%, transparent 70%)' }}
                   />
                 )}
                 {/* Active indicator line */}
@@ -10409,11 +10409,11 @@ export default function App() {
                 )}
                 <Icon
                   size={primary ? 24 : 22}
-                  className={`transition-all duration-300 ${isActive && !primary ? 'text-cyan-400 scale-110' : ''}`}
+                  className={`transition-all duration-300 ${isActive && !primary ? 'text-amber-400 scale-110' : ''}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span className={`text-[10px] font-semibold tracking-wide ${
-                  primary ? 'text-white' : isActive ? 'text-cyan-400' : ''
+                  primary ? 'text-white' : isActive ? 'text-amber-400' : ''
                 }`}>
                   {label}
                 </span>
